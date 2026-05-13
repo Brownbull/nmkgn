@@ -14,7 +14,7 @@ PostgreSQL database.
 | # | Phase | Description | Complexity | Exec | Review | Commit | Push |
 |---|---|---|---|---|---|---|
 | 1 | Product Backbone and Case Intake | Add FastAPI, PostgreSQL/Alembic, lean case intake, frontend API wiring, and verification for REQ-01. | medium | complete | complete | complete | pending |
-| 2 | Claude Design Intake and Case-Flow Gap Analysis | Curate the imported Claude design export, inventory its screens/assets, map gaps against Phase 1, and recommend the next case-flow UI integration. | low | complete | complete | pending | pending |
+| 2 | Claude Design Intake and Case-Flow Gap Analysis | Curate the imported Claude design export, inventory its screens/assets, map gaps against Phase 1, and recommend the next case-flow UI integration. | low | complete | complete | complete | pending |
 
 ## Scope
 
