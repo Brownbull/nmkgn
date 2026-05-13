@@ -1,0 +1,49 @@
+references:
+  - id: ref-01
+    path: docs/V0_ALIGNMENT.md
+    role: "V0 product boundary, evidence rules, and stable agent-schema contract"
+    weight: authoritative
+    load_mode: full_read
+    added: 2026-05-12
+    notes: |
+      Governs the first scope: Chilean consumer-credit review before broader
+      legal-document expansion.
+
+  - id: ref-02
+    path: .kdbp/VALUES.md
+    role: "Project values that must govern scope and requirements"
+    weight: authoritative
+    load_mode: full_read
+    added: 2026-05-12
+    notes: |
+      Values define the first-document-type boundary, stable Pydantic schemas,
+      evidence requirements, confirmation behavior, progress, routing, and
+      measurement expectations.
+
+  - id: ref-03
+    path: docs/AGENTS_USE.md
+    role: "Agent design and structured-output guidance"
+    weight: suggestive
+    load_mode: full_read
+    added: 2026-05-12
+
+  - id: ref-04
+    path: docs/architecture.md
+    role: "Initial system boundary, service boundaries, and data model framing"
+    weight: suggestive
+    load_mode: full_read
+    added: 2026-05-12
+
+  - id: ref-05
+    path: docs/SCALING.md
+    role: "Observability and reliability considerations"
+    weight: contextual
+    load_mode: full_read
+    added: 2026-05-12
+
+  - id: ref-06
+    path: src/screens/
+    role: "Current Clo-designed mockup flow as UX reference, not final layout"
+    weight: contextual
+    load_mode: index_only
+    added: 2026-05-12

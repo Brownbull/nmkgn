@@ -1,0 +1,97 @@
+{
+  "session_id": "c51edbdd-2a99-46eb-b6ef-1878de90d879",
+  "command_version": "v1.0",
+  "created": "2026-05-12T21:30:55Z",
+  "last_updated": "2026-05-13T19:43:38Z",
+  "current_step": "finalized",
+  "completed_steps": [
+    "step-0-reinvocation",
+    "step-0.5-reference-frame",
+    "step-1-intake",
+    "step-2-research",
+    "step-3-problem-vision",
+    "step-4-users",
+    "step-5-success-criteria",
+    "step-6-constraints-posture",
+    "step-7.1-requirements",
+    "step-7.2-granularity",
+    "step-7.3-phase-skeleton",
+    "step-7.4-phase-population",
+    "step-8-finalize"
+  ],
+  "prompt_versions_used": {
+    "intake-quality-evaluator": "v1",
+    "brainstorm-analyst": "v1",
+    "intake-summary-assembler": "v1",
+    "problem-vision-drafter": "v1",
+    "users-and-non-users-drafter": "v1",
+    "success-criteria-generator": "v1",
+    "non-goals-generator": "v1",
+    "constraints-and-posture-drafter": "v1",
+    "req-decomposer": "v1",
+    "phase-skeleton-and-populator": "v1"
+  },
+  "reference_frame_loaded": true,
+  "research_width": "standard",
+  "granularity": "standard",
+  "intake": {
+    "core_questions_answered": 5,
+    "follow_ups_asked": 0,
+    "brainstorm_cycles": {
+      "Q1": 1
+    },
+    "answers": [
+      {
+        "question_id": "Q1",
+        "question_text": "In one sentence, what are you building?",
+        "answer": "We are building a case-based document analysis app that lets people upload and compare documents under one situation, starting with Chilean consumer-credit contracts, and receive structured, evidence-backed findings and next actions.",
+        "quality": "spec",
+        "brainstorm_exit": false
+      },
+      {
+        "question_id": "Q2",
+        "question_text": "Who hurts the most from not having this, and what are they doing today instead?",
+        "answer": "People facing complex contract decisions while their attention is on the life event behind the contract, such as building a house. Today they skim, trust the provider or advisor, miss details like payment-count mismatches, and do not compare the terms deeply against market or legal references.",
+        "quality": "spec"
+      },
+      {
+        "question_id": "Q3",
+        "question_text": "What changed in the world or your context that makes this buildable or necessary now?",
+        "answer": "LLM coding agents, OCR/PDF extraction, and structured LLM analysis make it feasible to build a consumer-facing workflow that translates available contract information into clear, actionable findings. The information exists, but the tool that turns complex documents into understandable options for regular people is not yet broadly available.",
+        "quality": "spec"
+      },
+      {
+        "question_id": "Q4",
+        "question_text": "In 6 months, if this works, what's different?",
+        "answer": "A user facing a complex contract can explain the situation, configure the case context through fixed fields, mark whether the case is before signing or after signing, upload the contract and related documents, obtain path-appropriate information such as market alternatives before signing, identify questions to ask the company, see which laws or disclosure duties might be relevant, and know which entities to contact if issues remain.",
+        "quality": "spec"
+      },
+      {
+        "question_id": "Q5",
+        "question_text": "What would you refuse to build, even if users asked?",
+        "answer": "We will not build a free-form document analyzer, an actual advisor, or a marketplace. The product should analyze documents, simplify information, flag specific points to review, compare only a small bounded set of market options, and help the user understand enough to decide or take action themselves.",
+        "quality": "spec"
+      }
+    ]
+  },
+  "pending_approval_markers": [],
+  "coverage_status": {
+    "last_checked": "2026-05-13T19:40:42Z",
+    "sc_without_reqs": [],
+    "reqs_without_phases": [],
+    "reqs_in_multiple_phases": [],
+    "blocks_finalize": true,
+    "force_override": false
+  },
+  "open_questions": [
+    {
+      "id": "OQ-01",
+      "text": "Should v0 optimize primarily for before-signing review, after-signing discovery, or both?",
+      "status": "resolved"
+    }
+  ],
+  "cost_estimate": {
+    "tokens_used": 0,
+    "estimated_usd": 0
+  }
+}
