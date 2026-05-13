@@ -14,6 +14,7 @@ PostgreSQL database.
 | # | Phase | Description | Complexity | Exec | Review | Commit | Push |
 |---|---|---|---|---|---|---|
 | 1 | Product Backbone and Case Intake | Add FastAPI, PostgreSQL/Alembic, lean case intake, frontend API wiring, and verification for REQ-01. | medium | complete | complete | complete | pending |
+| 2 | Claude Design Intake and Case-Flow Gap Analysis | Curate the imported Claude design export, inventory its screens/assets, map gaps against Phase 1, and recommend the next case-flow UI integration. | low | complete | complete | pending | pending |
 
 ## Scope
 
@@ -76,4 +77,54 @@ PostgreSQL database.
 
 ## Current Phase
 
-Phase 1 execution, review, and commit are complete. Push remains pending.
+Phase 2 design-intake execution and review are complete. Commit and push remain
+pending. Phase 1 was committed at `3b88ea8`; its push is still pending behind
+the current design-intake change set.
+
+## Phase 2 - Claude Design Intake and Case-Flow Gap Analysis
+
+### Scope
+
+### In
+
+- Curated reference import under `docs/design/incoming/claude-design-20260513/`.
+- Manifest for the imported package.
+- Inventory of high-fidelity, wireframe, coach exploration, mobile, and asset
+  material.
+- Gap analysis against the committed Phase 1 case-based app.
+- Optional static preview port registration.
+
+### Out
+
+- Product UI implementation.
+- Changes to `src/`, `api/`, migrations, tests, or runtime behavior.
+- Direct copy of Claude JSX into the React/Vite app.
+
+### Tasks
+
+| ID | Task | Status |
+|---|---|---|
+| D1 | Remove disposable download metadata and ignore future `*:Zone.Identifier` files. | complete |
+| D2 | Update structure and port registry for imported design references. | complete |
+| D3 | Add Claude package manifest. | complete |
+| D4 | Add package inventory. | complete |
+| D5 | Add case-flow gap analysis and next implementation recommendation. | complete |
+| D6 | Run non-runtime verification gates. | complete |
+
+### Acceptance
+
+- The Claude export is preserved as curated reference material.
+- The import is documented before any product UI changes.
+- The next implementation recommendation prioritizes case flow only:
+  login, case setup, upload, detection, plan, and coach.
+- Phase 1 backend/API behavior remains untouched.
+
+### Verification
+
+- `git diff --check` — passed.
+- `git status --short -uall` — checked; only design-intake/KDBP/reference files
+  changed.
+- Static preview smoke on `127.0.0.1:15181` — passed for the three main HTML
+  canvases.
+- `npm run lint` — passed.
+- `npm run build` — passed.

@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>letra. · Pitch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper: #fafaf7;
+    --paper-2: #f1f0eb;
+    --paper-3: #e8e6df;
+    --ink: #1a1d24;
+    --ink-soft: #4f5562;
+    --ink-faint: #8b91a0;
+    --line: #e6e4dc;
+    --line-2: #d8d5cb;
+    --accent: #246a5b;
+    --accent-soft: #d9e8e3;
+    --accent-2: #5fa093;
+    --red: #b8442e;
+    --red-soft: #fbe7e1;
+    --amber: #a87420;
+    --amber-soft: #fbeed3;
+    --green: #2c6b3f;
+    --green-soft: #d6e8d9;
+  }
+  html, body { margin:0; padding:0; background:#0e1015; }
+  body { font-family: 'Manrope', system-ui, sans-serif; color: var(--ink); }
+
+  /* Override deck-stage's default #000 host bg — letterbox letra. in our ink color.
+     !important needed because :host rules inside the shadow DOM outrank external selectors.
+     Rail keeps its own #141414 bg (declared inside shadow DOM, unaffected). */
+  deck-stage { background: var(--ink) !important; }
+
+  deck-stage section { background: var(--paper); color: var(--ink); position:relative; overflow:hidden; }
+  /* Re-apply inverse color when a slide opts into the dark hero variant */
+  deck-stage section.sect-hero { color: var(--paper); }
+
+  .display { font-family: 'Manrope'; font-weight:700; letter-spacing:-0.025em; line-height:1.05; }
+  .num { font-family: 'JetBrains Mono', ui-monospace, monospace; font-feature-settings: "tnum","lnum"; letter-spacing:-0.01em; }
+  .label { font-family: 'Manrope'; font-weight:600; text-transform:uppercase; letter-spacing:0.12em; font-size:18px; color: var(--ink-faint); }
+
+  /* Slide layout helpers */
+  .pad   { padding: 80px 96px; box-sizing:border-box; height:100%; display:flex; flex-direction:column; }
+  .pad-x { padding: 0 96px; }
+  .grow  { flex: 1 1 0; }
+  .row   { display:flex; }
+  .col   { display:flex; flex-direction:column; }
+  .gap-12 { gap:12px } .gap-16 { gap:16px } .gap-24 { gap:24px } .gap-36 { gap:36px } .gap-48 { gap:48px }
+  .between { display:flex; justify-content:space-between; align-items:center; }
+  .center  { display:flex; align-items:center; justify-content:center; }
+  .baseline { display:flex; align-items:baseline; }
+
+  /* Cards & chips */
+  .card { background:#fff; border:1px solid var(--line); border-radius:18px; }
+  .card-soft { background: var(--paper-2); border:1px solid transparent; border-radius:18px; }
+  .pill { display:inline-flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; background: var(--paper-2); font-size:20px; font-weight:600; color: var(--ink-soft); }
+  .pill-accent { background: var(--accent-soft); color: var(--accent); }
+  .pill-red    { background: var(--red-soft); color: var(--red); }
+  .pill-amber  { background: var(--amber-soft); color: var(--amber); }
+  .pill-green  { background: var(--green-soft); color: var(--green); }
+  .pill-ink    { background: var(--ink); color: var(--paper); }
+
+  /* Wordmark */
+  .wm { display:inline-flex; align-items:center; gap:14px; }
+  .wm-mark { width:46px; height:46px; border-radius:12px; background: var(--ink); position:relative; }
+  .wm-mark::after {
+    content:''; position:absolute; inset:0;
+    background:
+      linear-gradient(var(--paper),var(--paper)) no-repeat 14px 12px / 2.5px 22px,
+      linear-gradient(var(--paper),var(--paper)) no-repeat 21px 18px / 2.5px 16px,
+      linear-gradient(var(--paper),var(--paper)) no-repeat 21px 18px / 9px 2.5px,
+      linear-gradient(var(--paper),var(--paper)) no-repeat 30px 18px / 2.5px 16px;
+  }
+  .wm-name { font-family:'Manrope'; font-weight:700; letter-spacing:-0.03em; font-size:40px; color: var(--ink); }
+  .wm-name .dot { color: var(--accent); }
+
+  /* Slide chrome */
+  .slide-head {
+    display:flex; align-items:flex-end; justify-content:space-between;
+    margin-bottom: 36px;
+  }
+  .slide-head .crumb { font-size: 22px; color: var(--ink-faint); font-family:'JetBrains Mono'; }
+  .slide-head .num   { font-size: 22px; color: var(--ink-faint); font-family:'JetBrains Mono'; }
+
+  /* Scrap / underline tag */
+  .tag-accent {
+    color: var(--accent); padding-bottom: 2px;
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-size: 100% 12px;
+    background-position: 0 100%;
+    background-color: transparent;
+    box-decoration-break: clone; -webkit-box-decoration-break: clone;
+  }
+
+  /* Mini badge for embedded UI */
+  .ds-badge { display:inline-flex; align-items:center; gap:14px; padding:10px 14px 10px 10px; border:1.5px solid var(--line); border-radius:14px; background:#fff; }
+  .ds-badge .ic { width:42px; height:42px; border-radius:10px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; }
+
+  .h-bullet { display:flex; gap:16px; align-items:flex-start; }
+  .h-bullet .b-num { font-family:'JetBrains Mono'; font-size:16px; color: var(--accent); font-weight:700; flex:0 0 auto; padding-top:4px; min-width:32px; }
+  .h-bullet .b-title { font-size: 26px; font-weight:700; letter-spacing:-0.015em; line-height:1.25; }
+  .h-bullet .b-body { font-size: 17px; color: var(--ink-soft); margin-top:8px; line-height:1.5; }
+
+  /* Lens cards */
+  .lc { background:#fff; border:1px solid var(--line); border-radius:18px; padding:0; overflow:hidden; flex:1; min-width:0; }
+  .lc .strip { height:5px; }
+  .lc .body  { padding: 22px 24px; }
+  .lc .label-row { display:flex; align-items:center; gap:14px; margin-bottom: 16px; }
+  .lc .label-row .ic { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .lc .label-row .name { font-size: 22px; font-weight:700; letter-spacing:-0.01em; flex:1; }
+  .lc .label-row .stat { font-size: 18px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
+  .lc .headline { font-family:'JetBrains Mono'; font-size: 32px; font-weight:600; letter-spacing:-0.02em; }
+  .lc .sub { font-size: 22px; color: var(--ink-soft); margin-top: 12px; line-height:1.5; }
+  .lc .count { font-family:'JetBrains Mono'; font-size: 20px; color: var(--ink-faint); margin-top: 18px; }
+
+  /* Quote — used in 'problem' slide */
+  .quote {
+    font-family:'Manrope'; font-weight:500; font-style:italic;
+    font-size: 28px; line-height: 1.5; color: var(--ink);
+    border-left: 3px solid var(--accent); padding-left: 24px;
+    max-width: 900px;
+  }
+
+  /* Stat block */
+  .stat-block { padding: 24px 28px; border-radius: 16px; background: var(--paper-2); }
+  .stat-block .big { font-family:'JetBrains Mono'; font-size: 72px; font-weight:700; letter-spacing:-0.04em; color: var(--ink); line-height:1; }
+  .stat-block .lbl { font-size: 22px; color: var(--ink-soft); margin-top: 14px; line-height:1.4; }
+  .stat-block.tone-red { background: var(--red-soft); }
+  .stat-block.tone-red .big { color: var(--red); }
+  .stat-block.tone-accent { background: var(--accent-soft); }
+  .stat-block.tone-accent .big { color: var(--accent); }
+
+  /* Email mini */
+  .em { background:#fff; border:1px solid var(--line); border-radius: 18px; overflow:hidden; box-shadow: 0 30px 60px -20px rgba(26,29,36,0.18); }
+  .em .em-top { padding: 16px 24px; border-bottom: 1px solid var(--line); background: var(--paper); display:flex; align-items:center; gap:12px; font-size: 20px; color: var(--ink-soft); }
+  .em .em-hd { padding: 16px 24px; border-bottom: 1px solid var(--line); display:flex; flex-direction:column; gap:8px; font-size: 20px; color: var(--ink-soft); }
+  .em .em-body { padding: 26px 30px; font-size: 22px; line-height:1.65; color: var(--ink); }
+
+  /* Mark element flash */
+  mark { background: var(--accent-soft); color: var(--accent); padding: 1px 6px; border-radius: 4px; font-weight:600; }
+  mark.red { background: var(--red-soft); color: var(--red); }
+
+  /* Section header slide variant */
+  .sect-hero { background: var(--ink); color: var(--paper); }
+  .sect-hero .wm-name { color: var(--paper); }
+  .sect-hero .wm-mark { background: var(--paper); }
+  .sect-hero .wm-mark::after {
+    background:
+      linear-gradient(var(--ink),var(--ink)) no-repeat 14px 12px / 2.5px 22px,
+      linear-gradient(var(--ink),var(--ink)) no-repeat 21px 18px / 2.5px 16px,
+      linear-gradient(var(--ink),var(--ink)) no-repeat 21px 18px / 9px 2.5px,
+      linear-gradient(var(--ink),var(--ink)) no-repeat 30px 18px / 2.5px 16px;
+  }
+
+  /* Step diagram */
+  .step { display:flex; flex-direction:column; gap:14px; padding: 26px 28px; background:#fff; border:1px solid var(--line); border-radius:16px; flex:1; min-width:0; position:relative; }
+  .step .step-n { font-family:'JetBrains Mono'; font-size:20px; color: var(--accent); font-weight:700; }
+  .step .step-t { font-size: 28px; font-weight:700; letter-spacing:-0.01em; }
+  .step .step-s { font-size: 20px; color: var(--ink-soft); line-height:1.45; }
+  .step-arr { display:flex; align-items:center; justify-content:center; color: var(--line-2); font-size: 28px; }
+
+  /* Country row */
+  .country-row { display:flex; align-items:center; gap:18px; padding: 22px 26px; border-bottom: 1px solid var(--line); }
+  .country-row:last-child { border-bottom: none; }
+  .country-flag { font-size: 42px; line-height: 1; }
+  .country-name { font-size: 28px; font-weight:700; letter-spacing:-0.01em; }
+  .country-sub  { font-size: 20px; color: var(--ink-faint); margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<script type="application/json" id="speaker-notes">[]</script>
+
+<deck-stage>
+
+<!-- ============ 01 · Cover ============ -->
+<section data-screen-label="01 Cover">
+  <div class="pad" style="position:relative;">
+    <!-- decorative grid lines -->
+    <div style="position:absolute; inset:0; background-image: linear-gradient(to right, rgba(26,29,36,0.03) 1px, transparent 1px); background-size: 96px 100%; pointer-events:none;"></div>
+
+    <div class="wm"><div class="wm-mark"></div><span class="wm-name">letra<span class="dot">.</span></span></div>
+
+    <div class="grow"></div>
+
+    <div style="display:flex; align-items:flex-end; gap:60px;">
+      <div style="flex:2;">
+        <span class="pill pill-accent" style="font-size:22px; padding:10px 22px;">
+          <span style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></span>
+          Para Chile · más países pronto
+        </span>
+        <h1 class="display" style="font-size: 170px; margin: 28px 0 0; letter-spacing:-0.04em;">
+          Lee la <br/>letra <span class="tag-accent">chica</span><br/>por ti.
+        </h1>
+      </div>
+      <div style="flex:1; max-width: 480px;">
+        <div style="font-size: 26px; color: var(--ink-soft); line-height:1.5;">
+          Un agente para revisar contratos, créditos y cotizaciones antes de firmarlos.
+        </div>
+        <div style="font-size: 20px; color: var(--ink-faint); margin-top: 24px; font-family:'JetBrains Mono';">
+          Pitch · mayo 2026
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 · El problema ============ -->
+<section data-screen-label="02 Problem">
+  <div class="pad">
+    <div class="slide-head">
+      <div>
+        <div class="label">El problema</div>
+        <h2 class="display" style="font-size: 76px; margin: 14px 0 0;">Nadie lee la letra chica.</h2>
+      </div>
+      <div class="num">02 / 10</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; flex:1;">
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div class="quote">
+          "Firmé el crédito en 20 minutos en el banco. Cuando llegué a la casa y revisé,<br/>
+          había <mark class="red">8 cuotas más</mark> que la simulación. <mark class="red">$1.4M de diferencia.</mark>"
+        </div>
+        <div style="font-size:22px; color: var(--ink-faint); margin-left: 28px;">
+          — usuario beta, Santiago · marzo 2025
+        </div>
+
+        <div style="margin-top: 36px; font-size: 22px; color: var(--ink-soft); line-height: 1.5; max-width: 660px;">
+          Los contratos financieros en Chile son largos, técnicos y a menudo distintos a la simulación.
+          La gente firma <b>sin entender</b> — y descubre las diferencias <b>cuando ya es tarde</b>.
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:18px;">
+        <div class="stat-block tone-red">
+          <div class="big">7%</div>
+          <div class="lbl">lee el contrato entero antes de firmar un crédito de consumo</div>
+        </div>
+        <div class="stat-block">
+          <div class="big">38</div>
+          <div class="lbl">páginas promedio · contrato hipotecario CMF</div>
+        </div>
+        <div class="stat-block tone-accent">
+          <div class="big">$870k</div>
+          <div class="lbl">diferencia mediana en costo total entre 2 ofertas para el mismo perfil</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 · La solución (section divider) ============ -->
+<section data-screen-label="03 Solution" class="sect-hero">
+  <div class="pad" style="justify-content:center;">
+    <div class="wm" style="margin-bottom: 64px;"><div class="wm-mark"></div><span class="wm-name">letra<span class="dot">.</span></span></div>
+
+    <h2 class="display" style="font-size: 100px; max-width: 1500px; line-height: 1.08;">
+      Subes un PDF.<br/>
+      En <span style="color: var(--accent-2)">2 minutos</span> sabes qué firmar,<br/>
+      qué negociar y qué rechazar.
+    </h2>
+
+    <div style="margin-top: 60px; display:flex; gap: 20px; flex-wrap:wrap;">
+      <span class="pill" style="background: transparent; color: var(--paper); border:1px solid rgba(255,255,255,0.2); font-size: 22px; padding: 12px 24px;">Para Chile · CMF + Ley 19.496</span>
+      <span class="pill" style="background: transparent; color: var(--paper); border:1px solid rgba(255,255,255,0.2); font-size: 22px; padding: 12px 24px;">Créditos, arriendos, seguros, contratos laborales</span>
+      <span class="pill" style="background: transparent; color: var(--paper); border:1px solid rgba(255,255,255,0.2); font-size: 22px; padding: 12px 24px;">Tú firmas — no automatizamos decisiones</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 · Cómo funciona ============ -->
+<section data-screen-label="04 How it works">
+  <div class="pad">
+    <div class="slide-head">
+      <div>
+        <div class="label">Cómo funciona</div>
+        <h2 class="display" style="font-size: 72px; margin: 14px 0 0;">4 pasos.</h2>
+      </div>
+      <div class="num">04 / 10</div>
+    </div>
+
+    <div style="display:flex; align-items:stretch; gap: 14px; margin-top: 36px;">
+      <div class="step">
+        <div class="step-n">01 · subir</div>
+        <div class="step-t">Suelta el PDF</div>
+        <div class="step-s">Aceptamos contratos, créditos, cotizaciones, escaneados o digitales. Hasta 25 MB.</div>
+      </div>
+      <div class="step-arr">→</div>
+      <div class="step">
+        <div class="step-n">02 · identificar</div>
+        <div class="step-t">Detectamos el tipo</div>
+        <div class="step-s">¿Es un crédito de consumo? ¿Arriendo? ¿Algo que no soportamos? Te decimos antes de seguir.</div>
+      </div>
+      <div class="step-arr">→</div>
+      <div class="step">
+        <div class="step-n">03 · plan</div>
+        <div class="step-t">Eliges qué revisar</div>
+        <div class="step-s">11 criterios por defecto · cláusulas abusivas, CAE vs. mercado, seguros vinculados, mora.</div>
+      </div>
+      <div class="step-arr">→</div>
+      <div class="step">
+        <div class="step-n">04 · análisis</div>
+        <div class="step-t">Recibes el coach</div>
+        <div class="step-s">Hallazgos con cláusula, severidad y argumento por <b>4 lentes</b>: ley, mercado, comparar, internacional.</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 48px; background: var(--paper-2); border-radius: 18px; padding: 28px 32px; display:flex; gap: 36px; align-items:center;">
+      <div style="flex:0 0 auto;">
+        <div class="label">Tiempo total · contrato típico</div>
+        <div class="num" style="font-size: 56px; font-weight:700; margin-top: 8px; color: var(--accent);">2 min 14 s</div>
+      </div>
+      <div style="width:1px; height: 70px; background: var(--line-2);"></div>
+      <div style="font-size: 22px; color: var(--ink-soft); line-height: 1.5; max-width: 720px;">
+        Mientras estás en el banco, en el celular, antes de firmar. <b>Ese</b> es el momento donde se gana o se pierde plata.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 · 4 lentes ============ -->
+<section data-screen-label="05 Lenses">
+  <div class="pad">
+    <div class="slide-head">
+      <div>
+        <div class="label">El análisis</div>
+        <h2 class="display" style="font-size: 72px; margin: 14px 0 0;">Tu documento por <span class="tag-accent">4 perspectivas</span>.</h2>
+      </div>
+      <div class="num">05 / 10</div>
+    </div>
+
+    <div style="font-size: 22px; color: var(--ink-soft); max-width: 1100px; margin-top: 8px; line-height:1.5;">
+      No es una nota global. Es saber dónde tu contrato está sólido y dónde está débil — separado por la lente que importa para cada decisión.
+    </div>
+
+    <div style="display:flex; gap: 18px; margin-top: 44px; flex: 1;">
+      <div class="lc">
+        <div class="strip" style="background:#3b4a6b;"></div>
+        <div class="body">
+          <div class="label-row">
+            <div class="ic" style="background:#e6eaf3;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b4a6b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4V20 M5 20 H19 M7 8 L4 14 H10 L7 8 Z M17 8 L14 14 H20 L17 8 Z M12 5 L7 8 M12 5 L17 8"/></svg>
+            </div>
+            <div class="name">Ley · Chile</div>
+            <div class="stat" style="color: var(--green);">SÓLIDO</div>
+          </div>
+          <div class="headline" style="color: var(--green);">Cumple</div>
+          <div class="sub">Sin cláusulas abusivas según el Art. 16 Ley 19.496.</div>
+          <div class="count">5 / 5 criterios OK</div>
+        </div>
+      </div>
+
+      <div class="lc">
+        <div class="strip" style="background:var(--accent);"></div>
+        <div class="body">
+          <div class="label-row">
+            <div class="ic" style="background:var(--accent-soft);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 V4 M4 20 H20 M8 16 V12 M12 16 V8 M16 16 V14"/></svg>
+            </div>
+            <div class="name">Mercado</div>
+            <div class="stat" style="color: var(--red);">DÉBIL</div>
+          </div>
+          <div class="headline" style="color: var(--red);">+4.2 pts CAE</div>
+          <div class="sub">CAE 24.8% sobre la mediana CMF de marzo 2025 para tu perfil.</div>
+          <div class="count">2 / 4 con alerta</div>
+        </div>
+      </div>
+
+      <div class="lc">
+        <div class="strip" style="background:#7a4b6f;"></div>
+        <div class="body">
+          <div class="label-row">
+            <div class="ic" style="background:#f3e6ee;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7a4b6f" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 H4 V20 H9 M15 4 H20 V20 H15 M9 8 V16 M15 8 V16 M12 4 V20"/></svg>
+            </div>
+            <div class="name">vs. otras ofertas</div>
+            <div class="stat" style="color: var(--red);">DÉBIL</div>
+          </div>
+          <div class="headline" style="color: var(--red);">−$1.2M peor</div>
+          <div class="sub">Frente al crédito de María: 8 cuotas más y 5.4 pts más de CAE.</div>
+          <div class="count">5 diferencias clave</div>
+        </div>
+      </div>
+
+      <div class="lc">
+        <div class="strip" style="background:#8a6f3d;"></div>
+        <div class="body">
+          <div class="label-row">
+            <div class="ic" style="background:#f3ecd9;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8a6f3d" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12 H21 M12 3 C15 6 16.5 9 16.5 12 C16.5 15 15 18 12 21 C9 18 7.5 15 7.5 12 C7.5 9 9 6 12 3"/></svg>
+            </div>
+            <div class="name">Internacional</div>
+            <div class="stat" style="color: var(--ink-faint);">REFERENCIA</div>
+          </div>
+          <div class="headline" style="color: var(--ink);">3 observaciones</div>
+          <div class="sub">Bajo CFPB el cambio de plazo podría ser práctica engañosa. No genera alertas acá.</div>
+          <div class="count">solo referencia</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 06 · Coach screen ============ -->
+<section data-screen-label="06 Coach">
+  <div class="pad">
+    <div class="slide-head">
+      <div>
+        <div class="label">El momento "wow"</div>
+        <h2 class="display" style="font-size: 64px; margin: 14px 0 0;">El veredicto, sin rodeos.</h2>
+      </div>
+      <div class="num">06 / 10</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap: 60px; flex:1; margin-top:14px;">
+      <!-- left: replica of coach hero -->
+      <div>
+        <div class="ds-badge">
+          <div class="ic">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 L12 4 L21 10 M5 10 L5 18 M9 10 L9 18 M15 10 L15 18 M19 10 L19 18 M3 20 L21 20"/></svg>
+          </div>
+          <div>
+            <div class="label" style="font-size: 16px;">Identificado</div>
+            <div style="font-weight:700; font-size: 24px; letter-spacing:-0.01em;">Crédito de consumo <span style="color: var(--ink-faint); font-weight: 500;">· Chile · CMF</span></div>
+          </div>
+        </div>
+
+        <h3 class="display" style="font-size: 70px; margin: 32px 0 0; line-height: 1.05;">
+          Estás pagando<br/>
+          <span style="color: var(--red);">$1.4M de más</span> por este crédito.
+        </h3>
+        <div style="font-size: 22px; color: var(--ink-faint); margin-top: 16px; font-family:'JetBrains Mono';">
+          contrato.pdf · BancoPlaceholder · 14 mar 2025
+        </div>
+
+        <div style="margin-top: 36px; display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <div class="card" style="padding: 18px 22px;">
+            <div class="label" style="font-size: 16px;">Cuotas</div>
+            <div class="num" style="font-size: 44px; color: var(--red); margin-top: 10px; line-height: 1;">68</div>
+            <div style="font-size: 20px; color: var(--red); margin-top: 10px; font-weight: 600;">+8 vs. 60 simuladas</div>
+          </div>
+          <div class="card" style="padding: 18px 22px;">
+            <div class="label" style="font-size: 16px;">CAE</div>
+            <div class="num" style="font-size: 44px; color: var(--red); margin-top: 10px; line-height: 1;">24.8%</div>
+            <div style="font-size: 20px; color: var(--red); margin-top: 10px; font-weight: 600;">+4.2 pts mercado</div>
+          </div>
+          <div class="card" style="padding: 18px 22px;">
+            <div class="label" style="font-size: 16px;">Costo total</div>
+            <div class="num" style="font-size: 44px; color: var(--red); margin-top: 10px; line-height: 1;">$23.9M</div>
+            <div style="font-size: 20px; color: var(--red); margin-top: 10px; font-weight: 600;">+$1.4M</div>
+          </div>
+          <div class="card" style="padding: 18px 22px;">
+            <div class="label" style="font-size: 16px;">Monto</div>
+            <div class="num" style="font-size: 44px; margin-top: 10px; line-height: 1;">$18M</div>
+            <div style="font-size: 20px; color: var(--ink-soft); margin-top: 10px;">solicitado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right: hallazgos -->
+      <div>
+        <div class="label">3 acciones concretas para negociar</div>
+        <div style="display:flex; flex-direction:column; gap: 14px; margin-top: 20px;">
+          <div class="card" style="padding: 18px 22px;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <span style="width:38px; height:38px; border-radius:50%; background: var(--red-soft); color: var(--red); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono'; font-weight:700; font-size: 19px;">1</span>
+              <span style="font-size: 26px; font-weight:700; flex:1; letter-spacing:-0.005em;">Bajar a 60 cuotas</span>
+              <span class="num" style="font-size: 24px; color: var(--green); font-weight: 600;">−$890k</span>
+            </div>
+            <div style="font-size: 20px; color: var(--ink-soft); margin-left: 52px; margin-top: 8px; line-height: 1.5;">
+              La simulación inicial era 60 cuotas. El contrato sumó 8 sin avisar.
+            </div>
+            <div style="margin-left: 52px; margin-top: 12px; display:flex; gap:10px;">
+              <span class="pill pill-amber" style="font-size:18px; padding: 5px 14px;">Cláusula 4.2</span>
+              <span class="pill" style="font-size:18px; padding: 5px 14px; background:#e6eaf3; color: #3b4a6b;">ley</span>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 18px 22px;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <span style="width:38px; height:38px; border-radius:50%; background: var(--red-soft); color: var(--red); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono'; font-weight:700; font-size: 19px;">2</span>
+              <span style="font-size: 26px; font-weight:700; flex:1; letter-spacing:-0.005em;">Pedir CAE de mercado</span>
+              <span class="num" style="font-size: 24px; color: var(--green); font-weight: 600;">−$420k</span>
+            </div>
+            <div style="font-size: 20px; color: var(--ink-soft); margin-left: 52px; margin-top: 8px; line-height: 1.5;">
+              CAE 4.2 pts sobre la mediana CMF para tu perfil de ingreso.
+            </div>
+            <div style="margin-left: 52px; margin-top: 12px; display:flex; gap:10px;">
+              <span class="pill pill-amber" style="font-size:18px; padding: 5px 14px;">Cláusula 3</span>
+              <span class="pill" style="font-size:18px; padding: 5px 14px; background:var(--accent-soft); color: var(--accent);">mercado</span>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 18px 22px;">
+            <div style="display:flex; align-items:center; gap: 14px;">
+              <span style="width:38px; height:38px; border-radius:50%; background: var(--amber-soft); color: var(--amber); display:flex; align-items:center; justify-content:center; font-family:'JetBrains Mono'; font-weight:700; font-size: 19px;">3</span>
+              <span style="font-size: 26px; font-weight:700; flex:1; letter-spacing:-0.005em;">Seguro externo</span>
+              <span class="num" style="font-size: 24px; color: var(--green); font-weight: 600;">−$90k</span>
+            </div>
+            <div style="font-size: 20px; color: var(--ink-soft); margin-left: 52px; margin-top: 8px; line-height: 1.5;">
+              Art. 17 H Ley 19.496 te deja elegir aseguradora. Sácalo del banco.
+            </div>
+            <div style="margin-left: 52px; margin-top: 12px; display:flex; gap:10px;">
+              <span class="pill pill-amber" style="font-size:18px; padding: 5px 14px;">Cláusula 9</span>
+              <span class="pill" style="font-size:18px; padding: 5px 14px; background:#e6eaf3; color: #3b4a6b;">ley</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 · Email composer ============ -->
+<section data-screen-label="07 Email">
+  <div class="pad">
+    <div class="slide-head">
+      <div>
+        <div class="label">Negociar</div>
+        <h2 class="display" style="font-size: 64px; margin: 14px 0 0;">Un click → email al banco.</h2>
+      </div>
+      <div class="num">07 / 10</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 0.85fr; gap: 56px; flex:1; margin-top:8px;">
+      <div class="em">
+        <div class="em-top">
+          <span class="pill" style="font-size:13px; padding: 4px 12px;">✎ Tono · <b>Firme</b></span>
+          <span class="pill pill-amber" style="font-size:13px; padding: 4px 12px;">firme</span>
+          <span style="color: var(--ink-faint); font-size: 14px;">· 187 palabras · 1m lectura</span>
+          <div style="flex:1"></div>
+          <span style="font-size: 14px; color: var(--ink-faint);">ES-CL</span>
+        </div>
+        <div class="em-hd">
+          <div><span class="label" style="font-size: 16px; margin-right: 14px;">Para</span><span>ejecutivo@bancoplaceholder.cl</span></div>
+          <div><span class="label" style="font-size: 16px; margin-right: 14px;">Asunto</span><b>Consultas sobre el contrato de mutuo N° 4471-2025-ZZ</b></div>
+        </div>
+        <div class="em-body">
+          <p style="margin:0 0 14px;">Estimado/a,</p>
+          <p style="margin:0 0 14px;">Antes de firmar el contrato de mutuo, necesito que revisemos los siguientes puntos. Hay diferencias respecto a lo simulado y a lo que indica la normativa:</p>
+          <ol style="margin: 0; padding-left: 26px; display:flex; flex-direction:column; gap: 12px;">
+            <li>La simulación mostraba <b>60 cuotas</b>. El contrato indica <mark class="red">68 cuotas</mark> (cláusula 4.2) — son 8 cuotas adicionales no informadas. Necesito la versión a 60 cuotas o la justificación del cambio.</li>
+            <li>La <b>CAE de 24.8%</b> supera en <mark class="red">4.2 puntos</mark> el promedio CMF para mi segmento (marzo 2025). Solicito propuesta alineada a mercado.</li>
+            <li>El seguro de desgravamen está vinculado al banco. El <b>Art. 17 H</b> me reconoce el derecho a elegir el proveedor. Solicito modificar la cláusula 9.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap: 18px;">
+        <div class="card-soft" style="padding: 22px 26px;">
+          <div class="label">Lo que cambia el tono</div>
+          <div style="display:flex; flex-direction:column; gap: 14px; margin-top: 14px;">
+            <div style="display:flex; gap: 12px; align-items:flex-start;">
+              <span class="pill pill-accent" style="font-size: 18px; padding: 4px 14px; min-width: 90px; justify-content:center;">Cordial</span>
+              <div style="font-size: 22px; color: var(--ink-soft); line-height: 1.45;">"…agradecería recibir la tabla a 60 cuotas para comparar."</div>
+            </div>
+            <div style="display:flex; gap: 12px; align-items:flex-start;">
+              <span class="pill pill-amber" style="font-size: 18px; padding: 4px 14px; min-width: 90px; justify-content:center;">Firme</span>
+              <div style="font-size: 22px; color: var(--ink-soft); line-height: 1.45;">"…necesito la versión a 60 cuotas o la justificación del cambio."</div>
+            </div>
+            <div style="display:flex; gap: 12px; align-items:flex-start;">
+              <span class="pill pill-red" style="font-size: 18px; padding: 4px 14px; min-width: 90px; justify-content:center;">Asertivo</span>
+              <div style="font-size: 22px; color: var(--ink-soft); line-height: 1.45;">"…solicito alinearlo a la simulación o presentar por escrito la causa."</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-soft" style="padding: 22px 26px;">
+          <div class="label">Apaga un hallazgo</div>
+          <div style="font-size: 18px; color: var(--ink-soft); margin-top: 12px; line-height: 1.5;">
+            Si no quieres pedir lo del seguro, lo desactivas en el panel derecho. <b>El email se re-redacta solo</b> — los hallazgos manejan el contenido.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 · Comparar ============ -->
+<section data-screen-label="08 Compare">
+  <div class="pad">
+    <div class="slide-head">
+      <div>
+        <div class="label">Comparar</div>
+        <h2 class="display" style="font-size: 64px; margin: 14px 0 0;">Tu oferta vs. la del vecino.</h2>
+      </div>
+      <div class="num">08 / 10</div>
+    </div>
+
+    <div style="font-size: 22px; color: var(--ink-soft); max-width: 1200px; line-height:1.5;">
+      Cada documento nuevo se compara automáticamente con los que ya subiste. El número que importa: <b>cuánto te cuesta firmar este vs. firmar el otro</b>.
+    </div>
+
+    <div style="margin-top: 36px; flex:1; display:flex; flex-direction:column; gap: 24px;">
+      <div class="card" style="padding: 32px 40px; background: linear-gradient(180deg, var(--red-soft) 0%, #fff 60%); border-color: transparent;">
+        <div class="label" style="color: var(--red);">Veredicto</div>
+        <div class="display" style="font-size: 48px; margin-top: 14px; line-height:1.15; max-width: 1500px;">
+          El crédito de María queda <span style="color: var(--green);">$1.2M mejor</span> a lo largo del plazo.<br/>
+          <span style="font-size: 28px; color: var(--ink-soft); font-weight:500;">La diferencia real no son las cuotas mensuales — son los <b>8 meses extra</b> y los <b>5.4 pts adicionales de CAE</b>.</span>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px; flex:1;">
+        <div class="card" style="overflow: hidden;">
+          <div style="padding: 14px 24px; background: var(--red-soft); display:flex; align-items:center; gap:10px;">
+            <span class="label" style="color: var(--red);">EL TUYO</span>
+            <div style="flex:1"></div>
+            <span class="pill pill-red">Peor</span>
+          </div>
+          <div style="padding: 28px 32px;">
+            <div style="font-size: 26px; font-weight:700;">BancoPlaceholder</div>
+            <div style="font-size: 22px; color: var(--ink-faint); margin-top: 6px;">14 mar 2025</div>
+          </div>
+          <div style="padding: 0 32px 28px; display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+            <div><div class="label" style="font-size: 16px;">Cuotas</div><div class="num" style="font-size: 32px; margin-top: 8px;">68</div></div>
+            <div><div class="label" style="font-size: 16px;">CAE</div><div class="num" style="font-size: 32px; margin-top: 8px; color: var(--red);">24.8%</div></div>
+            <div><div class="label" style="font-size: 16px;">Cuota mensual</div><div class="num" style="font-size: 32px; margin-top: 8px;">$352.400</div></div>
+            <div><div class="label" style="font-size: 16px;">Costo total</div><div class="num" style="font-size: 32px; margin-top: 8px; color: var(--red);">$23.9M</div></div>
+          </div>
+        </div>
+
+        <div class="card" style="overflow: hidden;">
+          <div style="padding: 14px 24px; background: var(--green-soft); display:flex; align-items:center; gap:10px;">
+            <span class="label" style="color: var(--green);">EL DE MARÍA</span>
+            <div style="flex:1"></div>
+            <span class="pill pill-green">Mejor</span>
+          </div>
+          <div style="padding: 28px 32px;">
+            <div style="font-size: 26px; font-weight:700;">OtroBanco</div>
+            <div style="font-size: 22px; color: var(--ink-faint); margin-top: 6px;">14 mar 2025</div>
+          </div>
+          <div style="padding: 0 32px 28px; display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+            <div><div class="label" style="font-size: 16px;">Cuotas</div><div class="num" style="font-size: 32px; margin-top: 8px;">60</div></div>
+            <div><div class="label" style="font-size: 16px;">CAE</div><div class="num" style="font-size: 32px; margin-top: 8px; color: var(--green);">19.4%</div></div>
+            <div><div class="label" style="font-size: 16px;">Cuota mensual</div><div class="num" style="font-size: 32px; margin-top: 8px;">$378.200</div></div>
+            <div><div class="label" style="font-size: 16px;">Costo total</div><div class="num" style="font-size: 32px; margin-top: 8px; color: var(--green);">$22.7M</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 · Dónde estamos ============ -->
+<section data-screen-label="09 Where we are">
+  <div class="pad">
+    <div class="slide-head">
+      <div>
+        <div class="label">Cobertura</div>
+        <h2 class="display" style="font-size: 64px; margin: 14px 0 0;">Hoy Chile. Después la región.</h2>
+      </div>
+      <div class="num">09 / 10</div>
+    </div>
+
+    <div style="font-size: 22px; color: var(--ink-soft); max-width: 1200px; line-height: 1.5;">
+      Empezamos profundo en un mercado — la ley, la CMF y los benchmarks reales. Cada país necesita su propia base de conocimiento.
+    </div>
+
+    <div style="margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; flex:1;">
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="padding: 22px 28px; background: var(--accent-soft); display:flex; align-items:center; gap: 14px;">
+          <div class="label" style="color: var(--accent);">PAÍSES ACTIVOS</div>
+          <div style="flex:1"></div>
+          <span class="num" style="font-size: 22px; color: var(--accent); font-weight:700;">7.402 docs analizados</span>
+        </div>
+
+        <div class="country-row">
+          <div class="country-flag">🇨🇱</div>
+          <div style="flex:1;">
+            <div class="country-name">Chile <span class="pill pill-green" style="font-size:18px; padding: 4px 14px; margin-left: 14px;">live</span></div>
+            <div class="country-sub">CMF · Ley 19.496 · 6 tipos de documento</div>
+          </div>
+          <div class="num" style="font-size: 32px; color: var(--accent); font-weight:700;">5.412</div>
+        </div>
+        <div class="country-row">
+          <div class="country-flag">🇲🇽</div>
+          <div style="flex:1;">
+            <div class="country-name">México <span class="pill pill-amber" style="font-size:18px; padding: 4px 14px; margin-left: 14px;">preview</span></div>
+            <div class="country-sub">CONDUSEF · LFPC · 3 tipos de documento</div>
+          </div>
+          <div class="num" style="font-size: 32px; color: var(--amber); font-weight:700;">240</div>
+        </div>
+      </div>
+
+      <div class="card-soft" style="padding: 0; overflow: hidden;">
+        <div style="padding: 22px 28px; display:flex; align-items:center; gap: 14px;">
+          <div class="label">PRÓXIMOS · 12 MESES</div>
+          <div style="flex:1"></div>
+          <span class="num" style="font-size: 22px; color: var(--ink-faint);">en desarrollo</span>
+        </div>
+
+        <div class="country-row">
+          <div class="country-flag" style="opacity: 0.7;">🇨🇴</div>
+          <div style="flex:1;">
+            <div class="country-name" style="color: var(--ink-soft);">Colombia</div>
+            <div class="country-sub">SFC · Ley 1480 · piloto Q3</div>
+          </div>
+        </div>
+        <div class="country-row">
+          <div class="country-flag" style="opacity: 0.7;">🇵🇪</div>
+          <div style="flex:1;">
+            <div class="country-name" style="color: var(--ink-soft);">Perú</div>
+            <div class="country-sub">SBS · piloto Q4</div>
+          </div>
+        </div>
+        <div class="country-row">
+          <div class="country-flag" style="opacity: 0.7;">🇦🇷</div>
+          <div style="flex:1;">
+            <div class="country-name" style="color: var(--ink-soft);">Argentina</div>
+            <div class="country-sub">BCRA · explorando</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 36px; padding: 22px 32px; background: var(--paper-2); border-radius: 16px; display:flex; align-items:center; gap: 32px;">
+      <div>
+        <div class="label">Lo que NO cambia entre países</div>
+        <div style="font-size: 22px; color: var(--ink-soft); margin-top: 10px; line-height: 1.5; max-width: 1100px;">
+          La interfaz, el modelo de detección de tipo, el composer de email, las cuatro lentes. <b>Lo que cambia es la base legal y los benchmarks de mercado</b> — y eso lo hacemos en alianza con socios locales.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 · Cierre + asks ============ -->
+<section data-screen-label="10 Close" class="sect-hero">
+  <div class="pad">
+    <div class="wm"><div class="wm-mark"></div><span class="wm-name">letra<span class="dot">.</span></span></div>
+
+    <div class="grow center" style="flex-direction:column; align-items:flex-start; justify-content:center;">
+      <div class="label" style="color: var(--paper); opacity: 0.6;">Próximos 6 meses</div>
+      <h2 class="display" style="font-size: 90px; margin: 18px 0 0; line-height:1.05;">
+        Lanzar Chile.<br/>
+        Pulir el coach.<br/>
+        Levantar <span style="color: var(--accent-2);">seed.</span>
+      </h2>
+
+      <div style="margin-top: 56px; display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; width: 100%; max-width: 1500px;">
+        <div style="border-left: 3px solid var(--accent-2); padding: 6px 0 6px 20px;">
+          <div class="label" style="color: var(--paper); opacity: 0.7;">Producto</div>
+          <div style="font-size: 28px; font-weight:700; margin-top: 10px;">Lanzar plan Plus en agosto</div>
+          <div style="font-size: 20px; color: rgba(255,255,255,0.6); margin-top: 10px; line-height:1.5;">3 nuevos tipos de documento, mobile, comparar tu oferta con otras del mercado en tiempo real.</div>
+        </div>
+        <div style="border-left: 3px solid var(--accent-2); padding: 6px 0 6px 20px;">
+          <div class="label" style="color: var(--paper); opacity: 0.7;">Equipo</div>
+          <div style="font-size: 28px; font-weight:700; margin-top: 10px;">2 ingenierías + 1 legal CL</div>
+          <div style="font-size: 20px; color: rgba(255,255,255,0.6); margin-top: 10px; line-height:1.5;">Hoy 3 personas. Necesitamos: backend senior, legal-CL, growth.</div>
+        </div>
+        <div style="border-left: 3px solid var(--accent-2); padding: 6px 0 6px 20px;">
+          <div class="label" style="color: var(--paper); opacity: 0.7;">Financiamiento</div>
+          <div style="font-size: 28px; font-weight:700; margin-top: 10px;">Seed de US$1.5M</div>
+          <div style="font-size: 20px; color: rgba(255,255,255,0.6); margin-top: 10px; line-height:1.5;">18 meses de runway · lanzar México preview · 50k usuarios activos en Chile.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.1);">
+      <div style="font-size: 22px; color: rgba(255,255,255,0.7);">Gracias.</div>
+      <div style="font-size: 20px; color: rgba(255,255,255,0.5); font-family:'JetBrains Mono';">hola@letra.cl · letra.cl</div>
+    </div>
+  </div>
+</section>
+
+</deck-stage>
+
+<script src="deck-stage.js"></script>
+</body>
+</html>

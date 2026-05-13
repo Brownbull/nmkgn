@@ -126,3 +126,62 @@ Verification:
 - `GET http://127.0.0.1:18080/api/health` — passed.
 - `GET http://127.0.0.1:15179/` — passed.
 - `docker compose -f docker/compose.yml ps` — PostgreSQL healthy.
+
+## 2026-05-13 19:20 — PHASE 2 EXECUTION: Claude Design Intake and Case-Flow Gap Analysis
+
+Implemented the design-intake phase for the Claude export under
+`docs/design/incoming/claude-design-20260513/`.
+
+- Removed `nmkgn.zip:Zone.Identifier` from the curated import and ignored future
+  Windows zone metadata files.
+- Preserved the useful Claude HTML, JSX, screenshot, canvas-state, and asset
+  files as reference material.
+- Added a package manifest at
+  `docs/design/incoming/claude-design-20260513/MANIFEST.md`.
+- Added `docs/design/CLAUDE_20260513_INVENTORY.md`.
+- Added `docs/design/CLAUDE_20260513_GAP_ANALYSIS.md`.
+- Updated structure rules to allow `docs/design/incoming/**`.
+- Registered optional static design preview port `15181`.
+- Added Phase 2 to the active KDBP plan with execution complete and review,
+  commit, and push pending.
+- Left `src/`, `api/`, migrations, tests, and runtime behavior unchanged.
+
+Verification:
+
+- `git diff --check` — passed.
+- `git status --short -uall` — checked; changed files are limited to
+  design-intake/KDBP/reference material.
+- Static preview smoke on `127.0.0.1:15181` — passed for:
+  - `letra. · Main flow.html`
+  - `wireframes.html`
+  - `Coach · Hi-fi explorations.html`
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `ss -ltn sport = :15181` — no lingering preview server.
+
+## 2026-05-13 19:37 — PHASE 2 REVIEW: Claude Design Intake and Case-Flow Gap Analysis
+
+VERDICT: APPROVE
+FINDINGS: 0 total (0 critical, 0 high, 0 medium, 0 low)
+COVERAGE: HIGH — checked KDBP state, design manifest, inventory, gap analysis,
+imported reference files, static preview, and regression gates.
+CONFIDENCE: 96/100
+DEFERRED: none
+ALIGNMENT: ALIGNED — changed files are limited to design-intake/KDBP/reference
+material; no product runtime files changed.
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5)
+
+Verification:
+
+- `git diff --check` — passed.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- Static preview smoke on `127.0.0.1:15181` — passed for:
+  - `letra. · Main flow.html`
+  - `wireframes.html`
+  - `Coach · Hi-fi explorations.html`
+- `find docs/design/incoming/claude-design-20260513 -name '*:Zone.Identifier'`
+  — no matches.
+- `ss -ltn sport = :15181` — no lingering preview server.

@@ -16,6 +16,7 @@ Used by Gabe checks when new files are added.
 | `LICENSE*` | License file | MVP |
 | `.gitignore` | Git ignore | MVP |
 | `docs/**/*.md` | Project documentation | MVP |
+| `docs/design/incoming/**` | Curated imported design reference exports | MVP |
 | `src/**/*.{ts,tsx,js,jsx,css}` | Current React/Vite application source | MVP |
 | `public/**` | Static assets | MVP |
 | `index.html` | Vite entry HTML | MVP |
@@ -51,6 +52,7 @@ Used by Gabe checks when new files are added.
 | `dist/**` | Build output |
 | `**/__pycache__/**` | Build artifacts |
 | `**/*.pyc` | Compiled bytecode |
+| `**/*:Zone.Identifier` | Windows download metadata |
 
 ## Exceptions Log
 

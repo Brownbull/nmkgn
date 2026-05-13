@@ -37,4 +37,7 @@ __pycache__/
 .env.local
 .venv/
 
+# Imported archive metadata
+*:Zone.Identifier
+
 .kdbp/reviews-archive/

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Contract Analyzer — Wireframes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Caveat:wght@400;700&family=Architects+Daughter&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --ink: #1f1b16;
+    --ink-soft: #4a423a;
+    --ink-faint: #8a8278;
+    --paper: #fbf8f1;
+    --paper-2: #f3eee2;
+    --rule: #2a241e;
+    --hi: #c8341a;   /* red — high risk */
+    --mid: #d98f1c;  /* amber — watch */
+    --ok: #2f7a3e;   /* green — ok */
+    --accent: #1e4a8a; /* notes */
+    --hand: 'Kalam', 'Caveat', cursive;
+    --hand-tight: 'Architects Daughter', 'Kalam', cursive;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  html, body { margin:0; padding:0; background:#e9e4d7; }
+  body { font-family: var(--hand); color: var(--ink); }
+
+  /* ===== Sketchy primitives shared across artboards ===== */
+  .wf {
+    width:100%; height:100%;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--hand);
+    position:relative;
+    overflow:hidden;
+    /* subtle paper grain */
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(0,0,0,.025) 0 1px, transparent 1px),
+      radial-gradient(circle at 80% 70%, rgba(0,0,0,.02) 0 1px, transparent 1px);
+    background-size: 7px 9px, 11px 13px;
+  }
+  .wf-edge {
+    position:absolute; inset:8px;
+    border:2px solid var(--rule);
+    border-radius:6px;
+    box-shadow: 2px 3px 0 rgba(0,0,0,.06);
+    pointer-events:none;
+  }
+  .wf-inner { position:absolute; inset:8px; padding:18px 20px; box-sizing:border-box; overflow:hidden; }
+
+  /* hand-drawn lines, boxes, dashes */
+  .hb { border:1.5px solid var(--rule); border-radius:4px; background:transparent; }
+  .hb-dashed { border:1.5px dashed var(--rule); border-radius:4px; }
+  .hb-soft { border:1.5px solid var(--rule); border-radius:6px; background:#fff; box-shadow: 2px 2px 0 rgba(0,0,0,.06); }
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border:1.5px solid var(--rule); border-radius:999px; font-family:var(--mono); font-size:11px; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:8px 16px; border:1.75px solid var(--rule); border-radius:6px; background:#fff; font-family:var(--hand); font-weight:700; font-size:16px; box-shadow: 2px 2px 0 var(--rule); cursor:pointer; }
+  .btn-primary { background:var(--ink); color:var(--paper); }
+  .btn-ghost { background:transparent; box-shadow:none; }
+  .small { font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--ink-soft); text-transform:uppercase; }
+  .micro { font-family:var(--mono); font-size:9px; color:var(--ink-faint); }
+  .hand-h1 { font-family:var(--hand); font-weight:700; font-size:30px; line-height:1.1; }
+  .hand-h2 { font-family:var(--hand); font-weight:700; font-size:22px; line-height:1.15; }
+  .hand-h3 { font-family:var(--hand); font-weight:700; font-size:18px; }
+  .scribble { color:var(--ink-soft); font-size:14px; line-height:1.55; }
+  .hand-h1, .hand-h2, .hand-h3 { line-height:1.25; }
+  /* Kalam has tall metrics — wrapped bullet text was crashing into the next row.
+     Give any bullet/flex row that wraps a healthy line-height + gap. */
+  .bullet-row { display:flex; align-items:flex-start; gap:8px; line-height:1.5; }
+  .bullet-list { display:flex; flex-direction:column; gap:10px; }
+  .strike-line { height:2px; background:var(--rule); border-radius:1px; }
+  .placeholder-line { height:6px; background:repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 14px); opacity:.35; border-radius:3px; }
+  .ph-line   { height:5px; background:#cdc6b6; border-radius:3px; }
+  .ph-line.short { width:55%; }
+  .ph-line.mid   { width:75%; }
+  .ph-line.full  { width:100%; }
+
+  /* flag chips */
+  .flag { display:inline-flex; align-items:center; gap:6px; padding:3px 8px; border-radius:4px; font-family:var(--mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; border:1.25px solid var(--rule); }
+  .flag.hi  { background:#fde4dd; color:var(--hi); border-color:var(--hi); }
+  .flag.mid { background:#fbeccf; color:#7a4d0a; border-color:var(--mid); }
+  .flag.ok  { background:#dceede; color:var(--ok); border-color:var(--ok); }
+  .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  .dot.hi  { background:var(--hi); }
+  .dot.mid { background:var(--mid); }
+  .dot.ok  { background:var(--ok); }
+
+  /* document placeholder */
+  .doc-page { background:#fffdf6; border:1.5px solid var(--rule); border-radius:3px; padding:14px; box-shadow: 2px 2px 0 rgba(0,0,0,.06); }
+  .doc-page .ph-line { background:#dcd6c5; }
+  .highlight-hi  { background: rgba(200,52,26,.18);  border-bottom:2px solid var(--hi); }
+  .highlight-mid { background: rgba(217,143,28,.22); border-bottom:2px solid var(--mid); }
+  .highlight-ok  { background: rgba(47,122,62,.18);  border-bottom:2px solid var(--ok); }
+
+  /* mobile bezel */
+  .phone {
+    width:100%; height:100%;
+    background:#1a1714;
+    border-radius:28px;
+    padding:10px 8px;
+    box-sizing:border-box;
+    box-shadow: 0 4px 0 rgba(0,0,0,.15), inset 0 0 0 2px #2c2620;
+    position:relative;
+  }
+  .phone-screen {
+    width:100%; height:100%;
+    background:var(--paper);
+    border-radius:20px;
+    overflow:hidden;
+    position:relative;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(0,0,0,.03) 0 1px, transparent 1px),
+      radial-gradient(circle at 80% 70%, rgba(0,0,0,.02) 0 1px, transparent 1px);
+    background-size: 7px 9px, 11px 13px;
+  }
+  .phone-notch { position:absolute; top:6px; left:50%; transform:translateX(-50%); width:80px; height:18px; background:#1a1714; border-radius:0 0 12px 12px; z-index:3; }
+  .phone-status { padding: 14px 18px 6px; display:flex; justify-content:space-between; font-family:var(--mono); font-size:10px; color:var(--ink-soft); }
+
+  /* hand-drawn arrow */
+  .arrow-svg { position:absolute; pointer-events:none; }
+
+  /* a sticky-note */
+  .stickynote {
+    background:#fff7a8; padding:8px 10px; font-family:var(--hand); font-size:13px;
+    box-shadow: 2px 3px 0 rgba(0,0,0,.1);
+    transform: rotate(-1.5deg);
+    border:1px solid rgba(0,0,0,.1);
+    color:#5a4a2a;
+  }
+  .stickynote.blue { background:#cfe2ff; color:#1e3a5f; }
+
+  /* utility */
+  .row { display:flex; }
+  .col { display:flex; flex-direction:column; }
+  .gap-4 { gap:4px; } .gap-6 { gap:6px; } .gap-8 { gap:8px; } .gap-12 { gap:12px; } .gap-16 { gap:16px; } .gap-20 { gap:20px; }
+  .mt-4{margin-top:4px;} .mt-8{margin-top:8px;} .mt-12{margin-top:12px;} .mt-16{margin-top:16px;} .mt-20{margin-top:20px;} .mt-24{margin-top:24px;}
+  .grow { flex:1 1 auto; min-width:0; }
+  .center { display:flex; align-items:center; justify-content:center; }
+  .between { display:flex; align-items:center; justify-content:space-between; }
+  .stack { display:flex; flex-direction:column; }
+  .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="wf-shared.jsx"></script>
+  <script type="text/babel" src="wf-detection.jsx"></script>
+  <script type="text/babel" src="wf-plan.jsx"></script>
+  <script type="text/babel" src="wf-direction-a.jsx"></script>
+  <script type="text/babel" src="wf-direction-b.jsx"></script>
+  <script type="text/babel" src="wf-direction-c.jsx"></script>
+  <script type="text/babel" src="wf-direction-d.jsx"></script>
+  <script type="text/babel" src="wf-direction-d-extra.jsx"></script>
+  <script type="text/babel" src="wf-app.jsx"></script>
+</body>
+</html>

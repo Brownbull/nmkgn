@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Coach Dashboard · Hi-fi explorations</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  html, body { margin:0; padding:0; background:#e9e4d7; }
+  body { font-family: 'Manrope', system-ui, sans-serif; color:#1a1a1a; }
+
+  /* ===== Shared layout primitives ===== */
+  .hf {
+    width:100%; height:100%;
+    position:relative;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  .hf-stack { display:flex; flex-direction:column; }
+  .hf-row { display:flex; }
+  .hf-grow { flex:1 1 0; min-width:0; }
+  .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ====== A · Notarial / editorial (Pliego) ====== */
+  .pliego {
+    --paper: #f6f1e3;
+    --paper-2: #efe8d4;
+    --ink: #1b1813;
+    --ink-soft: #4a4338;
+    --ink-faint: #8a8170;
+    --rule: #2b2620;
+    --oxblood: #7b2a1e;
+    --ochre: #b8861b;
+    --sage: #4b6b3e;
+    font-family: 'Newsreader', Georgia, serif;
+    color: var(--ink);
+    background: var(--paper);
+    font-feature-settings: "kern", "liga", "onum";
+  }
+  .pliego .display { font-family:'Newsreader', serif; font-weight:600; letter-spacing:-0.01em; font-optical-sizing:auto; }
+  .pliego .label  { font-family:'Newsreader', serif; font-variant: all-small-caps; letter-spacing:0.08em; color:var(--ink-soft); }
+  .pliego .num    { font-family:'JetBrains Mono', ui-monospace, monospace; font-feature-settings:"tnum","lnum"; }
+  .pliego .rule   { height:1px; background: var(--rule); opacity:.35; }
+  .pliego .rule-double { background: linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 3px, var(--rule) 3px 4px); height:4px; opacity:.6; }
+  .pliego .card   { background:#fff; border:1px solid rgba(43,38,32,.18); border-radius:2px; }
+  .pliego .btn    { font-family:'Newsreader', serif; font-weight:600; padding:10px 18px; border:1px solid var(--rule); background:#fff; cursor:pointer; font-size:15px; border-radius:2px; }
+  .pliego .btn-primary { background: var(--ink); color: var(--paper); border-color:var(--ink); }
+
+  /* ====== B · Calm fintech (letra.) ====== */
+  .letra {
+    --paper: #fafaf7;
+    --paper-2: #f1f0eb;
+    --ink: #1a1d24;
+    --ink-soft: #4f5562;
+    --ink-faint: #8b91a0;
+    --line: #e6e4dc;
+    --accent: #246a5b;       /* deep teal */
+    --accent-soft: #d9e8e3;
+    --red: #b8442e;
+    --amber: #a87420;
+    --green: #2c6b3f;
+    font-family: 'Manrope', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .letra .display { font-family:'Manrope', sans-serif; font-weight:700; letter-spacing:-0.025em; }
+  .letra .label  { font-family:'Manrope', sans-serif; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; font-size:10px; color:var(--ink-faint); }
+  .letra .num    { font-family:'JetBrains Mono', ui-monospace, monospace; font-feature-settings:"tnum","lnum"; font-weight:500; letter-spacing:-0.01em; }
+  .letra .card   { background:#fff; border:1px solid var(--line); border-radius:14px; }
+  .letra .card.flat { box-shadow: none; }
+  .letra .btn    { font-family:'Manrope', sans-serif; font-weight:600; padding:10px 18px; border:1px solid var(--line); background:#fff; border-radius:10px; cursor:pointer; font-size:14px; }
+  .letra .btn-primary { background: var(--ink); color: var(--paper); border-color:var(--ink); }
+  .letra .btn-accent { background: var(--accent); color:#fff; border-color: var(--accent); }
+  .letra .pill { display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:999px; background:var(--paper-2); font-size:11px; font-weight:600; color:var(--ink-soft); }
+
+  /* ====== C · Data-precise archival (Marcado) ====== */
+  .marcado {
+    --paper: #f3f1ec;
+    --panel: #15171b;
+    --ink: #15171b;
+    --ink-soft: #46494f;
+    --ink-faint: #797d85;
+    --line: #d6d2c7;
+    --line-dark: #2a2c31;
+    --accent: #e85a1f;       /* electric orange */
+    --accent-2: #f2d49c;
+    --red: #d23a1f;
+    --amber: #e0a516;
+    --green: #2d8f4a;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .marcado .display { font-family:'Space Grotesk', sans-serif; font-weight:700; letter-spacing:-0.02em; }
+  .marcado .label   { font-family:'IBM Plex Mono', ui-monospace, monospace; text-transform:uppercase; letter-spacing:0.06em; font-size:10px; font-weight:500; color:var(--ink-soft); }
+  .marcado .num     { font-family:'IBM Plex Mono', ui-monospace, monospace; font-feature-settings:"tnum","lnum"; font-weight:600; }
+  .marcado .card    { background:#fff; border:1px solid var(--line); border-radius:2px; }
+  .marcado .panel   { background: var(--panel); color: #f3f1ec; border-radius:2px; }
+  .marcado .btn     { font-family:'Space Grotesk', sans-serif; font-weight:600; padding:9px 16px; border:1px solid var(--ink); background:#fff; border-radius:2px; cursor:pointer; font-size:13px; }
+  .marcado .btn-primary { background: var(--ink); color: var(--paper); }
+  .marcado .btn-accent  { background: var(--accent); color:#fff; border-color: var(--accent); }
+  .marcado .tag { font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; padding:2px 6px; border:1px solid currentColor; border-radius:2px; }
+
+  /* Strategy / notes card */
+  .notes-card {
+    width:100%; height:100%;
+    background:#fffdf6;
+    padding:34px 36px;
+    box-sizing:border-box;
+    border:1px dashed #2b2620;
+    border-radius:4px;
+    font-family:'Manrope', sans-serif;
+    color:#1a1a1a;
+    display:flex; flex-direction:column; gap:14px;
+    overflow:hidden;
+  }
+</style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="coach-hifi-A.jsx"></script>
+  <script type="text/babel" src="coach-hifi-B.jsx"></script>
+  <script type="text/babel" src="coach-hifi-C.jsx"></script>
+  <script type="text/babel" src="coach-hifi-app.jsx"></script>
+</body>
+</html>
