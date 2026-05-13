@@ -5,6 +5,7 @@ import { useNav } from './NavContext';
 
 // Step progress indicator
 const PROTO_STEPS = [
+  { id: 'case', label: 'Caso' },
   { id: 'upload', label: 'Subir' },
   { id: 'process', label: 'Identificar' },
   { id: 'plan', label: 'Plan' },
@@ -12,10 +13,11 @@ const PROTO_STEPS = [
 ];
 
 const PROTO_STEP_INDEX: Record<string, number> = {
-  upload: 0,
-  process: 1, detect: 1,
-  plan: 2, running: 2,
-  coach: 3, email: 3, compare: 3, history: 3,
+  case: 0,
+  upload: 1,
+  process: 2, detect: 2,
+  plan: 3, running: 3,
+  coach: 4, email: 4, compare: 4, history: 4,
 };
 
 function ProtoStepIndicator({ steps, current }: { steps: typeof PROTO_STEPS; current: number }) {

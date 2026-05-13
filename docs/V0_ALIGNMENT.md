@@ -108,19 +108,25 @@ validated rule and the product clearly explains the evidence.
 
 ## UX Structure From Current Mockups
 
-Keep the current mockup flow as the starting structure:
+Keep the current mockup flow as the starting structure, with Phase 1 narrowing
+the active path to persisted case intake:
 
-1. case entry and upload
-2. document type detection
-3. review-plan selection
-4. live analysis progress
-5. findings by perspective
-6. next actions
-7. export, compare, or draft communication
+1. login with the fixed demo identity
+2. case setup with fixed lean fields and required stage selection
+3. persisted consumer-credit case creation
+4. upload handoff using the returned `caseId`
+5. prototype-only document preview and simulated analysis acknowledgement
+6. findings by perspective
+7. next actions
+8. export, compare, or draft communication
 
 The mockups are not final implementation quality. The real app still needs
 responsive layout work, accessible controls, source inspection, and state/error
 handling.
+
+Phase 1 keeps persisted cases limited to `consumer_credit`. Other document-type
+labels may remain visible as future options, but they must not mutate a persisted
+case into an unsupported document type.
 
 ## Implementation Implications
 

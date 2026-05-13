@@ -67,3 +67,8 @@ pydantic-ai, llm-agents
 
 <!-- Content above this line is managed by /gabe-init and refreshed by `update` mode. -->
 <!-- Add project-specific instructions for Claude Code below. -->
+
+## Local Ports
+
+Use `.kdbp/PORTS.md` before starting services. This project intentionally avoids
+default local ports because parallel development happens on this workstation.

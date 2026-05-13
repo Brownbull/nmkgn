@@ -26,6 +26,7 @@ Used by Gabe checks when new files are added.
 | `tsconfig*.json` | TypeScript config | MVP |
 | `tests/**/*.{py,ts,tsx,js,jsx}` | Test files | MVP |
 | `scripts/**/*.{sh,py,ts,js}` | Utility scripts | MVP |
+| `api/**/__init__.py` | Python package markers | MVP |
 | `api/main.py` | Future FastAPI entry | MVP |
 | `api/config.py` | Future backend settings | MVP |
 | `api/routes/*.py` | Future HTTP handlers | MVP |
@@ -34,6 +35,7 @@ Used by Gabe checks when new files are added.
 | `api/services/*.py` | Future business logic | MVP |
 | `api/guardrails/*.py` | Future safety and validation | MVP |
 | `api/models/*.py` | Future persistence models | MVP |
+| `api/migrations/**` | Alembic migration environment and versions | MVP |
 | `api/observability/*.py` | Future metrics/tracing | Enterprise |
 | `pyproject.toml` | Future Python dependencies | MVP |
 | `uv.lock` | Future Python lockfile | MVP |

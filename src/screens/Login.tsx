@@ -64,7 +64,7 @@ export function Login() {
           </p>
 
           <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <button className="btn btn-primary" style={{ padding: '12px 20px', fontSize: 15 }} onClick={() => nav.go('upload')}>
+            <button className="btn btn-primary" style={{ padding: '12px 20px', fontSize: 15 }} onClick={() => nav.go('case')}>
               <GoogleG size={18} /> Continuar con Google
             </button>
             <span style={{ fontSize: 12.5, color: 'var(--ink-faint)' }}>

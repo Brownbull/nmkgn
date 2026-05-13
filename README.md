@@ -1,73 +1,37 @@
-# React + TypeScript + Vite
+# nmkgn
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Case-based document analysis app for Chilean consumer-credit review.
 
-Currently, two official plugins are available:
+## Local Ports
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This project avoids common workstation defaults because parallel development
+happens on the same computer.
 
-## React Compiler
+| Service | Port | URL |
+|---|---:|---|
+| React/Vite app | 15179 | `http://127.0.0.1:15179/` |
+| Vite production preview | 15180 | `http://127.0.0.1:15180/` |
+| FastAPI API | 18080 | `http://127.0.0.1:18080/api/health` |
+| PostgreSQL host port | 55432 | `postgresql+psycopg://nmkgn:nmkgn@localhost:55432/nmkgn` |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The durable registry is `.kdbp/PORTS.md`.
 
-## Expanding the ESLint configuration
+## Run Locally
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run db:up
+uv run alembic -c api/migrations/alembic.ini upgrade head
+npm run api:dev
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Run the API and Vite commands in separate terminals.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Checks
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+uv run pytest
+npm test
+npm run lint
+npm run build
 ```

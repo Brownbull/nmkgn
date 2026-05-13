@@ -26,8 +26,15 @@ dist-ssr
 # TypeScript
 *.tsbuildinfo
 
+# Python
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
 # Environment
 .env
 .env.local
+.venv/
 
 .kdbp/reviews-archive/

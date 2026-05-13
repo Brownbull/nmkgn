@@ -1,0 +1,1 @@
+"""nmkgn FastAPI backend package."""
