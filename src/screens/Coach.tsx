@@ -1,6 +1,6 @@
 import { Icon } from '../components/Icon';
 import { DocBadge } from '../components/DocBadge';
-import { AppShell, StatCard, SectionCard } from '../components/shared';
+import { AppShell, CaseContextStrip, PrototypeNotice, StatCard, SectionCard } from '../components/shared';
 import { LensTag, LensScorecard } from '../components/Lenses';
 import { useNav } from '../components/NavContext';
 
@@ -98,7 +98,7 @@ export function Coach() {
         </span>
       )
     }>
-      <div style={{ padding: '28px 32px 0' }}>
+      <div className="coach-page" style={{ padding: '28px 32px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
           <DocBadge />
           <span className="pill"><span className="dot-sm" style={{ background: 'var(--accent)' }} /> Análisis completo</span>
@@ -106,6 +106,10 @@ export function Coach() {
           <span className="pill pill-red">4 hallazgos</span>
           <div style={{ flex: 1 }} />
           <button className="btn btn-small btn-ghost" style={{ color: 'var(--ink-soft)' }}>← Volver al plan</button>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <CaseContextStrip />
         </div>
 
         <h1 className="display" style={{ fontSize: 34, margin: 0, letterSpacing: -0.025, lineHeight: 1.08 }}>
@@ -116,14 +120,18 @@ export function Coach() {
         </div>
       </div>
 
-      <div style={{ padding: '20px 32px 0', display: 'flex', gap: 14 }}>
+      <div className="coach-page coach-stats-grid" style={{ padding: '20px 32px 0', display: 'flex', gap: 14 }}>
         <StatCard label="Monto" value="$18.0M" sub="solicitado" />
         <StatCard label="Cuotas" value="68" delta="+8" sev="hi" sub="vs. 60 simuladas" />
         <StatCard label="CAE" value="24.8%" delta="+4.2 pts" sev="hi" sub="vs. mercado" />
         <StatCard label="Costo total" value="$23.9M" delta="+$1.4M" sev="hi" sub="vs. esperado" />
       </div>
 
-      <div style={{ padding: '22px 32px 0' }}>
+      <div className="coach-page" style={{ padding: '22px 32px 0' }}>
+        <PrototypeNotice compact />
+      </div>
+
+      <div className="coach-page" style={{ padding: '22px 32px 0' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
           <h2 className="display" style={{ fontSize: 18, margin: 0, letterSpacing: -0.015 }}>Tu documento por perspectiva</h2>
           <span style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>4 lentes · 11 criterios revisados</span>
@@ -136,7 +144,7 @@ export function Coach() {
         ]} />
       </div>
 
-      <div style={{ padding: '20px 32px 0', display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 18 }}>
+      <div className="coach-page coach-main-grid" style={{ padding: '20px 32px 0', display: 'grid', gridTemplateColumns: '1.35fr 1fr', gap: 18 }}>
         <SectionCard
           title={<span>Comparado con el mercado <LensTag id="mercado" /></span>}
           right={<span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>Datos CMF · marzo 2025</span>}
@@ -176,7 +184,7 @@ export function Coach() {
         </div>
       </div>
 
-      <div style={{ padding: '20px 32px 0' }}>
+      <div className="coach-page" style={{ padding: '20px 32px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <Icon name="globe" size={16} color="var(--ink-soft)" />
           <h3 className="display" style={{ fontSize: 14, margin: 0, letterSpacing: -0.005 }}>Contexto internacional</h3>
@@ -184,7 +192,7 @@ export function Coach() {
           <div style={{ flex: 1 }} />
           <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>¿Por qué? <span style={{ textDecoration: 'underline' }}>Saber más</span></span>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div className="intl-ref-grid" style={{ display: 'flex', gap: 12 }}>
           <IntlRefCard tag="FCRA · EE.UU." body="Te exigiría notificarte del uso de tu informe crediticio. En Chile no es obligatorio." />
           <IntlRefCard tag="CFPB · UDAAP" body="El cambio de 60 a 68 cuotas podría considerarse práctica engañosa bajo este estándar." />
           <IntlRefCard tag="UE · CCD-ESIS" body="Existiría una tabla estándar de una página con todos los costos. En Chile no existe equivalente." />
@@ -198,7 +206,7 @@ export function Coach() {
         background: 'rgba(250,250,247,0.95)',
         backdropFilter: 'blur(8px)',
         display: 'flex', alignItems: 'center', gap: 10,
-      }}>
+      }} className="sticky-action-bar">
         <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
           Análisis terminado · 14:23 · te llevará 5 minutos revisar todo
         </span>

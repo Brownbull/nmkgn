@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { DocBadge } from '../components/DocBadge';
-import { AppShell, Toggle, ProgressBar } from '../components/shared';
+import { AppShell, CaseContextStrip, Toggle, ProgressBar, PrototypeNotice } from '../components/shared';
 import { LensTag } from '../components/Lenses';
 import { useNav } from '../components/NavContext';
 
@@ -100,7 +100,7 @@ export function PlanScreen() {
 
   return (
     <AppShell>
-      <div style={{ padding: '28px 32px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, height: '100%', boxSizing: 'border-box' }}>
+      <div className="plan-workspace" style={{ padding: '28px 32px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, height: '100%', boxSizing: 'border-box' }}>
         <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
           <div className="label">Paso 3 de 4</div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 6, gap: 12 }}>
@@ -111,6 +111,10 @@ export function PlanScreen() {
               </div>
             </div>
             <DocBadge compact />
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <CaseContextStrip />
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
@@ -197,6 +201,8 @@ export function PlanScreen() {
             <div style={{ fontWeight: 700, color: 'var(--ink)', marginBottom: 4 }}><Icon name="globe" size={12} /> Internacional</div>
             Aparece como contexto comparativo en el informe, nunca como alerta.
           </div>
+
+          <PrototypeNotice compact />
         </div>
       </div>
     </AppShell>
@@ -235,7 +241,7 @@ export function PlanRunning() {
 
   return (
     <AppShell>
-      <div style={{ padding: '28px 32px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, height: '100%', boxSizing: 'border-box' }}>
+      <div className="plan-workspace" style={{ padding: '28px 32px', display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, height: '100%', boxSizing: 'border-box' }}>
         <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%' }}>
           <div className="label">Paso 4 de 4</div>
           <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 6, gap: 12 }}>
@@ -246,6 +252,10 @@ export function PlanRunning() {
               </div>
             </div>
             <DocBadge compact />
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <CaseContextStrip />
           </div>
 
           <div className="card" style={{ marginTop: 16, padding: '16px 18px' }}>
@@ -295,6 +305,7 @@ export function PlanRunning() {
           <PartialFinding sev="mid" title="Seguro vinculado" where="Cláusula 9" impact="$890k" lens="ley" />
           <PartialFinding sev="mid" title="Aceleración a 1 cuota" where="Cláusula 12.3" impact="vs. 3" lens="ley" />
           <div style={{ flex: 1 }} />
+          <PrototypeNotice compact />
           <button className="btn btn-ghost" style={{ justifyContent: 'center', color: 'var(--ink-soft)' }} onClick={() => nav.go('plan')}>
             Cancelar análisis
           </button>

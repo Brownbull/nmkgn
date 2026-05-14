@@ -134,6 +134,134 @@ body {
 .scrollable::-webkit-scrollbar { width: 8px; height: 8px; }
 .scrollable::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 4px; }
 
+.case-context-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.case-context-main,
+.case-context-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.case-context-main strong {
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.case-context-meta span:not(.pill) {
+  padding-left: 9px;
+  border-left: 1px solid var(--line);
+}
+
+.prototype-notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 13px;
+  border: 1px solid var(--amber);
+  border-radius: 12px;
+  background: var(--amber-soft);
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.prototype-notice strong { color: var(--ink); }
+.prototype-notice-compact { padding: 9px 11px; font-size: 12px; }
+
+.login-hero-grid,
+.case-flow-grid,
+.upload-type-grid,
+.plan-workspace,
+.coach-main-grid,
+.coach-stats-grid,
+.intl-ref-grid {
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  body { overflow: auto; }
+  #root { min-height: 100vh; height: auto; }
+
+  .lt {
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .app-content-area {
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  .login-topbar,
+  .login-hero-grid,
+  .case-flow-page,
+  .upload-page,
+  .detection-page,
+  .plan-workspace,
+  .coach-page {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .login-hero-grid,
+  .case-flow-grid,
+  .plan-workspace,
+  .coach-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .upload-type-grid,
+  .coach-stats-grid,
+  .intl-ref-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .login-preview-card {
+    position: static !important;
+    transform: none !important;
+    margin-top: 14px;
+  }
+
+  .case-context-strip,
+  .case-context-main,
+  .case-context-meta {
+    align-items: flex-start;
+  }
+
+  .case-context-strip {
+    flex-direction: column;
+  }
+
+  .plan-workspace,
+  .coach-page {
+    height: auto !important;
+  }
+
+  .coach-stats-grid,
+  .intl-ref-grid {
+    display: grid !important;
+  }
+
+  .sticky-action-bar {
+    position: static !important;
+    flex-wrap: wrap;
+  }
+}
+
 @keyframes protoFade {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }

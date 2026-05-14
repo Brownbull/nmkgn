@@ -2,19 +2,21 @@
 
 <!-- status: active -->
 <!-- project_type: hybrid -->
-<!-- goal: ROADMAP Phase 1 - Product Backbone and Case Intake -->
+<!-- goal: Product Backbone and Case-Flow Alignment -->
 <!-- created: 2026-05-13 -->
+<!-- Last Updated: 2026-05-14 -->
 
-Create the first production backbone slice: a user can create a persisted
-Chilean consumer-credit case through the React/Vite app, FastAPI API, and
-PostgreSQL database.
+Maintain the completed production backbone slice and use the curated Claude
+design intake to align the case-flow UI without changing the current persistence,
+OCR, or agent boundaries.
 
 ## Phase Table
 
 | # | Phase | Description | Complexity | Exec | Review | Commit | Push |
-|---|---|---|---|---|---|---|
-| 1 | Product Backbone and Case Intake | Add FastAPI, PostgreSQL/Alembic, lean case intake, frontend API wiring, and verification for REQ-01. | medium | complete | complete | complete | complete |
-| 2 | Claude Design Intake and Case-Flow Gap Analysis | Curate the imported Claude design export, inventory its screens/assets, map gaps against Phase 1, and recommend the next case-flow UI integration. | low | complete | complete | complete | complete |
+|---|---|---|---|---|---|---|---|
+| 1 | Product Backbone and Case Intake | Add FastAPI, PostgreSQL/Alembic, lean case intake, frontend API wiring, and verification for REQ-01. | medium | ✅ | ✅ | ✅ | ✅ |
+| 2 | Claude Design Intake and Case-Flow Gap Analysis | Curate the imported Claude design export, inventory its screens/assets, map gaps against Phase 1, and recommend the next case-flow UI integration. | low | ✅ | ✅ | ✅ | ✅ |
+| 3 | Case Flow UI Alignment from Claude Design | Align login, case setup, upload, detection, plan, and coach UI with the curated Claude design while preserving persisted consumer-credit constraints and prototype-only analysis states. | medium | ✅ | ✅ | ⬜ | ⬜ |
 
 ## Scope
 
@@ -28,6 +30,11 @@ PostgreSQL database.
   `GET /api/cases/{id}`.
 - React case setup screen before upload.
 - Existing lint blocker fix for `src/components/Lenses.tsx`.
+- Case-flow UI alignment from the curated Claude design reference for login,
+  case setup, upload, detection, plan selection, and coach dashboard screens.
+- Prototype-only detection states: ready, low confidence, unsupported, and
+  failed.
+- Responsive checks for desktop and mobile widths.
 
 ### Out
 
@@ -36,6 +43,9 @@ PostgreSQL database.
 - OCR and agents.
 - Provenance record implementation beyond Phase 1 structural preparation.
 - Production retention/deletion enforcement.
+- Direct copy of Claude JSX into `src/`.
+- History, settings, share, compare, or email implementation unless needed for
+  the current case-flow screens.
 
 ## Tasks
 
@@ -77,9 +87,7 @@ PostgreSQL database.
 
 ## Current Phase
 
-Phase 2 design-intake execution and review are complete. Commit and push remain
-pending. Phase 1 was committed at `3b88ea8`; its push is still pending behind
-the current design-intake change set.
+Phase 3: Case Flow UI Alignment from Claude Design
 
 ## Phase 2 - Claude Design Intake and Case-Flow Gap Analysis
 
@@ -128,3 +136,68 @@ the current design-intake change set.
   canvases.
 - `npm run lint` — passed.
 - `npm run build` — passed.
+
+## Phase 3 - Case Flow UI Alignment from Claude Design
+
+### Scope
+
+### In
+
+- Login, case setup, upload, detection, plan selection, and coach dashboard UI
+  alignment using `docs/design/incoming/claude-design-20260513/` as reference.
+- Persistent case/document context signal after case creation.
+- Upload layout refresh that preserves persisted-case document locks and the
+  prototype acknowledgement guard.
+- Prototype-only detection branches for ready, low confidence, unsupported, and
+  failed states.
+- Plan and coach hierarchy updates from the Claude criteria, KPI, benchmark,
+  and action-plan direction.
+- Responsive desktop and mobile behavior checks.
+- Focused frontend tests for case setup, upload guard, detection branches, and
+  basic responsive assumptions.
+
+### Out
+
+- Real upload persistence.
+- OCR or document detection.
+- Agent output schemas or analysis pipeline changes.
+- History, settings, share, compare, or email surfaces.
+- Unrestricted multi-document-type persistence.
+- Direct copy of Claude JSX into the Vite app.
+
+### Tasks
+
+| ID | Task | Status |
+|---|---|---|
+| U1 | Align login and case setup to the selected `letra.` visual language without removing persisted case creation. | complete |
+| U2 | Add a persistent case/document context badge after case creation. | complete |
+| U3 | Refresh upload layout from Claude references while preserving persisted-case locks and prototype acknowledgement. | complete |
+| U4 | Add prototype-only detection branches: ready, low confidence, unsupported, and failed. | complete |
+| U5 | Align plan selection and analysis-running hierarchy to the Claude criteria model. | complete |
+| U6 | Align coach dashboard hierarchy to the impact, KPI, benchmark, and action-plan direction. | complete |
+| U7 | Add or update responsive and state-routing frontend tests, then run verification. | complete |
+
+### Tier Decision
+
+- **Base tier:** MVP
+- **Reason:** Phase 3 should polish and align the existing prototype-backed
+  case flow without introducing real document ingestion, OCR, agents, or new
+  production trust claims.
+
+### Acceptance
+
+- The app still creates and uses a persisted `consumer_credit` case before
+  upload.
+- Unsupported document types cannot mutate persisted Phase 1 cases.
+- Simulated analysis states remain visibly marked as prototype-only.
+- Case-flow screens work on desktop and mobile widths (manual verification;
+  automated viewport testing deferred until Playwright is added).
+- Tests cover case setup, upload guard, detection branch routing, responsive
+  class-name presence, and basic rendering assumptions.
+
+### Verification
+
+- `npm test` — passed, 14 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.

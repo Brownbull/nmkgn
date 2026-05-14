@@ -196,3 +196,62 @@ PR: —
 CI: — (no CI configured)
 PROMOTION: N/A
 DEPLOYMENTS: P1 (added row to .kdbp/DEPLOYMENTS.md)
+
+## 2026-05-14 09:07 — PLAN UPDATED: Product Backbone and Case-Flow Alignment
+
+CHANGE: Refreshed the active plan after Phase 1 and Phase 2 completion, normalized
+the phase tracker cells to `✅` / `⬜`, advanced `## Current Phase` to Phase 3,
+and added "Case Flow UI Alignment from Claude Design" as the next executable
+phase.
+
+- Wrote only `.kdbp/PLAN.md` and `.kdbp/LEDGER.md`; `SCOPE.md` and
+  `ROADMAP.md` remain `/gabe-scope*` surfaces.
+- Phase 3 is based on `docs/design/CLAUDE_20260513_GAP_ANALYSIS.md` and keeps
+  real upload persistence, OCR, agents, and unrestricted document types out of
+  scope.
+
+## 2026-05-14 09:09 — PHASE 3 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 3: Case Flow UI Alignment from
+Claude Design.
+
+- PLAN: Phase 3 `Exec` marked `🔄`.
+- Scope remains UI/state alignment only; backend persistence, OCR, agents,
+  history/settings/share/email, and unrestricted document types stay out of
+  scope.
+
+## 2026-05-14 09:35 — PHASE 3 EXECUTION COMPLETE
+
+Implemented Phase 3 case-flow UI alignment from the curated Claude design
+reference.
+
+- Added persistent case context and prototype-state notices across the post-case
+  flow.
+- Refreshed login/case setup/upload framing while preserving persisted
+  `consumer_credit` case creation, unsupported document locks, and the prototype
+  acknowledgement guard.
+- Added prototype-only detection branches for ready, low confidence,
+  unsupported, and failed states.
+- Added responsive structure for the key case-flow layouts.
+- Added focused frontend coverage for detection branch routing and upload branch
+  selection.
+- PLAN: Phase 3 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `npm test` — passed, 14 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-14 10:16 — PHASE 3 REVIEW: Case Flow UI Alignment from Claude Design
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 0 high, 1 medium, 1 low)
+COVERAGE: MEDIUM — detection branch routing and upload scenario selection tested; responsive/viewport not exercisable in jsdom
+CONFIDENCE: 95/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/2 strict overlap
+FIXES: #1 revised acceptance text + added responsive class-name tests, #2 replaced fragile CSS attribute selector with .app-content-area class

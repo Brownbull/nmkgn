@@ -6,6 +6,7 @@ export interface NavState {
   docType: string;
   docLabel: string;
   fileName: string;
+  detectionScenario?: 'ready' | 'low_confidence' | 'unsupported' | 'failed';
   caseId?: string;
   caseTitle?: string;
   caseStage?: 'before_signing' | 'after_signing';
@@ -25,7 +26,14 @@ export interface NavValue {
 
 const NO_OP_NAV: NavValue = {
   interactive: false,
-  state: { step: 'login', history: [], docType: 'bank', docLabel: 'Crédito bancario', fileName: 'contrato.pdf' },
+  state: {
+    step: 'login',
+    history: [],
+    docType: 'bank',
+    docLabel: 'Crédito bancario',
+    fileName: 'contrato.pdf',
+    detectionScenario: 'ready',
+  },
   go: () => {},
   back: () => {},
   set: () => {},

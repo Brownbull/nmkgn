@@ -73,6 +73,9 @@ export function CaseSetup() {
         caseStage: created.case_stage,
         analysisPlan: created.analysis_plan,
         institutionName: created.institution_name,
+        docType: 'bank',
+        docLabel: 'Crédito bancario',
+        detectionScenario: 'ready',
         mockAnalysisAcknowledged: false,
       });
       nav.go('upload');
@@ -85,7 +88,7 @@ export function CaseSetup() {
 
   return (
     <AppShell activeNav="Análisis">
-      <div style={{ padding: '32px 40px', maxWidth: 980, margin: '0 auto' }}>
+      <div className="case-flow-page" style={{ padding: '32px 40px', maxWidth: 1040, margin: '0 auto' }}>
         <div className="label">Nuevo caso</div>
         <h1 className="display" style={{ fontSize: 36, margin: '8px 0 6px', letterSpacing: 0 }}>
           Primero definamos el contexto.
@@ -94,7 +97,8 @@ export function CaseSetup() {
           Esta primera version solo crea casos de credito de consumo chileno. Los documentos vienen despues; aqui fijamos la etapa y los campos minimos para no analizar a ciegas.
         </div>
 
-        <form onSubmit={handleSubmit} className="card" style={{ marginTop: 24, padding: 24 }}>
+        <div className="case-flow-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 18, marginTop: 24, alignItems: 'start' }}>
+        <form onSubmit={handleSubmit} className="card" style={{ padding: 24 }}>
           <div style={fieldGridStyle}>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
               <span className="label">Nombre del caso</span>
@@ -189,6 +193,40 @@ export function CaseSetup() {
             </button>
           </div>
         </form>
+
+        <aside className="card-soft" style={{ padding: 18 }}>
+          <div className="label">Ruta del caso</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
+            {[
+              ['1', 'Caso', 'Campos fijos y etapa'],
+              ['2', 'Documento', 'Credito de consumo'],
+              ['3', 'Lectura', 'Estados simulados'],
+              ['4', 'Plan', 'Criterios por fuente'],
+            ].map(([n, titleText, sub]) => (
+              <div key={n} style={{ display: 'flex', gap: 10 }}>
+                <span style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  background: n === '1' ? 'var(--accent)' : '#fff',
+                  color: n === '1' ? '#fff' : 'var(--ink-soft)',
+                  border: n === '1' ? '1px solid var(--accent)' : '1px solid var(--line)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'JetBrains Mono',
+                  fontSize: 11,
+                  flex: '0 0 auto',
+                }}>{n}</span>
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 800 }}>{titleText}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-faint)', marginTop: 2 }}>{sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+        </div>
       </div>
     </AppShell>
   );

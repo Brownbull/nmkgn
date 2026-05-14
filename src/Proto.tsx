@@ -3,7 +3,13 @@ import { NavCtx, type NavState } from './components/NavContext';
 import { Login } from './screens/Login';
 import { CaseSetup } from './screens/CaseSetup';
 import { Upload } from './screens/Upload';
-import { DetectProcessing, DetectReady } from './screens/Detection';
+import {
+  DetectFailed,
+  DetectLowConfidence,
+  DetectProcessing,
+  DetectReady,
+  DetectUnsupported,
+} from './screens/Detection';
 import { PlanScreen, PlanRunning } from './screens/Plan';
 import { Coach } from './screens/Coach';
 import { Email } from './screens/Email';
@@ -16,6 +22,7 @@ const INITIAL_STATE: NavState = {
   docType: 'bank',
   docLabel: 'Crédito bancario',
   fileName: 'contrato.pdf',
+  detectionScenario: 'ready',
 };
 
 function loadState(): NavState {
@@ -36,14 +43,17 @@ const SCREEN_BY_STEP: Record<string, () => React.ReactElement> = {
   upload: () => <Upload />,
   process: () => <DetectProcessing />,
   detect: () => <DetectReady />,
+  'detect-low': () => <DetectLowConfidence />,
+  'detect-unsupported': () => <DetectUnsupported />,
+  'detect-failed': () => <DetectFailed />,
   plan: () => <PlanScreen />,
   running: () => <PlanRunning />,
   coach: () => <Coach />,
   email: () => <Email />,
 };
 
-const STEP_ORDER = ['login', 'case', 'upload', 'process', 'detect', 'plan', 'running', 'coach', 'email'];
-const MOCK_ANALYSIS_STEPS = new Set(['process', 'detect', 'plan', 'running', 'coach', 'email']);
+const STEP_ORDER = ['login', 'case', 'upload', 'process', 'detect', 'detect-low', 'detect-unsupported', 'detect-failed', 'plan', 'running', 'coach', 'email'];
+const MOCK_ANALYSIS_STEPS = new Set(['process', 'detect', 'detect-low', 'detect-unsupported', 'detect-failed', 'plan', 'running', 'coach', 'email']);
 
 function FloatingDebug({ state, stepIdx, go, reset }: {
   state: NavState; stepIdx: number; go: (s: string) => void; reset: () => void;

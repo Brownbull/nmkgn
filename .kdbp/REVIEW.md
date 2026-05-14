@@ -3,16 +3,16 @@
 sources:
   - cli: codex
     model: gpt-5
-    timestamp: 2026-05-13T21:12:49Z
-    findings: 3
+    timestamp: 2026-05-14T09:59:00Z
+    findings: 1
   - cli: claude
     model: claude-opus-4-6
-    timestamp: 2026-05-13T17:31:00Z
-    findings: 3
-consolidated_at: 2026-05-13T17:31:00Z
+    timestamp: 2026-05-14T10:10:00Z
+    findings: 2
+consolidated_at: 2026-05-14T10:16:00Z
 consolidation: union
 project_root: /home/khujta/projects/apps/nmkgn
-target: Phase 1 implementation live diff and untracked files
+target: Phase 3 Case Flow UI Alignment from Claude Design
 maturity: mvp
 status: resolved
 ---
@@ -20,22 +20,23 @@ status: resolved
 # Gabe Review — Live Document
 
 **Verdict:** APPROVE
-**Confidence:** 90/100
-**Coverage:** HIGH
-**Findings:** 3 (CRITICAL: 0, HIGH: 3, MEDIUM: 0, LOW: 0) | **Sources:** codex+claude
-**Resolution:** 3 fixed / 0 deferred / 0 dismissed of 3 (pending: 0)
+**Confidence:** 95/100
+**Coverage:** MEDIUM
+**Findings:** 2 (CRITICAL: 0, HIGH: 0, MEDIUM: 1, LOW: 1) | **Sources:** codex+claude
+**Resolution:** 2 fixed / 0 deferred / 0 dismissed of 2 (pending: 0)
 
 ## Findings
 
 | # | Status | Severity | Finding | File | Churn | Fix Cost | Defer Risk | Maturity Gate | Escalation | Sources |
 |---|--------|----------|---------|------|-------|----------|------------|---------------|------------|---------|
-| 1 | fixed | HIGH | Debug step jumper bypasses the prototype acknowledgement guard. | `src/Proto.tsx:46` | STABLE | S | UNSUPPORTED FINDINGS SHOWN AS PRODUCT — P(medium), I(high) | MVP | — | codex, claude |
-| 2 | fixed | HIGH | Upload still lets a persisted consumer-credit case switch to unsupported document labels. | `src/screens/Upload.tsx:59` | STABLE | S | CASE/DOCUMENT TYPE DRIFT — P(high), I(high) | MVP | — | codex, claude |
-| 3 | fixed | HIGH | API accepts `case_stage` and `analysis_plan` combinations that contradict each other. | `api/schemas/cases.py:37` | STABLE | S | CONTRADICTORY CASE STATE — P(medium), I(high) | MVP | — | codex, claude |
+| 1 | fixed | MEDIUM | Phase 3 marks responsive/mobile verification complete, but no viewport/browser smoke covers the new media-query breakpoints. Fixed: acceptance text revised to reflect manual-only responsive verification; responsive class-name tests added. | src/index.css:195 | STABLE | S | MOBILE LAYOUT REGRESSION UNDETECTED — P(medium), I(moderate) | MVP | — | codex, claude |
+| 2 | fixed | LOW | Responsive CSS used fragile `[style*="top: 61px"]` attribute selector coupled to inline header height. Fixed: added `.app-content-area` class to content div, replaced attribute selector with class target. | src/index.css:204 | STABLE | S | SILENT RESPONSIVE BREAKAGE — P(low), I(moderate) | Enterprise | — | claude |
 
 ## Plan Alignment
 
-Alignment: DRIFTED (justified). The diff covers Phase 1 scope plus user-requested port registration and alignment cleanup.
+Alignment: ALIGNED. All 12 changed files map directly to Phase 3 scope (login,
+case setup, upload, detection branches, plan, coach, responsive CSS, frontend
+tests). No off-scope files changed.
 
 ## Stale Verified Topics
 
@@ -47,57 +48,12 @@ None proposed.
 
 ## Tier Drift
 
-None detected for MVP Phase 1.
+None detected for MVP Phase 3.
 
 ## Deferred Backlog Status
 
-- PENDING #1 remains deferred (provenance-ready persistence — Phase 2).
-- PENDING #2 remains deferred (config consolidation — Phase 2).
+- PENDING #1 remains deferred (provenance-ready persistence — backend scope).
+- PENDING #2 remains deferred (runtime config consolidation — not touched).
 
 ---
 _Review resolved. All findings fixed._
-
----
-
-## Review Pass — Phase 2 Claude Design Intake and Case-Flow Gap Analysis
-
-**Timestamp:** 2026-05-13 19:37 -04
-**Target:** Phase 2 design-intake live diff and imported reference files
-**Verdict:** APPROVE
-**Confidence:** 96/100
-**Coverage:** HIGH
-**Findings:** 0 (CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0)
-**Resolution:** 0 fixed / 0 deferred / 0 dismissed of 0
-
-### Findings
-
-No findings.
-
-### Plan Alignment
-
-Alignment: ALIGNED. The change set is limited to the Claude design reference
-import, inventory/gap-analysis docs, KDBP bookkeeping, port registration, and
-metadata-ignore cleanup. No `src/`, `api/`, migration, test, or runtime product
-behavior files changed.
-
-### Review Notes
-
-- The curated import contains 48 files under
-  `docs/design/incoming/claude-design-20260513/`.
-- `nmkgn.zip:Zone.Identifier` was removed and future `*:Zone.Identifier` files
-  are ignored.
-- The inventory and gap analysis correctly preserve the Phase 1 case-first
-  product constraint and mark Claude JSX as reference-only.
-- Phase 1 push remains pending, but the current Phase 2 push will carry both
-  committed and pending local changes when that gate runs.
-
-### Verification
-
-- `git diff --check` — passed.
-- `npm run lint` — passed.
-- `npm run build` — passed.
-- Static preview smoke on `127.0.0.1:15181` — passed for the three main HTML
-  canvases.
-- `find docs/design/incoming/claude-design-20260513 -name '*:Zone.Identifier'`
-  — no matches.
-- `ss -ltn sport = :15181` — no lingering preview server.

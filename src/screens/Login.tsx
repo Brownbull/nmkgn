@@ -5,11 +5,10 @@ import { DocBadge } from '../components/DocBadge';
 import { useNav } from '../components/NavContext';
 
 const SUPPORTED_TYPES = [
-  { icon: 'bank', label: 'Crédito bancario', sub: 'Consumo · Hipotecario · Automotriz' },
-  { icon: 'house', label: 'Arriendo', sub: 'Vivienda · Comercial' },
-  { icon: 'shield', label: 'Seguro', sub: 'Vida · Auto · Salud' },
-  { icon: 'briefcase', label: 'Contrato laboral', sub: 'Indefinido · Plazo fijo' },
-  { icon: 'wrench', label: 'Cotización taller', sub: 'Reparación · Mantención' },
+  { icon: 'bank', label: 'Crédito bancario', sub: 'Soportado hoy' },
+  { icon: 'house', label: 'Arriendo', sub: 'Próximo' },
+  { icon: 'shield', label: 'Seguro', sub: 'Próximo' },
+  { icon: 'briefcase', label: 'Contrato laboral', sub: 'Próximo' },
 ];
 
 function Finding({ sev, title, where }: { sev: string; title: string; where: string }) {
@@ -40,18 +39,17 @@ export function Login() {
         pointerEvents: 'none',
       }} />
 
-      <div style={{ padding: '24px 40px', display: 'flex', alignItems: 'center', position: 'relative' }}>
+      <div className="login-topbar" style={{ padding: '24px 40px', display: 'flex', alignItems: 'center', position: 'relative' }}>
         <Logo size={22} />
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginRight: 18 }}>Precios</span>
         <span style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginRight: 18 }}>Cómo funciona</span>
         <span style={{ fontSize: 13.5, color: 'var(--ink-soft)' }}>Ayuda</span>
       </div>
 
-      <div style={{ padding: '64px 40px 0', display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 60, position: 'relative' }}>
+      <div className="login-hero-grid" style={{ padding: '64px 40px 0', display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: 60, position: 'relative' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 12px', borderRadius: 999, background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: 12, fontWeight: 600 }}>
-            <Icon name="sparkle" size={14} /> Para Chile · más países pronto
+            <Icon name="sparkle" size={14} /> Chile · crédito de consumo v0
           </div>
           <h1 className="display" style={{
             fontSize: 64, margin: '18px 0 0', letterSpacing: -0.035, lineHeight: 1.02,
@@ -60,7 +58,8 @@ export function Login() {
             <span style={{ color: 'var(--accent)' }}>chica</span> por ti.
           </h1>
           <p style={{ fontSize: 18, color: 'var(--ink-soft)', marginTop: 20, lineHeight: 1.5, maxWidth: 480 }}>
-            Sube un crédito, contrato o cotización. Te marcamos lo abusivo, lo escondido y lo que está sobre el mercado <em>antes</em> de que firmes.
+            Crea un caso, sube tu contrato de crédito y revisa riesgos posibles,
+            inconsistencias y puntos a confirmar sin tratar el producto como asesor.
           </p>
 
           <div style={{ marginTop: 32, display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -68,16 +67,16 @@ export function Login() {
               <GoogleG size={18} /> Continuar con Google
             </button>
             <span style={{ fontSize: 12.5, color: 'var(--ink-faint)' }}>
-              Sin tarjeta · 1 documento gratis al mes
+              Caso demo · sin autenticación real todavía
             </span>
           </div>
 
           <div style={{ marginTop: 42, display: 'flex', alignItems: 'center', gap: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-soft)' }}>
-              <Icon name="shield-check" size={16} color="var(--accent)" /> Tus PDFs se borran a las 72h
+              <Icon name="shield-check" size={16} color="var(--accent)" /> Evidencia antes que conclusión
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--ink-soft)' }}>
-              <Icon name="scale" size={16} color="var(--accent)" /> Comparado con CMF y Ley 19.496
+              <Icon name="scale" size={16} color="var(--accent)" /> Lenguaje de análisis, no asesoría
             </div>
           </div>
         </div>
@@ -103,7 +102,7 @@ export function Login() {
               <Finding sev="mid" title="Seguro vinculado al banco" where="Cláusula 9" />
             </div>
           </div>
-          <div className="card" style={{
+          <div className="card login-preview-card" style={{
             position: 'absolute', top: -14, right: -14,
             padding: '8px 12px',
             background: 'var(--ink)', color: 'var(--paper)', borderColor: 'var(--ink)',
@@ -116,15 +115,14 @@ export function Login() {
         </div>
       </div>
 
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 40px', borderTop: '1px solid var(--line)', background: 'var(--paper-2)' }}>
+      <div className="login-topbar" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '24px 40px', borderTop: '1px solid var(--line)', background: 'var(--paper-2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
-          <span className="label">Tipos soportados hoy</span>
+          <span className="label">Alcance v0</span>
           {SUPPORTED_TYPES.map(t => (
             <span key={t.label} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--ink-soft)' }}>
-              <Icon name={t.icon} size={14} /> {t.label}
+              <Icon name={t.icon} size={14} /> {t.label} · {t.sub}
             </span>
           ))}
-          <span style={{ fontSize: 13, color: 'var(--ink-faint)' }}>+ 1 más</span>
         </div>
       </div>
     </div>

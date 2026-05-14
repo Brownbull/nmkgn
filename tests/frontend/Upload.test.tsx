@@ -87,4 +87,13 @@ describe('Upload prototype guard', () => {
 
     expect(nav.set).toHaveBeenCalledWith({ mockAnalysisAcknowledged: true });
   });
+
+  it('stores the selected prototype detection branch', async () => {
+    const user = userEvent.setup();
+    const nav = renderUpload({ caseId: 'case-123', mockAnalysisAcknowledged: true });
+
+    await user.click(screen.getByRole('button', { name: /baja confianza/i }));
+
+    expect(nav.set).toHaveBeenCalledWith({ detectionScenario: 'low_confidence' });
+  });
 });

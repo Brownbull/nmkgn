@@ -15,7 +15,7 @@ const PROTO_STEPS = [
 const PROTO_STEP_INDEX: Record<string, number> = {
   case: 0,
   upload: 1,
-  process: 2, detect: 2,
+  process: 2, detect: 2, 'detect-low': 2, 'detect-unsupported': 2, 'detect-failed': 2,
   plan: 3, running: 3,
   coach: 4, email: 4, compare: 4, history: 4,
 };
@@ -112,8 +112,48 @@ export function AppShell({ children, activeNav = 'Análisis', rightExtra }: AppS
           marginLeft: 6,
         }}>JR</div>
       </div>
-      <div style={{ position: 'absolute', top: 61, left: 0, right: 0, bottom: 0, overflow: 'auto' }}>
+      <div className="app-content-area" style={{ position: 'absolute', top: 61, left: 0, right: 0, bottom: 0, overflow: 'auto' }}>
         {children}
+      </div>
+    </div>
+  );
+}
+
+export function CaseContextStrip() {
+  const nav = useNav();
+  if (!nav.state.caseId) return null;
+
+  const stageLabel = nav.state.caseStage === 'after_signing'
+    ? 'Despues de firmar'
+    : 'Antes de firmar';
+  const planLabel = nav.state.analysisPlan === 'after_signing_discrepancy'
+    ? 'Discrepancias'
+    : 'Revision previa';
+
+  return (
+    <div className="case-context-strip">
+      <div className="case-context-main">
+        <span className="pill pill-accent"><Icon name="bank" size={13} /> Caso guardado</span>
+        <strong>{nav.state.caseTitle ?? 'Credito para construir casa'}</strong>
+        <span>{nav.state.institutionName ?? 'Banco Demo'}</span>
+      </div>
+      <div className="case-context-meta">
+        <span>{stageLabel}</span>
+        <span>{planLabel}</span>
+        <span>{nav.state.docLabel ?? 'Credito bancario'}</span>
+        <span className="pill pill-amber">Prototipo</span>
+      </div>
+    </div>
+  );
+}
+
+export function PrototypeNotice({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className={compact ? 'prototype-notice prototype-notice-compact' : 'prototype-notice'}>
+      <Icon name="shield-check" size={16} color="var(--amber)" />
+      <div>
+        <strong>Estado simulado.</strong>{' '}
+        Lectura, plan y resultados siguen siendo prototipo hasta conectar carga real, OCR, agentes y procedencia.
       </div>
     </div>
   );
