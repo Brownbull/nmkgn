@@ -190,3 +190,9 @@ Verification:
 FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
 ACTIONS: none
 DEFERRED: none
+
+## 2026-05-13 19:50 — PUSH main -> main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P1 (added row to .kdbp/DEPLOYMENTS.md)
