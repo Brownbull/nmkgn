@@ -4,7 +4,7 @@
 <!-- project_type: hybrid -->
 <!-- goal: Product Backbone and Case-Flow Alignment -->
 <!-- created: 2026-05-13 -->
-<!-- Last Updated: 2026-05-14 -->
+<!-- Last Updated: 2026-05-14T10:19 -->
 
 Maintain the completed production backbone slice and use the curated Claude
 design intake to align the case-flow UI without changing the current persistence,
@@ -16,7 +16,7 @@ OCR, or agent boundaries.
 |---|---|---|---|---|---|---|---|
 | 1 | Product Backbone and Case Intake | Add FastAPI, PostgreSQL/Alembic, lean case intake, frontend API wiring, and verification for REQ-01. | medium | ✅ | ✅ | ✅ | ✅ |
 | 2 | Claude Design Intake and Case-Flow Gap Analysis | Curate the imported Claude design export, inventory its screens/assets, map gaps against Phase 1, and recommend the next case-flow UI integration. | low | ✅ | ✅ | ✅ | ✅ |
-| 3 | Case Flow UI Alignment from Claude Design | Align login, case setup, upload, detection, plan, and coach UI with the curated Claude design while preserving persisted consumer-credit constraints and prototype-only analysis states. | medium | ✅ | ✅ | ⬜ | ⬜ |
+| 3 | Case Flow UI Alignment from Claude Design | Align login, case setup, upload, detection, plan, and coach UI with the curated Claude design while preserving persisted consumer-credit constraints and prototype-only analysis states. | medium | ✅ | ✅ | ✅ | ⬜ |
 
 ## Scope
 

@@ -255,3 +255,8 @@ TIER: mvp | DRIFT: none
 TICK: ✅
 SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/2 strict overlap
 FIXES: #1 revised acceptance text + added responsive class-name tests, #2 replaced fragile CSS attribute selector with .app-content-area class
+
+## 2026-05-14 10:19 — [a6449d9] feat(screens): align case-flow UI to Claude design reference
+FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
+ACTIONS: none
+DEFERRED: none
