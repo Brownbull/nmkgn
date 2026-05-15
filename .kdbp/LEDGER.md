@@ -440,3 +440,9 @@ FIXES: #1 added text-segments 404 tests for nonexistent case and nonexistent doc
 FINDINGS: 1 (0 critical, 0 high, 0 medium, 1 low)
 ACTIONS: 1:update-docs
 DEFERRED: none
+
+## 2026-05-15 00:28 — PUSH main -> main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P5 (added row to .kdbp/DEPLOYMENTS.md)
