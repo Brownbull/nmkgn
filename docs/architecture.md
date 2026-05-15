@@ -154,12 +154,15 @@ The case API exposes a lean case-intake contract:
 - Case list and read endpoints only return cases for `demo-user` until real auth
   exists.
 
-The document schema contract is present before route wiring:
+The document API scopes uploads under their parent case:
 
 - A document belongs to one case and one owner.
 - V0 roles distinguish one primary document from comparison materials such as
   simulations, offers, payments, emails, and comparator loans.
-- Uploaded bytes are addressed by `storage_key`; the API should not publicly
+- Upload accepts multipart file + role + document_type; validates content type
+  against allowed list, rejects oversized or empty files, and returns full
+  document metadata on success.
+- Uploaded bytes are addressed by `storage_key`; the API does not publicly
   serve local files.
 - Extraction output is text-segment level evidence only. It is not a normalized
   fact, confirmed fact, inference, or finding.
@@ -173,18 +176,13 @@ The central contract is document-type-specific structured output:
 
 ## API Endpoints
 
-Phase 1 endpoints:
-
 - `GET /api/health`
 - `POST /api/cases`
 - `GET /api/cases`
 - `GET /api/cases/{id}`
-
-Planned document endpoints:
-
-- `POST /api/cases/{case_id}/documents`
-- `GET /api/cases/{case_id}/documents`
-- `GET /api/documents/{document_id}`
+- `POST /api/cases/{case_id}/documents` — multipart upload (file + role + document_type)
+- `GET /api/cases/{case_id}/documents` — list documents for case, owner-scoped
+- `GET /api/cases/{case_id}/documents/{document_id}` — single document metadata
 
 ## Services
 
@@ -197,6 +195,9 @@ Current service boundaries:
 - Upload storage configuration for local-only document persistence, including
   root path, size limit, allowed content types, retention days, and production
   upload guard.
+- Document service for scoped upload, list, and read. Validates content type
+  and size, streams file bytes to local storage with SHA-256 checksum, cleans
+  up partial files on failure, and enforces owner scoping on all queries.
 
 Expected future service boundaries:
 
