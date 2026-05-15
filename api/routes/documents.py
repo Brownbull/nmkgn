@@ -10,7 +10,12 @@ from api.config import (
     get_stub_owner_ref,
     get_upload_storage_settings,
 )
-from api.schemas.documents import DocumentRead, DocumentRole, DocumentType
+from api.schemas.documents import (
+    DocumentRead,
+    DocumentRole,
+    DocumentType,
+    ExtractedTextSegmentRead,
+)
 from api.services import documents as document_service
 from api.services.database import get_session
 
@@ -94,3 +99,24 @@ def get_document(
             status_code=status.HTTP_404_NOT_FOUND, detail="document not found"
         )
     return document
+
+
+@router.get(
+    "/{document_id}/text-segments", response_model=list[ExtractedTextSegmentRead]
+)
+def list_text_segments(
+    case_id: str, document_id: str, session: SessionDep, owner_ref: OwnerDep
+) -> list[ExtractedTextSegmentRead]:
+    try:
+        segments = document_service.list_text_segments(
+            session, case_id, document_id, owner_ref
+        )
+    except document_service.CaseNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=exc.detail
+        ) from exc
+    if segments is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="document not found"
+        )
+    return segments

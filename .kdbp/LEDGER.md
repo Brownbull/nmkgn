@@ -387,3 +387,51 @@ PR: —
 CI: — (no CI configured)
 PROMOTION: N/A
 DEPLOYMENTS: P4 (added row to .kdbp/DEPLOYMENTS.md)
+
+## 2026-05-14 22:51 — PHASE 3 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 3: Text extraction pipeline.
+
+- PLAN: Current Phase advanced from Phase 2 to Phase 3; Phase 3 `Exec` marked `🔄`.
+- Scope is text extraction only: supported text-bearing uploads, persisted
+  extracted text segments, status transitions, warnings/failures, and backend
+  tests.
+- Out of scope: OCR provider integration, background worker queues/retries,
+  normalized fact extraction, findings, and frontend upload wiring.
+
+## 2026-05-14 22:56 — PHASE 3 EXECUTION COMPLETE
+
+Implemented Phase 3 text extraction pipeline.
+
+- Added synchronous local extraction after document upload.
+- Added `pypdf` for text-bearing PDF extraction.
+- Added plain-text span segmentation and PDF page segmentation.
+- Marked image uploads and text-empty PDFs as `needs_ocr`.
+- Marked malformed/unreadable PDF extraction as `failed` without failing stored
+  upload persistence.
+- Added owner-scoped `GET /api/cases/{case_id}/documents/{document_id}/text-segments`.
+- Updated architecture docs with the extraction boundary and endpoint.
+- PLAN: Phase 3 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `uv run pytest tests/api/test_documents_api.py tests/api/test_documents_contract.py -q` — passed, 23 tests.
+- `uv run ruff check api/services/text_extraction.py api/services/documents.py api/routes/documents.py tests/api/test_documents_api.py` — passed.
+- `uv run ruff format --check api/services/text_extraction.py api/services/documents.py api/routes/documents.py tests/api/test_documents_api.py` — passed.
+- `uv run pytest -q` — passed, 30 tests.
+- `uv run ruff check .` — passed.
+- `git diff --check` — passed.
+- Note: `uv run ruff format --check .` still reports 12 pre-existing backend/test
+  files outside this Phase 3 change that would be reformatted.
+
+## 2026-05-14 23:10 — PHASE 3 REVIEW: Text extraction pipeline
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 1 high, 1 medium, 0 low)
+COVERAGE: HIGH — all error branches now tested (text-segments 404 for nonexistent case and document, decode warning for non-UTF-8, partial_pdf_text warning for mixed PDFs, plus prior happy path, needs_ocr, and failed statuses)
+CONFIDENCE: 90/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 2/2 strict overlap, union consolidation
+FIXES: #1 added text-segments 404 tests for nonexistent case and nonexistent document, #2 added decode_replacement warning test for non-UTF-8 plain text and partial_pdf_text warning test for mixed blank/text PDF pages

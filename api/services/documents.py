@@ -13,7 +13,9 @@ from sqlalchemy.orm import Session
 from api.config import UploadStorageSettings
 from api.models.case import Case
 from api.models.document import Document, utcnow
+from api.models.extraction import ExtractedTextSegment
 from api.schemas.documents import DocumentRole, DocumentType
+from api.services.text_extraction import extract_document_text
 
 CHUNK_SIZE_BYTES = 1024 * 1024
 
@@ -64,6 +66,24 @@ def get_document(
         Document.owner_ref == owner_ref,
     )
     return session.scalar(stmt)
+
+
+def list_text_segments(
+    session: Session, case_id: str, document_id: str, owner_ref: str
+) -> list[ExtractedTextSegment] | None:
+    document = get_document(session, case_id, document_id, owner_ref)
+    if document is None:
+        return None
+    stmt = (
+        select(ExtractedTextSegment)
+        .where(ExtractedTextSegment.document_id == document.id)
+        .order_by(
+            ExtractedTextSegment.page_number,
+            ExtractedTextSegment.start_offset,
+            ExtractedTextSegment.extracted_at,
+        )
+    )
+    return list(session.scalars(stmt))
 
 
 def store_document_upload(
@@ -124,6 +144,7 @@ def store_document_upload(
         _remove_partial_file(destination)
         raise
     session.refresh(document)
+    extract_document_text(session, document, settings)
     return document
 
 

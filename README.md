@@ -38,6 +38,12 @@ npm run dev
 
 Run the API and Vite commands in separate terminals.
 
+## Key Backend Dependencies
+
+- **FastAPI** + **SQLAlchemy** + **Alembic** — API, ORM, and migrations.
+- **pypdf** — text extraction from PDF uploads (text-bearing pages only; scanned/image PDFs stay `needs_ocr`).
+- **python-multipart** — multipart form/file upload parsing.
+
 ## Checks
 
 ```bash

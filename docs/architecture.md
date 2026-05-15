@@ -164,6 +164,10 @@ The document API scopes uploads under their parent case:
   document metadata on success.
 - Uploaded bytes are addressed by `storage_key`; the API does not publicly
   serve local files.
+- Stored uploads run synchronous MVP text extraction. Plain text uploads produce
+  span-based segments, text-bearing PDFs produce page-based segments, and
+  image or scanned-PDF inputs stay visible as `needs_ocr` instead of silently
+  becoming empty evidence.
 - Extraction output is text-segment level evidence only. It is not a normalized
   fact, confirmed fact, inference, or finding.
 
@@ -183,6 +187,8 @@ The central contract is document-type-specific structured output:
 - `POST /api/cases/{case_id}/documents` — multipart upload (file + role + document_type)
 - `GET /api/cases/{case_id}/documents` — list documents for case, owner-scoped
 - `GET /api/cases/{case_id}/documents/{document_id}` — single document metadata
+- `GET /api/cases/{case_id}/documents/{document_id}/text-segments` — extracted
+  text segments for one owner-scoped document
 
 ## Services
 
@@ -198,10 +204,14 @@ Current service boundaries:
 - Document service for scoped upload, list, and read. Validates content type
   and size, streams file bytes to local storage with SHA-256 checksum, cleans
   up partial files on failure, and enforces owner scoping on all queries.
+- Text extraction service for local MVP extraction. It reads stored upload bytes,
+  persists extracted segments, marks non-text image/scanned documents as
+  `needs_ocr`, and marks malformed/unreadable files as `failed` without
+  creating findings or normalized facts.
 
 Expected future service boundaries:
 
-- document ingestion and OCR/extraction
+- OCR provider integration
 - document type detection
 - normalized fact confirmation
 - document-specific agent analysis
