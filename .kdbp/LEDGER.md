@@ -435,3 +435,8 @@ TIER: mvp | DRIFT: none
 TICK: ✅
 SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 2/2 strict overlap, union consolidation
 FIXES: #1 added text-segments 404 tests for nonexistent case and nonexistent document, #2 added decode_replacement warning test for non-UTF-8 plain text and partial_pdf_text warning test for mixed blank/text PDF pages
+
+## 2026-05-15 — [b25365a] feat(extraction): add synchronous text extraction pipeline with warning tracking
+FINDINGS: 1 (0 critical, 0 high, 0 medium, 1 low)
+ACTIONS: 1:update-docs
+DEFERRED: none
