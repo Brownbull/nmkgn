@@ -381,3 +381,9 @@ FIXES: #1 added empty-file and storage-write-failure tests, #2 added list/read 4
 FINDINGS: 3 (0 critical, 1 high, 1 medium, 1 low)
 ACTIONS: 1:update-docs 2:accept 3:accept
 DEFERRED: none
+
+## 2026-05-14 22:50 — PUSH main -> main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P4 (added row to .kdbp/DEPLOYMENTS.md)

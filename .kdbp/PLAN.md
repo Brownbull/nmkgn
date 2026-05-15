@@ -57,7 +57,7 @@ source metadata before any agent or finding path consumes the upload.
 | # | Phase | Description | Types | Tier | Complexity | Exec | Review | Commit | Push |
 |---|-------|-------------|-------|------|------------|------|--------|--------|------|
 | 1 | Storage contract and schema | Add upload configuration, document/extraction schema, Alembic migration, and architecture docs for provenance-ready storage. | `persistence, data-migration, upload, storage` | mvp (Retention→ent) | med | ✅ | ✅ | ✅ | ✅ |
-| 2 | Backend ingestion API | Implement scoped multipart upload, document listing/read endpoints, local file write path, status transitions, and backend tests. | `upload, storage, user-facing, persistence` | mvp | high | ✅ | ✅ | ✅ | ⬜ |
+| 2 | Backend ingestion API | Implement scoped multipart upload, document listing/read endpoints, local file write path, status transitions, and backend tests. | `upload, storage, user-facing, persistence` | mvp | high | ✅ | ✅ | ✅ | ✅ |
 | 3 | Text extraction pipeline | Extract text from supported text-bearing uploads, persist page/span segments, record warnings/failures, and keep scanned-image OCR clearly pending. | `persistence, async-worker, data-migration` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
 | 4 | Frontend upload/status handoff | Replace the prototype-only upload action with real file selection, upload progress/status, extracted-text preview, and analysis guardrails. | `user-facing, client-state, upload` | mvp | med | ⬜ | ⬜ | ⬜ | ⬜ |
 
