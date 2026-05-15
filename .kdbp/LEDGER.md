@@ -554,3 +554,9 @@ FIXES: #1 replaced independent case_id/document_id FKs with composite FK (docume
 FINDINGS: 1 (0 critical, 0 high, 0 medium, 1 low)
 ACTIONS: 1:accept (pre-existing alembic env issue)
 DEFERRED: 0
+
+## 2026-05-15 16:30 — PUSH main -> main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P7 (added row to .kdbp/DEPLOYMENTS.md)
