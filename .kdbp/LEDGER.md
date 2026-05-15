@@ -324,3 +324,9 @@ FINDINGS: 4 (2 critical, 1 high, 1 low)
 ACTIONS: 1:fix 2:fix 3:resolve-now 4:update-docs
 DEFERRED: none
 RESOLVED: PENDING #1 (provenance-ready persistence — addressed by this commit)
+
+## 2026-05-14 16:50 — PUSH main -> main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P3 (added row to .kdbp/DEPLOYMENTS.md)
