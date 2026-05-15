@@ -482,3 +482,8 @@ TIER: mvp | DRIFT: none
 TICK: ✅
 SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 2/3 strict overlap, union consolidation
 FIXES: #1 separated POST success from refresh failure in handleUpload to prevent duplicate-upload risk, #2 added POST-failure, refresh-failure, and list-load-failure tests, #3 documented VITE_API_BASE_URL in .env.example and updated PORTS.md reference from cases.ts to client.ts
+
+## 2026-05-15 01:21 — [d5a6db4] feat(upload): wire frontend to real document upload, status, and text preview
+FINDINGS: 1 (0 critical, 0 high, 0 medium, 1 low)
+ACTIONS: 1:update-docs (README.md — added VITE_API_BASE_URL mention)
+DEFERRED: none
