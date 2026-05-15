@@ -37,6 +37,9 @@ __pycache__/
 .env.local
 .venv/
 
+# Local document uploads
+var/uploads/
+
 # Imported archive metadata
 *:Zone.Identifier
 

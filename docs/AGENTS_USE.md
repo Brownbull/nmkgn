@@ -25,6 +25,12 @@ To define during implementation. Expected tool categories:
 - benchmark lookup
 - rule-source lookup
 
+The document text lookup boundary should read persisted extracted text segments,
+not uploaded file bytes directly. Extracted text segments identify their source
+document, page or span, provider, extraction date, confidence when known, and any
+warning state. They are source material for later normalized facts, not findings
+by themselves.
+
 ## Prompts
 
 Prompts must be paired with schema enforcement. Prompt instructions alone are not
@@ -39,6 +45,9 @@ to review unless a validated rule supports stronger language.
 
 The agent should receive normalized document facts, user-provided comparison
 context, selected benchmark/rule sources, and the analysis schema version.
+Uploaded documents and extracted text feed that normalization pipeline, but the
+agent should not infer trusted findings from raw extracted text without a
+provenance and confirmation path.
 
 ## Output Contract
 

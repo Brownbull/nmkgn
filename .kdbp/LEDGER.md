@@ -266,3 +266,55 @@ PR: —
 CI: — (no CI configured)
 PROMOTION: N/A
 DEPLOYMENTS: P2 (added row to .kdbp/DEPLOYMENTS.md)
+
+## 2026-05-14 10:21 — PLAN COMPLETED: Product Backbone and Case-Flow Alignment
+ARCHIVE: .kdbp/archive/completed_PLAN_2026-05-14_product-backbone-case-flow.md
+PHASES COMPLETED: 3 of 3
+
+## 2026-05-14 10:29 — PLAN CREATED: Real document upload persistence and text extraction
+
+PHASES: 4 | COMPLEXITY: medium | MATURITY: mvp
+TIERS: mvp x 4, ent x 0, scale x 0 | PROTOTYPES: 0
+DECISIONS: D4 -> D7 (4 phase tier decisions logged)
+RELATED: PENDING #1, PENDING #2, ROADMAP Phase 2, and the text-extraction bridge into ROADMAP Phase 3
+
+## 2026-05-14 10:35 — PHASE 1 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 1: Storage contract and schema.
+
+- PLAN: Phase 1 `Exec` marked `🔄`.
+- Scope is schema/config/docs only: no upload endpoint, extraction service,
+  OCR provider, frontend behavior, or agent/finding pipeline changes.
+
+## 2026-05-14 10:40 — PHASE 1 EXECUTION COMPLETE
+
+Implemented Phase 1 storage contract and schema.
+
+- Added env-backed upload storage settings and `.env.example`.
+- Added document and extracted-text SQLAlchemy models.
+- Added document/extracted-text Pydantic schemas.
+- Added Alembic migration `20260514_0002_create_documents`.
+- Added contract tests for upload settings, document roles, text span validation,
+  model persistence, and migration-created tables.
+- Updated architecture and agent docs with the document/text boundary.
+- Updated `.kdbp/STRUCTURE.md` to allow `.env.example`.
+- PLAN: Phase 1 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `uv run pytest tests/api/test_documents_contract.py tests/api/test_cases.py -q` — passed, 11 tests.
+- `uv run pytest` — passed, 11 API tests.
+- `git diff --check` — passed.
+- `npm run db:up` — passed; PostgreSQL container running.
+- `uv run alembic -c api/migrations/alembic.ini upgrade head` — passed against local PostgreSQL.
+
+## 2026-05-14 16:38 — PHASE 1 REVIEW: Storage contract and schema
+VERDICT: APPROVE
+FINDINGS: 3 total (0 critical, 0 high, 2 medium, 1 low)
+COVERAGE: MEDIUM — API contract tests and SQLite Alembic passed; live PostgreSQL migration not rerun because Docker is unavailable in this WSL distro
+CONFIDENCE: 92/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+FIXES: added upload-config bound validation, complete extracted-text locator validation, SHA-256 hex validation, and matching tests

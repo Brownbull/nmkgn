@@ -1,203 +1,199 @@
 # Active Plan
 
 <!-- status: active -->
-<!-- project_type: hybrid -->
-<!-- goal: Product Backbone and Case-Flow Alignment -->
-<!-- created: 2026-05-13 -->
-<!-- Last Updated: 2026-05-14T10:20 -->
+<!-- project_type: code -->
+<!-- goal: Real document upload persistence and text extraction -->
+<!-- created: 2026-05-14 -->
+<!-- last_updated: 2026-05-14T10:40 -->
 
-Maintain the completed production backbone slice and use the curated Claude
-design intake to align the case-flow UI without changing the current persistence,
-OCR, or agent boundaries.
+## Goal
 
-## Phase Table
+Persist real consumer-credit case documents and extract reviewable text with
+source metadata before any agent or finding path consumes the upload.
 
-| # | Phase | Description | Complexity | Exec | Review | Commit | Push |
-|---|---|---|---|---|---|---|---|
-| 1 | Product Backbone and Case Intake | Add FastAPI, PostgreSQL/Alembic, lean case intake, frontend API wiring, and verification for REQ-01. | medium | ✅ | ✅ | ✅ | ✅ |
-| 2 | Claude Design Intake and Case-Flow Gap Analysis | Curate the imported Claude design export, inventory its screens/assets, map gaps against Phase 1, and recommend the next case-flow UI integration. | low | ✅ | ✅ | ✅ | ✅ |
-| 3 | Case Flow UI Alignment from Claude Design | Align login, case setup, upload, detection, plan, and coach UI with the curated Claude design while preserving persisted consumer-credit constraints and prototype-only analysis states. | medium | ✅ | ✅ | ✅ | ✅ |
+## Context
+
+- **Maturity:** mvp
+- **Domain:** Chilean consumer-credit case reviewer.
+- **Created:** 2026-05-14
+- **Last Updated:** 2026-05-14
+- **Roadmap coverage:** ROADMAP Phase 2 (`REQ-02`, `REQ-04`) plus the text
+  extraction foundation for Phase 3 (`REQ-03`), without normalized fact
+  extraction or confirmation controls yet.
+- **Related pending items:** PENDING #1 (provenance-ready persistence) and
+  PENDING #2 (runtime config consolidation).
 
 ## Scope
 
 ### In
 
-- FastAPI app under `api/`.
-- PostgreSQL persistence with Alembic migrations.
-- Stub login identity with fixed owner `demo-user`.
-- Lean fixed case fields.
-- API endpoints: `GET /api/health`, `POST /api/cases`, `GET /api/cases`,
-  `GET /api/cases/{id}`.
-- React case setup screen before upload.
-- Existing lint blocker fix for `src/components/Lenses.tsx`.
-- Case-flow UI alignment from the curated Claude design reference for login,
-  case setup, upload, detection, plan selection, and coach dashboard screens.
-- Prototype-only detection states: ready, low confidence, unsupported, and
-  failed.
-- Responsive checks for desktop and mobile widths.
+- Document records tied to persisted cases and scoped to the stub owner.
+- Primary and comparison document roles for the current consumer-credit flow.
+- Local file persistence behind configurable storage settings.
+- Upload API accepting bounded file types and sizes.
+- Document status, extraction status, checksum, byte size, content type, and
+  storage path metadata.
+- Text extraction for text-bearing PDFs and plain text files.
+- Persisted extracted text segments with source document id, page number or text
+  span, extraction provider label, extraction date, and confidence when known.
+- Frontend upload screen wired to real document upload/status while preserving
+  prototype boundaries for analysis, findings, and unsupported document types.
+- Architecture and agent docs updated to reflect the new ingestion boundary.
 
 ### Out
 
-- Real authentication.
-- Document upload persistence.
-- OCR and agents.
-- Provenance record implementation beyond Phase 1 structural preparation.
-- Production retention/deletion enforcement.
-- Direct copy of Claude JSX into `src/`.
-- History, settings, share, compare, or email implementation unless needed for
-  the current case-flow screens.
+- OCR provider integration for scanned PDFs or images.
+- Normalized consumer-credit fact extraction, high-impact fact confirmation, or
+  user corrections.
+- ConsumerCreditAgent execution, findings, deterministic discrepancy checks, or
+  generated drafts.
+- Real authentication, multi-user authorization, public document serving,
+  antivirus scanning, object storage, CDN delivery, and production retention
+  automation.
+- Broad legal-document upload or generic "analyze anything" behavior.
 
-## Tasks
+## Phases
 
-| ID | Task | Status |
-|---|---|---|
-| T1 | Update structure standard for Alembic and Python package files. | complete |
-| T2 | Add FastAPI project dependencies and lockfile. | complete |
-| T3 | Implement SQLAlchemy case model, DB session, and Alembic migration. | complete |
-| T4 | Implement case schemas, service, routes, and health endpoint. | complete |
-| T5 | Add backend tests for health, validation, create/list/read, and migration import. | complete |
-| T6 | Add React case setup screen, API client, and navigation state. | complete |
-| T7 | Fix `LENSES` fast-refresh lint blocker. | complete |
-| T8 | Run verification: backend tests, `npm run lint`, `npm run build`, and migration check where available. | complete |
+| # | Phase | Description | Types | Tier | Complexity | Exec | Review | Commit | Push |
+|---|-------|-------------|-------|------|------------|------|--------|--------|------|
+| 1 | Storage contract and schema | Add upload configuration, document/extraction schema, Alembic migration, and architecture docs for provenance-ready storage. | `persistence, data-migration, upload, storage` | mvp (Retention→ent) | med | ✅ | ✅ | ⬜ | ⬜ |
+| 2 | Backend ingestion API | Implement scoped multipart upload, document listing/read endpoints, local file write path, status transitions, and backend tests. | `upload, storage, user-facing, persistence` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 3 | Text extraction pipeline | Extract text from supported text-bearing uploads, persist page/span segments, record warnings/failures, and keep scanned-image OCR clearly pending. | `persistence, async-worker, data-migration` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 4 | Frontend upload/status handoff | Replace the prototype-only upload action with real file selection, upload progress/status, extracted-text preview, and analysis guardrails. | `user-facing, client-state, upload` | mvp | med | ⬜ | ⬜ | ⬜ | ⬜ |
 
-## Tier Decision
+<!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->
+<!-- Review/Commit/Push auto-ticked by /gabe-review, /gabe-commit, /gabe-push -->
+<!-- A phase is complete when all four status columns are ✅ -->
+<!-- /gabe-next routes to the next command based on column state -->
+<!-- Tier column values: mvp | ent | scale, with compact per-dim overrides when needed. -->
 
-- **Base tier:** MVP
-- **Reason:** Phase 1 should build the spine before the scanner: real case
-  persistence and API wiring, without auth, OCR, agents, or document storage.
+## Phase Details
 
-## Acceptance
+### Phase 1 — Storage contract and schema
 
-- A case cannot be created without a valid `case_stage`.
-- Created cases persist through the FastAPI/PostgreSQL data path.
-- Frontend stores the returned `caseId` and advances to upload.
-- Verification commands are recorded in `.kdbp/LEDGER.md`.
+```yaml
+phase: 1
+types: [persistence, data-migration, upload, storage]
+phase_tier: mvp
+prototype: false
+dim_overrides:
+  - section: File/Media
+    dim: Retention
+    tier: ent
+    reason: Real document records need retention metadata and a production guard before storage ships.
+sections_considered: [Core, Data, File/Media]
+suppressed_dims_count: 5
+decisions_entry: D4
+```
 
-## Verification
+- **Tier chosen:** `mvp` with File/Media Retention override to `ent`.
+- **Prototype:** no.
+- **Likely files:** `api/config.py`, `api/models/document.py`,
+  `api/models/extraction.py`, `api/migrations/versions/*`,
+  `api/schemas/documents.py`, `.env.example`, `docs/architecture.md`.
+- **Acceptance:** migrations create document and extracted-text storage; storage
+  settings are centralized; records can represent primary/comparison uploads,
+  extraction status, retention state, and provenance-ready metadata.
+- **Trade-offs accepted:** See `DECISIONS.md` D4.
 
-- `uv run pytest` — passed, 7 backend tests.
-- `npm test` — passed, 9 frontend tests.
-- `npm run lint` — passed.
-- `npm run build` — passed.
-- `uv run alembic -c api/migrations/alembic.ini upgrade head` — passed against local PostgreSQL.
-- FastAPI `POST /api/cases` and `GET /api/cases/{id}` smoke — passed against local PostgreSQL.
-- `git diff --check` — passed.
-- `GET http://127.0.0.1:18080/api/health` — passed.
-- `GET http://127.0.0.1:15179/` — passed.
+### Phase 2 — Backend ingestion API
+
+```yaml
+phase: 2
+types: [upload, storage, user-facing, persistence]
+phase_tier: mvp
+prototype: false
+dim_overrides: []
+sections_considered: [Core, File/Media, UI/UX, Data]
+suppressed_dims_count: 6
+decisions_entry: D5
+```
+
+- **Tier chosen:** `mvp`.
+- **Prototype:** no.
+- **Likely files:** `api/routes/documents.py`, `api/services/documents.py`,
+  `api/schemas/documents.py`, `api/models/document.py`, `api/main.py`,
+  `tests/api/test_documents.py`.
+- **Acceptance:** a persisted case can accept a primary or comparison upload;
+  the API rejects unsupported owner/case/type/size combinations; metadata and
+  file bytes persist; list/read endpoints only return the stub owner's
+  documents.
+- **Trade-offs accepted:** See `DECISIONS.md` D5.
+
+### Phase 3 — Text extraction pipeline
+
+```yaml
+phase: 3
+types: [persistence, async-worker, data-migration]
+phase_tier: mvp
+prototype: false
+dim_overrides: []
+sections_considered: [Core, Data, Background jobs]
+suppressed_dims_count: 5
+decisions_entry: D6
+```
+
+- **Tier chosen:** `mvp`.
+- **Prototype:** no.
+- **Likely files:** `api/services/text_extraction.py`,
+  `api/models/extraction.py`, `api/schemas/documents.py`,
+  `api/routes/documents.py`, `tests/api/fixtures/*`,
+  `tests/api/test_text_extraction.py`.
+- **Acceptance:** supported uploads move through extracted/failed/needs-ocr
+  states; extracted text segments are persisted with document id, page or span,
+  provider label, extraction timestamp, and warnings; scanned image/OCR cases
+  are visible as pending rather than silently treated as read.
+- **Trade-offs accepted:** See `DECISIONS.md` D6.
+
+### Phase 4 — Frontend upload/status handoff
+
+```yaml
+phase: 4
+types: [user-facing, client-state, upload]
+phase_tier: mvp
+prototype: false
+dim_overrides: []
+sections_considered: [Core, UI/UX, Client State, File/Media]
+suppressed_dims_count: 7
+decisions_entry: D7
+```
+
+- **Tier chosen:** `mvp`.
+- **Prototype:** no.
+- **Likely files:** `src/api/documents.ts`, `src/screens/Upload.tsx`,
+  `src/components/NavContext.tsx`, `tests/frontend/Upload.test.tsx`.
+- **Acceptance:** users upload files from the persisted case upload screen, see
+  stored document metadata and extraction status, can inspect a small extracted
+  text preview, and cannot proceed into prototype analysis as if findings were
+  real.
+- **Trade-offs accepted:** See `DECISIONS.md` D7.
 
 ## Current Phase
 
-Phase 3: Case Flow UI Alignment from Claude Design
+Phase 1: Storage contract and schema
 
-## Phase 2 - Claude Design Intake and Case-Flow Gap Analysis
+## Dependencies
 
-### Scope
+- Phase 2 depends on Phase 1 schema/config.
+- Phase 3 depends on Phase 2 stored document bytes and metadata.
+- Phase 4 depends on Phase 2 API contracts and Phase 3 status fields.
+- Normalized fact extraction and confirmation remain a later plan after this
+  plan proves document identity and text provenance.
 
-### In
+## Risks
 
-- Curated reference import under `docs/design/incoming/claude-design-20260513/`.
-- Manifest for the imported package.
-- Inventory of high-fidelity, wireframe, coach exploration, mobile, and asset
-  material.
-- Gap analysis against the committed Phase 1 case-based app.
-- Optional static preview port registration.
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| Sensitive documents are stored before production hardening exists. | high | Keep storage local/dev-only, do not publicly serve files, add retention metadata now, and block production acceptance until auth, backup, retention, and scan policy are defined. |
+| Extracted text is mistaken for verified facts. | high | Store extracted text separately from facts; label it as extraction output; keep findings/analysis blocked until normalized facts and confirmation exist. |
+| Scanned PDFs/images produce empty extraction. | medium | Persist `needs_ocr` or failed extraction status with user-visible warning; leave OCR provider integration out of this plan. |
+| DB/file-system drift leaves orphaned files or records. | medium | Write backend tests for failed writes and deletion/error behavior; keep file path generation deterministic and scoped by case/document id. |
+| Runtime config drifts across frontend, backend, and local scripts. | medium | Address PENDING #2 by centralizing upload/API/storage config and documenting `.env.example`. |
 
-### Out
+## Notes
 
-- Product UI implementation.
-- Changes to `src/`, `api/`, migrations, tests, or runtime behavior.
-- Direct copy of Claude JSX into the React/Vite app.
-
-### Tasks
-
-| ID | Task | Status |
-|---|---|---|
-| D1 | Remove disposable download metadata and ignore future `*:Zone.Identifier` files. | complete |
-| D2 | Update structure and port registry for imported design references. | complete |
-| D3 | Add Claude package manifest. | complete |
-| D4 | Add package inventory. | complete |
-| D5 | Add case-flow gap analysis and next implementation recommendation. | complete |
-| D6 | Run non-runtime verification gates. | complete |
-
-### Acceptance
-
-- The Claude export is preserved as curated reference material.
-- The import is documented before any product UI changes.
-- The next implementation recommendation prioritizes case flow only:
-  login, case setup, upload, detection, plan, and coach.
-- Phase 1 backend/API behavior remains untouched.
-
-### Verification
-
-- `git diff --check` — passed.
-- `git status --short -uall` — checked; only design-intake/KDBP/reference files
-  changed.
-- Static preview smoke on `127.0.0.1:15181` — passed for the three main HTML
-  canvases.
-- `npm run lint` — passed.
-- `npm run build` — passed.
-
-## Phase 3 - Case Flow UI Alignment from Claude Design
-
-### Scope
-
-### In
-
-- Login, case setup, upload, detection, plan selection, and coach dashboard UI
-  alignment using `docs/design/incoming/claude-design-20260513/` as reference.
-- Persistent case/document context signal after case creation.
-- Upload layout refresh that preserves persisted-case document locks and the
-  prototype acknowledgement guard.
-- Prototype-only detection branches for ready, low confidence, unsupported, and
-  failed states.
-- Plan and coach hierarchy updates from the Claude criteria, KPI, benchmark,
-  and action-plan direction.
-- Responsive desktop and mobile behavior checks.
-- Focused frontend tests for case setup, upload guard, detection branches, and
-  basic responsive assumptions.
-
-### Out
-
-- Real upload persistence.
-- OCR or document detection.
-- Agent output schemas or analysis pipeline changes.
-- History, settings, share, compare, or email surfaces.
-- Unrestricted multi-document-type persistence.
-- Direct copy of Claude JSX into the Vite app.
-
-### Tasks
-
-| ID | Task | Status |
-|---|---|---|
-| U1 | Align login and case setup to the selected `letra.` visual language without removing persisted case creation. | complete |
-| U2 | Add a persistent case/document context badge after case creation. | complete |
-| U3 | Refresh upload layout from Claude references while preserving persisted-case locks and prototype acknowledgement. | complete |
-| U4 | Add prototype-only detection branches: ready, low confidence, unsupported, and failed. | complete |
-| U5 | Align plan selection and analysis-running hierarchy to the Claude criteria model. | complete |
-| U6 | Align coach dashboard hierarchy to the impact, KPI, benchmark, and action-plan direction. | complete |
-| U7 | Add or update responsive and state-routing frontend tests, then run verification. | complete |
-
-### Tier Decision
-
-- **Base tier:** MVP
-- **Reason:** Phase 3 should polish and align the existing prototype-backed
-  case flow without introducing real document ingestion, OCR, agents, or new
-  production trust claims.
-
-### Acceptance
-
-- The app still creates and uses a persisted `consumer_credit` case before
-  upload.
-- Unsupported document types cannot mutate persisted Phase 1 cases.
-- Simulated analysis states remain visibly marked as prototype-only.
-- Case-flow screens work on desktop and mobile widths (manual verification;
-  automated viewport testing deferred until Playwright is added).
-- Tests cover case setup, upload guard, detection branch routing, responsive
-  class-name presence, and basic rendering assumptions.
-
-### Verification
-
-- `npm test` — passed, 14 frontend tests.
-- `npm run lint` — passed.
-- `npm run build` — passed.
-- `git diff --check` — passed.
+- This plan intentionally advances the real ingestion boundary without making
+  analysis claims. It should remove the current "No analiza PDFs reales" upload
+  limitation only for storage and extraction status, not for findings.
+- Do not update `.kdbp/SCOPE.md` or `.kdbp/ROADMAP.md` from this plan; those
+  remain `/gabe-scope*` surfaces.

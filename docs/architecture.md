@@ -17,11 +17,15 @@ rules.
 
 ## Data Model
 
-Phase 1 persists the case shell. It intentionally does not persist documents,
-OCR output, extracted facts, or agent analysis yet.
+The current backend persists the case shell plus the storage contract for
+uploaded document metadata and extracted text segments. It still does not persist
+normalized facts, user confirmations, agent analysis, or findings.
 
 ```mermaid
 erDiagram
+  CASE ||--o{ DOCUMENT : owns
+  DOCUMENT ||--o{ EXTRACTED_TEXT_SEGMENT : yields
+
   CASE {
     uuid id PK
     string owner_ref
@@ -34,6 +38,39 @@ erDiagram
     integer expected_term_months
     datetime created_at
     datetime updated_at
+  }
+
+  DOCUMENT {
+    uuid id PK
+    uuid case_id FK
+    string owner_ref
+    string role
+    string document_type
+    string original_filename
+    string content_type
+    integer byte_size
+    string checksum_sha256
+    string storage_key
+    string upload_status
+    string extraction_status
+    string retention_state
+    datetime delete_after
+    datetime created_at
+    datetime updated_at
+  }
+
+  EXTRACTED_TEXT_SEGMENT {
+    uuid id PK
+    uuid document_id FK
+    integer page_number
+    integer start_offset
+    integer end_offset
+    text text
+    string extraction_provider
+    datetime extracted_at
+    float confidence
+    string warning_code
+    text warning_message
   }
 ```
 
@@ -51,7 +88,7 @@ Case fields:
 - `created_at`
 - `updated_at`
 
-Phase 1 constraints:
+Case constraints:
 
 - `owner_ref` is the fixed stub identity `demo-user`.
 - `case_stage` is either `before_signing` or `after_signing`.
@@ -59,10 +96,43 @@ Phase 1 constraints:
 - `analysis_plan` is derived from `case_stage` and must match either
   `before_signing_review` or `after_signing_discrepancy`.
 
+Document fields:
+
+- `id`
+- `case_id`
+- `owner_ref`
+- `role`: `primary`, `simulation`, `offer`, `payment`, `email`, or
+  `comparator_loan`
+- `document_type`: fixed to `consumer_credit` for v0
+- `original_filename`
+- `content_type`
+- `byte_size`
+- `checksum_sha256`
+- `storage_key`
+- `upload_status`: `pending`, `stored`, or `failed`
+- `extraction_status`: `pending`, `extracting`, `extracted`, `needs_ocr`, or
+  `failed`
+- `retention_state`: `active`, `delete_requested`, or `deleted`
+- optional `delete_after`
+- `created_at`
+- `updated_at`
+
+Extracted text segment fields:
+
+- `id`
+- `document_id`
+- optional `page_number`
+- optional `start_offset`
+- optional `end_offset`
+- `text`
+- `extraction_provider`
+- `extracted_at`
+- optional `confidence`
+- optional `warning_code`
+- optional `warning_message`
+
 Future domain objects:
 
-- Document
-- DocumentType
 - ExtractedFact
 - ProvenanceRecord
 - UserConfirmation
@@ -75,7 +145,7 @@ Future domain objects:
 
 ## API Contracts
 
-Phase 1 exposes a lean case-intake contract:
+The case API exposes a lean case-intake contract:
 
 - Create case request accepts title, stage, institution, optional amount, and
   optional expected term.
@@ -83,6 +153,16 @@ Phase 1 exposes a lean case-intake contract:
   plan from the selected stage.
 - Case list and read endpoints only return cases for `demo-user` until real auth
   exists.
+
+The document schema contract is present before route wiring:
+
+- A document belongs to one case and one owner.
+- V0 roles distinguish one primary document from comparison materials such as
+  simulations, offers, payments, emails, and comparator loans.
+- Uploaded bytes are addressed by `storage_key`; the API should not publicly
+  serve local files.
+- Extraction output is text-segment level evidence only. It is not a normalized
+  fact, confirmed fact, inference, or finding.
 
 The central contract is document-type-specific structured output:
 
@@ -100,14 +180,23 @@ Phase 1 endpoints:
 - `GET /api/cases`
 - `GET /api/cases/{id}`
 
+Planned document endpoints:
+
+- `POST /api/cases/{case_id}/documents`
+- `GET /api/cases/{case_id}/documents`
+- `GET /api/documents/{document_id}`
+
 ## Services
 
-Phase 1 service boundaries:
+Current service boundaries:
 
 - SQLAlchemy session management for PostgreSQL.
 - Alembic migrations for schema changes.
 - Case service for create/list/read operations scoped to the current owner.
 - Deterministic stage-to-plan mapping for case intake.
+- Upload storage configuration for local-only document persistence, including
+  root path, size limit, allowed content types, retention days, and production
+  upload guard.
 
 Expected future service boundaries:
 
@@ -129,6 +218,11 @@ flow guidance, not final production implementation.
 PostgreSQL is required for application persistence. OCR, LLM provider, document
 storage, and benchmark/reference-source strategy are defined behind interfaces
 during implementation planning.
+
+Local upload storage defaults to `var/uploads` and is ignored by git. The
+`.env.example` file documents the runtime settings. `NMKGN_ENABLE_PRODUCTION_UPLOADS`
+defaults to `false`; accepting real production documents requires auth, malware
+scanning, backup/restore, retention/deletion, and audit policy first.
 
 Local development ports are registered in [.kdbp/PORTS.md](../.kdbp/PORTS.md)
 to avoid collisions with parallel development work.

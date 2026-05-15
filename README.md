@@ -16,6 +16,17 @@ happens on the same computer.
 
 The durable registry is `.kdbp/PORTS.md`.
 
+## Configuration
+
+Copy `.env.example` to `.env` and adjust values as needed:
+
+```bash
+cp .env.example .env
+```
+
+Upload storage settings (`NMKGN_UPLOAD_*`) control local document persistence.
+Production uploads are disabled by default — see `.env.example` comments.
+
 ## Run Locally
 
 ```bash

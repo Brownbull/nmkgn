@@ -133,3 +133,5 @@ def test_alembic_upgrade_creates_cases_table(tmp_path: Path, monkeypatch: pytest
     engine = create_engine(os.environ["DATABASE_URL"])
     inspector = inspect(engine)
     assert "cases" in inspector.get_table_names()
+    assert "documents" in inspector.get_table_names()
+    assert "extracted_text_segments" in inspector.get_table_names()

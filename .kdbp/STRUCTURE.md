@@ -22,6 +22,7 @@ Used by Gabe checks when new files are added.
 | `index.html` | Vite entry HTML | MVP |
 | `package.json` | Frontend dependencies and scripts | MVP |
 | `package-lock.json` | npm lockfile | MVP |
+| `.env.example` | Local runtime configuration template without secrets | MVP |
 | `vite.config.ts` | Vite config | MVP |
 | `eslint.config.js` | ESLint config | MVP |
 | `tsconfig*.json` | TypeScript config | MVP |
