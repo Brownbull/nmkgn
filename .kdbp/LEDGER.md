@@ -318,3 +318,9 @@ ALIGNMENT: ALIGNED
 TIER: mvp | DRIFT: none
 TICK: ✅
 FIXES: added upload-config bound validation, complete extracted-text locator validation, SHA-256 hex validation, and matching tests
+
+## 2026-05-14 16:45 — [2f448bb] feat(storage): add document and extraction schema with provenance-ready storage contract
+FINDINGS: 4 (2 critical, 1 high, 1 low)
+ACTIONS: 1:fix 2:fix 3:resolve-now 4:update-docs
+DEFERRED: none
+RESOLVED: PENDING #1 (provenance-ready persistence — addressed by this commit)
