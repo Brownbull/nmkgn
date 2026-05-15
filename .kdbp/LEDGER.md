@@ -330,3 +330,54 @@ PR: —
 CI: — (no CI configured)
 PROMOTION: N/A
 DEPLOYMENTS: P3 (added row to .kdbp/DEPLOYMENTS.md)
+
+## 2026-05-14 21:31 — PHASE 2 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 2: Backend ingestion API.
+
+- PLAN: Current Phase advanced from Phase 1 to Phase 2; Phase 2 `Exec` marked `🔄`.
+- Scope is backend ingestion only: multipart upload, owner/case validation,
+  local file persistence, document metadata reads, and backend tests.
+- Out of scope: text extraction, OCR, frontend upload wiring, public file
+  serving, antivirus scanning, and production storage hardening.
+
+## 2026-05-14 21:35 — PHASE 2 EXECUTION COMPLETE
+
+Implemented Phase 2 backend ingestion API.
+
+- Added multipart document upload endpoints under `/api/cases/{case_id}/documents`.
+- Added scoped document listing and metadata read endpoints.
+- Added local upload storage service with filename/path sanitization,
+  checksum calculation, byte-size enforcement, content-type enforcement,
+  delete-after metadata, and rollback cleanup for rejected writes.
+- Added `python-multipart` for FastAPI form/file parsing.
+- Added backend API coverage for successful upload persistence, stub-owner
+  scoping, other-owner case rejection, unsupported media types, oversize
+  payload cleanup, and metadata reads.
+- PLAN: Phase 2 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `uv run pytest tests/api/test_documents_api.py tests/api/test_documents_contract.py tests/api/test_cases.py -q` — passed, 22 tests.
+- `uv run ruff format --check api/routes/documents.py api/services/documents.py tests/api/test_documents_api.py api/main.py` — passed.
+- `uv run ruff check .` — passed.
+- `uv run pytest -q` — passed, 22 tests.
+- `git diff --check` — passed.
+- Note: `uv run ruff format --check .` still reports 12 pre-existing backend/test files outside this Phase 2 change that would be reformatted.
+
+## 2026-05-14 22:30 — PHASE 2 REVIEW: Backend ingestion API
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 1 high, 1 medium, 0 low)
+COVERAGE: HIGH — all error branches now tested (empty file 400, storage write 500, list/read 404, plus prior happy path, owner scoping, unsupported type, oversize)
+CONFIDENCE: 95/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/2 strict overlap, union consolidation
+FIXES: #1 added empty-file and storage-write-failure tests, #2 added list/read 404 tests
+
+## 2026-05-14 22:45 — [420c1b0] feat(documents): add scoped multipart upload, list, and read API
+FINDINGS: 3 (0 critical, 1 high, 1 medium, 1 low)
+ACTIONS: 1:update-docs 2:accept 3:accept
+DEFERRED: none
