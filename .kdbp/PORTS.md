@@ -14,6 +14,6 @@ Reserved for this project on this workstation.
 
 - Do not use default local ports `5173`, `8000`, or `5432` for nmkgn dev.
 - Use `15181` only for static review of imported design references.
-- Update this file, `package.json`, `docker/compose.yml`, `api/config.py`, and
-  `src/api/cases.ts` together if a port changes.
+- Update this file, `package.json`, `docker/compose.yml`, `api/config.py`,
+  `src/api/client.ts`, and `.env.example` together if a port changes.
 - Prefer binding services to `127.0.0.1` during local development.

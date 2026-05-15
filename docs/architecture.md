@@ -221,8 +221,16 @@ Expected future service boundaries:
 
 ## Frontend Structure
 
-Current mockup screens live under `src/screens/` and should be treated as product
-flow guidance, not final production implementation.
+Current screens live under `src/screens/`. The case setup and upload steps now
+cross the real backend boundary: case setup creates persisted consumer-credit
+cases, and upload calls the document API to store files, list document metadata,
+and show extracted text segments. Later analysis, plan, finding, and email
+screens remain prototype surfaces until normalized facts, confirmations, agents,
+and evidence-backed findings exist.
+
+Frontend API helpers live under `src/api/`. `src/api/client.ts` owns the Vite
+API base URL, while endpoint-specific clients such as `cases.ts` and
+`documents.ts` own request payloads and response types.
 
 ## Integrations
 

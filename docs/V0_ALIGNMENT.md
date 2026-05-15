@@ -109,13 +109,15 @@ validated rule and the product clearly explains the evidence.
 ## UX Structure From Current Mockups
 
 Keep the current mockup flow as the starting structure, with Phase 1 narrowing
-the active path to persisted case intake:
+the active path to persisted case intake and Phase 4 replacing the upload
+handoff with real document persistence:
 
 1. login with the fixed demo identity
 2. case setup with fixed lean fields and required stage selection
 3. persisted consumer-credit case creation
-4. upload handoff using the returned `caseId`
-5. prototype-only document preview and simulated analysis acknowledgement
+4. document upload, status display, and extracted-text preview using the
+   returned `caseId`
+5. simulated analysis acknowledgement before entering later prototype screens
 6. findings by perspective
 7. next actions
 8. export, compare, or draft communication
@@ -127,6 +129,11 @@ handling.
 Phase 1 keeps persisted cases limited to `consumer_credit`. Other document-type
 labels may remain visible as future options, but they must not mutate a persisted
 case into an unsupported document type.
+
+Phase 4 lets persisted cases upload primary and comparison documents, but it
+does not turn extracted text into confirmed facts, analysis, or findings. The UI
+must keep OCR-pending, failed extraction, and later prototype analysis visibly
+separate from real document storage.
 
 ## Implementation Implications
 

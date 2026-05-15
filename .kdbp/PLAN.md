@@ -4,7 +4,7 @@
 <!-- project_type: code -->
 <!-- goal: Real document upload persistence and text extraction -->
 <!-- created: 2026-05-14 -->
-<!-- last_updated: 2026-05-15T00:28 -->
+<!-- last_updated: 2026-05-15T00:51 -->
 
 ## Goal
 
@@ -16,7 +16,7 @@ source metadata before any agent or finding path consumes the upload.
 - **Maturity:** mvp
 - **Domain:** Chilean consumer-credit case reviewer.
 - **Created:** 2026-05-14
-- **Last Updated:** 2026-05-14
+- **Last Updated:** 2026-05-15
 - **Roadmap coverage:** ROADMAP Phase 2 (`REQ-02`, `REQ-04`) plus the text
   extraction foundation for Phase 3 (`REQ-03`), without normalized fact
   extraction or confirmation controls yet.
@@ -59,7 +59,7 @@ source metadata before any agent or finding path consumes the upload.
 | 1 | Storage contract and schema | Add upload configuration, document/extraction schema, Alembic migration, and architecture docs for provenance-ready storage. | `persistence, data-migration, upload, storage` | mvp (Retention→ent) | med | ✅ | ✅ | ✅ | ✅ |
 | 2 | Backend ingestion API | Implement scoped multipart upload, document listing/read endpoints, local file write path, status transitions, and backend tests. | `upload, storage, user-facing, persistence` | mvp | high | ✅ | ✅ | ✅ | ✅ |
 | 3 | Text extraction pipeline | Extract text from supported text-bearing uploads, persist page/span segments, record warnings/failures, and keep scanned-image OCR clearly pending. | `persistence, async-worker, data-migration` | mvp | high | ✅ | ✅ | ✅ | ✅ |
-| 4 | Frontend upload/status handoff | Replace the prototype-only upload action with real file selection, upload progress/status, extracted-text preview, and analysis guardrails. | `user-facing, client-state, upload` | mvp | med | ⬜ | ⬜ | ⬜ | ⬜ |
+| 4 | Frontend upload/status handoff | Replace the prototype-only upload action with real file selection, upload progress/status, extracted-text preview, and analysis guardrails. | `user-facing, client-state, upload` | mvp | med | ✅ | ✅ | ⬜ | ⬜ |
 
 <!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->
 <!-- Review/Commit/Push auto-ticked by /gabe-review, /gabe-commit, /gabe-push -->
@@ -170,7 +170,7 @@ decisions_entry: D7
 
 ## Current Phase
 
-Phase 3: Text extraction pipeline
+Phase 4: Frontend upload/status handoff
 
 ## Dependencies
 

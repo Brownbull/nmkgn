@@ -24,8 +24,10 @@ Copy `.env.example` to `.env` and adjust values as needed:
 cp .env.example .env
 ```
 
-Upload storage settings (`NMKGN_UPLOAD_*`) control local document persistence.
-Production uploads are disabled by default — see `.env.example` comments.
+`VITE_API_BASE_URL` sets the backend URL the frontend uses (defaults to
+`http://localhost:18080`). Upload storage settings (`NMKGN_UPLOAD_*`) control
+local document persistence. Production uploads are disabled by default — see
+`.env.example` comments.
 
 ## Run Locally
 

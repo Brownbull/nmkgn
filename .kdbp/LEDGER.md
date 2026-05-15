@@ -446,3 +446,39 @@ PR: —
 CI: — (no CI configured)
 PROMOTION: N/A
 DEPLOYMENTS: P5 (added row to .kdbp/DEPLOYMENTS.md)
+
+## 2026-05-15 00:51 — PHASE 4 EXECUTION COMPLETE
+
+Implemented Phase 4 frontend upload/status handoff.
+
+- Added shared frontend API base/error handling in `src/api/client.ts`.
+- Added document API client for upload, document listing, and text-segment reads.
+- Replaced the persisted-case upload screen's prototype-only action with real
+  file selection, role selection, multipart upload, server-backed document
+  status, upload progress state, and extracted-text preview.
+- Kept later analysis screens guarded as prototype-only until normalized facts,
+  confirmations, agents, and evidence-backed findings exist.
+- Updated V0 and architecture docs to reflect the real upload boundary.
+- PLAN: Current Phase advanced from Phase 3 to Phase 4; Phase 4 `Exec` marked
+  `✅`; Review remains pending.
+
+Verification:
+
+- `npm test -- --run tests/frontend/Upload.test.tsx` — passed, 8 tests.
+- `npm test` — passed, 18 frontend tests.
+- `uv run pytest` — passed, 34 API tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-15 01:15 — PHASE 4 REVIEW: Frontend upload/status handoff
+VERDICT: APPROVE
+FINDINGS: 3 total (0 critical, 2 high, 1 medium, 0 low)
+COVERAGE: HIGH — all error branches now tested (POST failure, POST success + refresh failure, initial list load failure, plus prior happy path, metadata display, OCR-pending, and prototype guard)
+CONFIDENCE: 61 → 95/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 2/3 strict overlap, union consolidation
+FIXES: #1 separated POST success from refresh failure in handleUpload to prevent duplicate-upload risk, #2 added POST-failure, refresh-failure, and list-load-failure tests, #3 documented VITE_API_BASE_URL in .env.example and updated PORTS.md reference from cases.ts to client.ts

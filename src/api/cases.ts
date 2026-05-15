@@ -1,3 +1,5 @@
+import { endpoint, responseError } from './client';
+
 export type CaseStage = 'before_signing' | 'after_signing';
 export type AnalysisPlan = 'before_signing_review' | 'after_signing_discrepancy';
 
@@ -19,12 +21,6 @@ export interface CaseRecord extends CaseCreatePayload {
   updated_at: string;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:18080';
-
-function endpoint(path: string): string {
-  return `${API_BASE_URL}${path}`;
-}
-
 export function defaultAnalysisPlan(caseStage: CaseStage): AnalysisPlan {
   return caseStage === 'before_signing' ? 'before_signing_review' : 'after_signing_discrepancy';
 }
@@ -37,14 +33,7 @@ export async function createCase(payload: CaseCreatePayload): Promise<CaseRecord
   });
 
   if (!response.ok) {
-    let detail = 'No pudimos crear el caso. Revisa los campos e intenta nuevamente.';
-    try {
-      const body = await response.json();
-      if (typeof body.detail === 'string') detail = body.detail;
-    } catch {
-      // Keep the generic message.
-    }
-    throw new Error(detail);
+    throw await responseError(response, 'No pudimos crear el caso. Revisa los campos e intenta nuevamente.');
   }
 
   return response.json();
