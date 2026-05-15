@@ -549,3 +549,8 @@ TIER: mvp | DRIFT: none
 TICK: ✅
 SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/1 strict overlap, union consolidation
 FIXES: #1 replaced independent case_id/document_id FKs with composite FK (document_id, case_id) → (documents.id, documents.case_id), added UniqueConstraint targets, added cross-provenance regression test
+
+## 2026-05-15 16:30 — [2706cb5] feat(facts): add consumer-credit fact and confirmation persistence contract
+FINDINGS: 1 (0 critical, 0 high, 0 medium, 1 low)
+ACTIONS: 1:accept (pre-existing alembic env issue)
+DEFERRED: 0
