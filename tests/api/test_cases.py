@@ -19,8 +19,13 @@ from api.services.database import get_session
 
 @pytest.fixture()
 def client(tmp_path: Path) -> Generator[TestClient, None, None]:
-    engine = create_engine(f"sqlite+pysqlite:///{tmp_path / 'test.db'}", connect_args={"check_same_thread": False})
-    TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+    engine = create_engine(
+        f"sqlite+pysqlite:///{tmp_path / 'test.db'}",
+        connect_args={"check_same_thread": False},
+    )
+    TestingSessionLocal = sessionmaker(
+        bind=engine, autoflush=False, expire_on_commit=False
+    )
     Base.metadata.create_all(bind=engine)
 
     def override_session() -> Generator[Session, None, None]:
@@ -77,12 +82,16 @@ def test_after_signing_defaults_analysis_plan(client: TestClient) -> None:
     assert response.json()["analysis_plan"] == "after_signing_discrepancy"
 
 
-def test_missing_or_invalid_case_stage_returns_validation_error(client: TestClient) -> None:
+def test_missing_or_invalid_case_stage_returns_validation_error(
+    client: TestClient,
+) -> None:
     missing = valid_payload()
     missing.pop("case_stage")
 
     missing_response = client.post("/api/cases", json=missing)
-    invalid_response = client.post("/api/cases", json=valid_payload(case_stage="signed_later"))
+    invalid_response = client.post(
+        "/api/cases", json=valid_payload(case_stage="signed_later")
+    )
 
     assert missing_response.status_code == 422
     assert invalid_response.status_code == 422
@@ -123,7 +132,9 @@ def test_case_list_only_returns_demo_user_cases(client: TestClient) -> None:
     assert [case["id"] for case in cases] == [created["id"]]
 
 
-def test_alembic_upgrade_creates_cases_table(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_alembic_upgrade_creates_cases_table(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     db_path = tmp_path / "migration.db"
     monkeypatch.setenv("DATABASE_URL", f"sqlite+pysqlite:///{db_path}")
 
@@ -135,3 +146,5 @@ def test_alembic_upgrade_creates_cases_table(tmp_path: Path, monkeypatch: pytest
     assert "cases" in inspector.get_table_names()
     assert "documents" in inspector.get_table_names()
     assert "extracted_text_segments" in inspector.get_table_names()
+    assert "consumer_credit_facts" in inspector.get_table_names()
+    assert "fact_confirmations" in inspector.get_table_names()

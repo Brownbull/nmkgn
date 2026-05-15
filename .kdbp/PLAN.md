@@ -2,64 +2,61 @@
 
 <!-- status: active -->
 <!-- project_type: code -->
-<!-- goal: Real document upload persistence and text extraction -->
-<!-- created: 2026-05-14 -->
-<!-- last_updated: 2026-05-15T15:33 -->
+<!-- goal: Normalize consumer-credit facts and add confirmation gate -->
+<!-- created: 2026-05-15 -->
+<!-- last_updated: 2026-05-15T15:58 -->
 
 ## Goal
 
-Persist real consumer-credit case documents and extract reviewable text with
-source metadata before any agent or finding path consumes the upload.
+Persist normalized Chilean consumer-credit facts from extracted document text and
+require user confirmation before those facts can drive analysis or findings.
 
 ## Context
 
 - **Maturity:** mvp
 - **Domain:** Chilean consumer-credit case reviewer.
-- **Created:** 2026-05-14
+- **Created:** 2026-05-15
 - **Last Updated:** 2026-05-15
-- **Roadmap coverage:** ROADMAP Phase 2 (`REQ-02`, `REQ-04`) plus the text
-  extraction foundation for Phase 3 (`REQ-03`), without normalized fact
-  extraction or confirmation controls yet.
-- **Related pending items:** PENDING #1 (provenance-ready persistence) and
-  PENDING #2 (runtime config consolidation).
+- **Roadmap coverage:** ROADMAP Phase 3 (`REQ-03`, `REQ-05`) building on the
+  completed document ingestion and extracted-text foundation from ROADMAP
+  Phase 2.
+- **Completed foundation:** persisted cases, document uploads, extracted text
+  segments, document status, local storage metadata, and frontend upload/status
+  handoff are already in place.
 
 ## Scope
 
 ### In
 
-- Document records tied to persisted cases and scoped to the stub owner.
-- Primary and comparison document roles for the current consumer-credit flow.
-- Local file persistence behind configurable storage settings.
-- Upload API accepting bounded file types and sizes.
-- Document status, extraction status, checksum, byte size, content type, and
-  storage path metadata.
-- Text extraction for text-bearing PDFs and plain text files.
-- Persisted extracted text segments with source document id, page number or text
-  span, extraction provider label, extraction date, and confidence when known.
-- Frontend upload screen wired to real document upload/status while preserving
-  prototype boundaries for analysis, findings, and unsupported document types.
-- Architecture and agent docs updated to reflect the new ingestion boundary.
+- Normalized consumer-credit fact records for high-impact fields.
+- Provenance from normalized facts back to document/text segment/page/span,
+  extraction provider, extraction date, and confidence when known.
+- MVP deterministic extraction from existing extracted text segments for common
+  Chilean consumer-credit fields.
+- Fact status, warning, high-impact, and confirmation state.
+- User confirmation, correction, and rejection of extracted facts.
+- API endpoints to list fact candidates and record confirmation decisions.
+- Frontend fact review screen/state before prototype analysis continues.
+- Documentation updates for the new fact and confirmation boundary.
 
 ### Out
 
 - OCR provider integration for scanned PDFs or images.
-- Normalized consumer-credit fact extraction, high-impact fact confirmation, or
-  user corrections.
-- ConsumerCreditAgent execution, findings, deterministic discrepancy checks, or
-  generated drafts.
-- Real authentication, multi-user authorization, public document serving,
-  antivirus scanning, object storage, CDN delivery, and production retention
-  automation.
-- Broad legal-document upload or generic "analyze anything" behavior.
+- LLM-based extraction or `ConsumerCreditAgent` execution.
+- Deterministic discrepancy findings, official benchmark lookup, or market
+  comparison output.
+- Before-signing/after-signing path-specific findings.
+- Evidence export, communication drafts, production auth, and public document
+  serving.
 
 ## Phases
 
 | # | Phase | Description | Types | Tier | Complexity | Exec | Review | Commit | Push |
 |---|-------|-------------|-------|------|------------|------|--------|--------|------|
-| 1 | Storage contract and schema | Add upload configuration, document/extraction schema, Alembic migration, and architecture docs for provenance-ready storage. | `persistence, data-migration, upload, storage` | mvp (Retention→ent) | med | ✅ | ✅ | ✅ | ✅ |
-| 2 | Backend ingestion API | Implement scoped multipart upload, document listing/read endpoints, local file write path, status transitions, and backend tests. | `upload, storage, user-facing, persistence` | mvp | high | ✅ | ✅ | ✅ | ✅ |
-| 3 | Text extraction pipeline | Extract text from supported text-bearing uploads, persist page/span segments, record warnings/failures, and keep scanned-image OCR clearly pending. | `persistence, async-worker, data-migration` | mvp | high | ✅ | ✅ | ✅ | ✅ |
-| 4 | Frontend upload/status handoff | Replace the prototype-only upload action with real file selection, upload progress/status, extracted-text preview, and analysis guardrails. | `user-facing, client-state, upload` | mvp | med | ✅ | ✅ | ✅ | ✅ |
+| 1 | Fact contract and schema | Add normalized fact and confirmation persistence contracts, schemas, migration, and architecture docs. | `persistence, data-migration, data-validation` | mvp | high | ✅ | ✅ | ⬜ | ⬜ |
+| 2 | MVP fact extraction service | Extract common high-impact consumer-credit facts from stored text segments with provenance and warnings. | `persistence, extraction, data-processing` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 3 | Confirmation API and analysis gate | Expose owner-scoped fact review/confirmation endpoints and block downstream analysis until high-impact facts are confirmed or rejected. | `api, user-facing, data-validation` | mvp | med | ⬜ | ⬜ | ⬜ | ⬜ |
+| 4 | Frontend fact review handoff | Add a fact confirmation screen/state with source snippets, correction controls, status summaries, and prototype-analysis guardrails. | `user-facing, client-state` | mvp | med | ⬜ | ⬜ | ⬜ | ⬜ |
 
 <!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->
 <!-- Review/Commit/Push auto-ticked by /gabe-review, /gabe-commit, /gabe-push -->
@@ -69,131 +66,129 @@ source metadata before any agent or finding path consumes the upload.
 
 ## Phase Details
 
-### Phase 1 — Storage contract and schema
+### Phase 1 — Fact contract and schema
 
 ```yaml
 phase: 1
-types: [persistence, data-migration, upload, storage]
-phase_tier: mvp
-prototype: false
-dim_overrides:
-  - section: File/Media
-    dim: Retention
-    tier: ent
-    reason: Real document records need retention metadata and a production guard before storage ships.
-sections_considered: [Core, Data, File/Media]
-suppressed_dims_count: 5
-decisions_entry: D4
-```
-
-- **Tier chosen:** `mvp` with File/Media Retention override to `ent`.
-- **Prototype:** no.
-- **Likely files:** `api/config.py`, `api/models/document.py`,
-  `api/models/extraction.py`, `api/migrations/versions/*`,
-  `api/schemas/documents.py`, `.env.example`, `docs/architecture.md`.
-- **Acceptance:** migrations create document and extracted-text storage; storage
-  settings are centralized; records can represent primary/comparison uploads,
-  extraction status, retention state, and provenance-ready metadata.
-- **Trade-offs accepted:** See `DECISIONS.md` D4.
-
-### Phase 2 — Backend ingestion API
-
-```yaml
-phase: 2
-types: [upload, storage, user-facing, persistence]
+types: [persistence, data-migration, data-validation]
 phase_tier: mvp
 prototype: false
 dim_overrides: []
-sections_considered: [Core, File/Media, UI/UX, Data]
-suppressed_dims_count: 6
-decisions_entry: D5
+sections_considered: [Core, Data]
+suppressed_dims_count: 5
+decisions_entry: D8
 ```
 
 - **Tier chosen:** `mvp`.
 - **Prototype:** no.
-- **Likely files:** `api/routes/documents.py`, `api/services/documents.py`,
-  `api/schemas/documents.py`, `api/models/document.py`, `api/main.py`,
-  `tests/api/test_documents.py`.
-- **Acceptance:** a persisted case can accept a primary or comparison upload;
-  the API rejects unsupported owner/case/type/size combinations; metadata and
-  file bytes persist; list/read endpoints only return the stub owner's
-  documents.
-- **Trade-offs accepted:** See `DECISIONS.md` D5.
+- **Likely files:** `api/models/extraction.py`,
+  `api/migrations/versions/*`, `api/schemas/documents.py`,
+  `api/schemas/facts.py`, `docs/architecture.md`.
+- **Acceptance:** migrations create normalized fact and confirmation tables with
+  source document/text locator constraints; schemas can represent extracted,
+  corrected, confirmed, rejected, and pending high-impact facts without creating
+  findings.
+- **Trade-offs accepted:** See `DECISIONS.md` D8.
 
-### Phase 3 — Text extraction pipeline
+### Phase 2 — MVP fact extraction service
 
 ```yaml
-phase: 3
-types: [persistence, async-worker, data-migration]
+phase: 2
+types: [persistence, extraction, data-processing]
 phase_tier: mvp
 prototype: false
 dim_overrides: []
 sections_considered: [Core, Data, Background jobs]
-suppressed_dims_count: 5
-decisions_entry: D6
+suppressed_dims_count: 6
+decisions_entry: D9
 ```
 
 - **Tier chosen:** `mvp`.
 - **Prototype:** no.
-- **Likely files:** `api/services/text_extraction.py`,
-  `api/models/extraction.py`, `api/schemas/documents.py`,
-  `api/routes/documents.py`, `tests/api/fixtures/*`,
-  `tests/api/test_text_extraction.py`.
-- **Acceptance:** supported uploads move through extracted/failed/needs-ocr
-  states; extracted text segments are persisted with document id, page or span,
-  provider label, extraction timestamp, and warnings; scanned image/OCR cases
-  are visible as pending rather than silently treated as read.
-- **Trade-offs accepted:** See `DECISIONS.md` D6.
+- **Likely files:** `api/services/fact_extraction.py`,
+  `api/services/documents.py`, `api/models/extraction.py`,
+  `api/schemas/facts.py`, `tests/api/test_fact_extraction.py`.
+- **Acceptance:** extracted text can produce persisted fact candidates for
+  amount, currency, dates, term, payment count, installment amount, rates/CAE,
+  total cost, fees/insurance/linked-product signals, and relevant clause
+  snippets when detectable; skipped/ambiguous fields remain visible as warnings
+  rather than invented values.
+- **Trade-offs accepted:** See `DECISIONS.md` D9.
 
-### Phase 4 — Frontend upload/status handoff
+### Phase 3 — Confirmation API and analysis gate
 
 ```yaml
-phase: 4
-types: [user-facing, client-state, upload]
+phase: 3
+types: [api, user-facing, data-validation]
 phase_tier: mvp
 prototype: false
 dim_overrides: []
-sections_considered: [Core, UI/UX, Client State, File/Media]
-suppressed_dims_count: 7
-decisions_entry: D7
+sections_considered: [Core, Data, UI/UX]
+suppressed_dims_count: 5
+decisions_entry: D10
 ```
 
 - **Tier chosen:** `mvp`.
 - **Prototype:** no.
-- **Likely files:** `src/api/documents.ts`, `src/screens/Upload.tsx`,
-  `src/components/NavContext.tsx`, `tests/frontend/Upload.test.tsx`.
-- **Acceptance:** users upload files from the persisted case upload screen, see
-  stored document metadata and extraction status, can inspect a small extracted
-  text preview, and cannot proceed into prototype analysis as if findings were
-  real.
-- **Trade-offs accepted:** See `DECISIONS.md` D7.
+- **Likely files:** `api/routes/documents.py`, `api/routes/cases.py`,
+  `api/services/facts.py`, `api/schemas/facts.py`,
+  `tests/api/test_facts_api.py`.
+- **Acceptance:** clients can list owner-scoped fact candidates, confirm,
+  correct, or reject each high-impact fact, and receive a case-level readiness
+  state that blocks analysis while required facts are unresolved.
+- **Trade-offs accepted:** See `DECISIONS.md` D10.
+
+### Phase 4 — Frontend fact review handoff
+
+```yaml
+phase: 4
+types: [user-facing, client-state]
+phase_tier: mvp
+prototype: false
+dim_overrides: []
+sections_considered: [Core, UI/UX, Client State]
+suppressed_dims_count: 6
+decisions_entry: D11
+```
+
+- **Tier chosen:** `mvp`.
+- **Prototype:** no.
+- **Likely files:** `src/api/facts.ts`, `src/screens/Upload.tsx`,
+  `src/screens/Detection.tsx`, `src/components/NavContext.tsx`,
+  `tests/frontend/Upload.test.tsx`, `docs/V0_ALIGNMENT.md`.
+- **Acceptance:** after upload/extraction, users can review high-impact fact
+  candidates with source snippets, confirm/correct/reject them, see unresolved
+  fact counts, and cannot continue into prototype analysis as if unconfirmed
+  facts were evidence-backed findings.
+- **Trade-offs accepted:** See `DECISIONS.md` D11.
 
 ## Current Phase
 
-Phase 4: Frontend upload/status handoff
+Phase 1: Fact contract and schema
 
 ## Dependencies
 
-- Phase 2 depends on Phase 1 schema/config.
-- Phase 3 depends on Phase 2 stored document bytes and metadata.
-- Phase 4 depends on Phase 2 API contracts and Phase 3 status fields.
-- Normalized fact extraction and confirmation remain a later plan after this
-  plan proves document identity and text provenance.
+- Phase 1 establishes the storage and schema contract for all later fact work.
+- Phase 2 depends on Phase 1 and the existing extracted text segments.
+- Phase 3 depends on Phase 1 fact/confirmation records and Phase 2 candidate
+  generation.
+- Phase 4 depends on Phase 3 API readiness and confirmation contracts.
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Sensitive documents are stored before production hardening exists. | high | Keep storage local/dev-only, do not publicly serve files, add retention metadata now, and block production acceptance until auth, backup, retention, and scan policy are defined. |
-| Extracted text is mistaken for verified facts. | high | Store extracted text separately from facts; label it as extraction output; keep findings/analysis blocked until normalized facts and confirmation exist. |
-| Scanned PDFs/images produce empty extraction. | medium | Persist `needs_ocr` or failed extraction status with user-visible warning; leave OCR provider integration out of this plan. |
-| DB/file-system drift leaves orphaned files or records. | medium | Write backend tests for failed writes and deletion/error behavior; keep file path generation deterministic and scoped by case/document id. |
-| Runtime config drifts across frontend, backend, and local scripts. | medium | Address PENDING #2 by centralizing upload/API/storage config and documenting `.env.example`. |
+| Regex or heuristic extraction invents facts from weak text matches. | high | Store candidates with confidence/warnings and leave ambiguous values unresolved instead of fabricating normalized values. |
+| Unconfirmed facts leak into analysis screens as trusted findings. | high | Add API readiness state and frontend guardrails before prototype analysis continues. |
+| Provenance becomes too weak for later findings. | high | Require document id plus page or text span locator for each uploaded-document fact. |
+| Fact schema overfits one sample contract. | medium | Keep keys explicit but extensible, add fixtures for common Chilean consumer-credit labels, and document deferred fields. |
+| Confirmation edits overwrite extraction evidence. | medium | Preserve original extraction values separately from user-confirmed values with actor/timestamp. |
 
 ## Notes
 
-- This plan intentionally advances the real ingestion boundary without making
-  analysis claims. It should remove the current "No analiza PDFs reales" upload
-  limitation only for storage and extraction status, not for findings.
-- Do not update `.kdbp/SCOPE.md` or `.kdbp/ROADMAP.md` from this plan; those
-  remain `/gabe-scope*` surfaces.
+- This plan intentionally stops before `ConsumerCreditAgent`, deterministic
+  discrepancy findings, benchmark catalogs, and export/draft generation.
+- MVP extraction can be deterministic and conservative; low-confidence or
+  missing fields should become confirmation prompts, not inferred conclusions.
+- Scanned uploads that are `needs_ocr` remain pending until an OCR provider plan
+  exists.

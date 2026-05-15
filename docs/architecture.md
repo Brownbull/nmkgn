@@ -17,14 +17,18 @@ rules.
 
 ## Data Model
 
-The current backend persists the case shell plus the storage contract for
-uploaded document metadata and extracted text segments. It still does not persist
-normalized facts, user confirmations, agent analysis, or findings.
+The current backend persists the case shell, uploaded document metadata,
+extracted text segments, and the storage contract for normalized
+consumer-credit fact candidates plus user confirmation records. It still does
+not run normalized fact extraction automatically, agent analysis, or findings.
 
 ```mermaid
 erDiagram
   CASE ||--o{ DOCUMENT : owns
   DOCUMENT ||--o{ EXTRACTED_TEXT_SEGMENT : yields
+  DOCUMENT ||--o{ CONSUMER_CREDIT_FACT : sources
+  EXTRACTED_TEXT_SEGMENT ||--o{ CONSUMER_CREDIT_FACT : anchors
+  CONSUMER_CREDIT_FACT ||--o{ FACT_CONFIRMATION : receives
 
   CASE {
     uuid id PK
@@ -71,6 +75,48 @@ erDiagram
     float confidence
     string warning_code
     text warning_message
+  }
+
+  CONSUMER_CREDIT_FACT {
+    uuid id PK
+    uuid case_id FK
+    uuid document_id FK
+    uuid text_segment_id FK
+    string fact_key
+    string label
+    string value_kind
+    text value_text
+    float value_number
+    string value_currency
+    date value_date
+    string unit
+    boolean high_impact
+    string confirmation_status
+    string source_type
+    integer source_page_number
+    integer source_start_offset
+    integer source_end_offset
+    text source_snippet
+    string extraction_provider
+    datetime extracted_at
+    float confidence
+    string warning_code
+    text warning_message
+    datetime created_at
+    datetime updated_at
+  }
+
+  FACT_CONFIRMATION {
+    uuid id PK
+    uuid fact_id FK
+    string owner_ref
+    string action
+    text corrected_value_text
+    float corrected_value_number
+    string corrected_value_currency
+    date corrected_value_date
+    text note
+    datetime created_at
   }
 ```
 
@@ -131,11 +177,62 @@ Extracted text segment fields:
 - optional `warning_code`
 - optional `warning_message`
 
+Consumer-credit fact fields:
+
+- `id`
+- `case_id`
+- `document_id`
+- optional `text_segment_id`
+- `fact_key`: `principal_amount`, `currency`, `contract_date`,
+  `term_months`, `payment_count`, `installment_amount`, `interest_rate`,
+  `cae`, `total_cost`, `fee`, `insurance`, `linked_product`, or `clause`
+- `label`
+- `value_kind`: `money`, `currency`, `date`, `integer`, `percentage`, `text`,
+  or `boolean`
+- optional value columns: `value_text`, `value_number`, `value_currency`,
+  `value_date`, and `unit`
+- `high_impact`
+- `confirmation_status`: `pending`, `confirmed`, `corrected`, or `rejected`
+- `source_type`: fixed to `uploaded_document` for the current MVP contract
+- optional source locator fields: `source_page_number`, `source_start_offset`,
+  `source_end_offset`, and `source_snippet`
+- `extraction_provider`
+- `extracted_at`
+- optional `confidence`
+- optional `warning_code`
+- optional `warning_message`
+- `created_at`
+- `updated_at`
+
+Consumer-credit fact constraints:
+
+- A fact must belong to a case and a document.
+- An uploaded-document fact must include either a text segment id, a page number,
+  or a complete text span.
+- Span offsets must be provided as a pair and must be ordered.
+- A fact must carry either a normalized value or a warning code explaining why
+  the candidate is unresolved.
+- `confidence`, when present, is bounded from 0 to 1.
+
+Fact confirmation fields:
+
+- `id`
+- `fact_id`
+- `owner_ref`
+- `action`: `confirm`, `correct`, or `reject`
+- optional corrected value columns for correction actions only
+- optional `note`
+- `created_at`
+
+Fact confirmation constraints:
+
+- `correct` requires at least one corrected value.
+- `confirm` and `reject` cannot carry corrected values.
+- Confirmation records preserve the user's decision separately from the
+  original extraction evidence.
+
 Future domain objects:
 
-- ExtractedFact
-- ProvenanceRecord
-- UserConfirmation
 - AnalysisRun
 - ConsumerCreditAnalysis
 - Finding
@@ -170,6 +267,9 @@ The document API scopes uploads under their parent case:
   becoming empty evidence.
 - Extraction output is text-segment level evidence only. It is not a normalized
   fact, confirmed fact, inference, or finding.
+- The normalized fact contract stores fact candidates separately from extracted
+  text. A fact candidate is still not a finding: it must be confirmed, corrected,
+  or rejected before later analysis can treat it as trusted input.
 
 The central contract is document-type-specific structured output:
 
@@ -208,12 +308,16 @@ Current service boundaries:
   persists extracted segments, marks non-text image/scanned documents as
   `needs_ocr`, and marks malformed/unreadable files as `failed` without
   creating findings or normalized facts.
+- Fact persistence contract for normalized consumer-credit candidates and
+  confirmation records. Extraction and confirmation services are planned next;
+  the schema already enforces provenance locator and correction boundaries.
 
 Expected future service boundaries:
 
 - OCR provider integration
 - document type detection
-- normalized fact confirmation
+- normalized fact extraction
+- confirmation API and analysis readiness gate
 - document-specific agent analysis
 - deterministic calculations
 - benchmark and rule-source lookup

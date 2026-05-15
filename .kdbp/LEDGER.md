@@ -493,3 +493,59 @@ PR: —
 CI: — (no CI configured)
 PROMOTION: N/A
 DEPLOYMENTS: P6 (added row to .kdbp/DEPLOYMENTS.md)
+
+## 2026-05-15 15:33 — PLAN COMPLETED: Real document upload persistence and text extraction
+ARCHIVE: .kdbp/archive/completed_PLAN_2026-05-15_document-upload-text-extraction.md
+PHASES COMPLETED: 4 of 4
+
+## 2026-05-15 15:51 — PLAN CREATED: Normalize consumer-credit facts and add confirmation gate
+PHASES: 4 | COMPLEXITY: high x 2, med x 2 | MATURITY: mvp
+TIERS: mvp x 4, ent x 0, scale x 0 | PROTOTYPES: 0
+DECISIONS: D8 → D11 (4 phase tier decisions logged)
+
+## 2026-05-15 15:53 — PHASE 1 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 1: Fact contract and schema.
+
+- PLAN: Phase 1 `Exec` marked `🔄`.
+- Scope is schema/contract only: normalized fact persistence, confirmation
+  persistence, Pydantic schemas, Alembic migration, architecture docs, and
+  focused contract tests.
+- Out of scope: extraction service implementation, confirmation API endpoints,
+  frontend fact review, agents, findings, OCR, and exports.
+
+## 2026-05-15 15:58 — PHASE 1 EXECUTION COMPLETE
+
+Implemented Phase 1 fact contract and schema.
+
+- Added SQLAlchemy models for normalized consumer-credit fact candidates and
+  fact confirmation records.
+- Added Alembic migration `20260515_0003` for `consumer_credit_facts` and
+  `fact_confirmations`.
+- Added Pydantic schemas for fact creation/read and confirmation creation/read.
+- Added contract tests for fact source locators, value/warning requirements,
+  correction boundaries, relationships, DB constraints, and Alembic table
+  creation.
+- Updated architecture docs with fact/confirmation data model and boundary.
+- PLAN: Phase 1 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `uv run pytest tests/api/test_documents_contract.py tests/api/test_cases.py -q` — passed, 20 tests.
+- `uv run ruff check api/models/extraction.py api/models/document.py api/models/__init__.py api/schemas/__init__.py api/schemas/facts.py api/migrations/versions/20260515_0003_create_consumer_credit_facts.py tests/api/test_documents_contract.py tests/api/test_cases.py` — passed.
+- `uv run ruff format --check api/models/extraction.py api/models/document.py api/models/__init__.py api/schemas/__init__.py api/schemas/facts.py api/migrations/versions/20260515_0003_create_consumer_credit_facts.py tests/api/test_documents_contract.py tests/api/test_cases.py` — passed.
+- `uv run pytest -q` — passed, 37 tests.
+- `uv run ruff check .` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-15 16:20 — PHASE 1 REVIEW: Fact contract and schema
+VERDICT: APPROVE
+FINDINGS: 1 total (1 critical, 0 high, 0 medium, 0 low)
+COVERAGE: MEDIUM — cross-provenance regression test added during triage; text_segment/document consistency accepted as MVP limitation
+CONFIDENCE: 75 → 95/100
+DEFERRED: none
+ALIGNMENT: DRIFTED (workflow state alongside plan scope — no implementation risk)
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/1 strict overlap, union consolidation
+FIXES: #1 replaced independent case_id/document_id FKs with composite FK (document_id, case_id) → (documents.id, documents.case_id), added UniqueConstraint targets, added cross-provenance regression test

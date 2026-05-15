@@ -201,3 +201,188 @@ dim_overrides: []
 ### Status
 
 - accepted
+
+## D8 — Phase 1 tier: mvp (2026-05-15)
+
+**Phase:** Fact contract and schema
+**Types:** persistence, data-migration, data-validation
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; the first fact contract should lock provenance and confirmation fields without introducing the full agent or findings system.
+
+### Sections rendered
+
+- Core (always)
+- Data
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Data.Indexing — fact lookup can start with case/document queries before search or analytics exists.
+- Data.Backup/restore — production backup policy remains a release guardrail.
+- Data.Partitioning — single-project MVP volume does not need partitioning.
+- Core.Observability — schema-level tests are enough before long-running extraction or analysis jobs.
+- Core.Abstractions — keep fact types explicit before introducing generic claim engines.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- L x 3, M x 3
+- Load-bearing items skipped:
+  - Data.Indexing: revisit when fact review needs search, filtering across many documents, or analytics.
+
+### Review trigger
+
+- Escalate before facts drive user-visible findings, before supporting multiple document types, or before production users upload sensitive documents.
+
+### Status
+
+- accepted
+
+## D9 — Phase 2 tier: mvp (2026-05-15)
+
+**Phase:** MVP fact extraction service
+**Types:** persistence, extraction, data-processing
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; deterministic conservative extraction is the smallest safe bridge from text segments to user-reviewable facts.
+
+### Sections rendered
+
+- Core (always)
+- Data
+- Background jobs
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Background jobs.Scheduling — extraction can run synchronously after text extraction for this slice.
+- Background jobs.Concurrency — no worker pool until OCR/LLM providers or volume require it.
+- Background jobs.Dead-letter — failed or ambiguous extraction can be stored as warnings for manual review.
+- Data.Indexing — case/document lookups are enough for first fact candidates.
+- Data.Backup/restore — production backup policy remains a release guardrail.
+- Core.Abstractions — do not add provider registries until LLM/OCR extraction exists.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- XL x 1, L x 4, M x 3
+- Load-bearing items skipped:
+  - Background jobs.Idempotency/dead-letter: acceptable only while extraction is local, deterministic, and rerunnable from stored text segments.
+
+### Review trigger
+
+- Escalate before adding OCR, LLM extraction, retries, worker queues, or any automatic claim promotion into findings.
+
+### Status
+
+- accepted
+
+## D10 — Phase 3 tier: mvp (2026-05-15)
+
+**Phase:** Confirmation API and analysis gate
+**Types:** api, user-facing, data-validation
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; owner-scoped confirmation endpoints and a readiness gate are enough before building the analysis engine.
+
+### Sections rendered
+
+- Core (always)
+- Data
+- UI/UX
+
+### Dimensions suppressed (Layer 2 filter)
+
+- UI/UX.Streaming — fact confirmation is interactive and synchronous for MVP.
+- UI/UX.Personalization — display rules stay tied to case stage and fact status only.
+- Data.Indexing — direct case/document/fact queries are enough.
+- Data.Backup/restore — production backup policy remains a release guardrail.
+- Core.Abstractions — no generic workflow engine until multiple gates exist.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- L x 3, M x 4
+- Load-bearing items skipped:
+  - UI/UX.Streaming: revisit when confirmation depends on long-running OCR/LLM jobs or progress events.
+
+### Review trigger
+
+- Escalate before confirmed facts drive `ConsumerCreditAgent`, deterministic findings, or exportable evidence.
+
+### Status
+
+- accepted
+
+## D11 — Phase 4 tier: mvp (2026-05-15)
+
+**Phase:** Frontend fact review handoff
+**Types:** user-facing, client-state
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; a focused fact review screen can prove the trust boundary without redesigning the full analysis experience.
+
+### Sections rendered
+
+- Core (always)
+- UI/UX
+- Client State
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Client State.Cross-tab sync — single-tab confirmation is enough for MVP.
+- Client State.Offline support — offline confirmation is out of scope.
+- Client State.Optimistic updates — wait for server confirmation before treating facts as confirmed.
+- UI/UX.Streaming — confirmation work is synchronous in this plan.
+- UI/UX.Empty-state personalization — one consumer-credit path only.
+- Core.Abstractions — avoid shared workflow chrome until analysis and export screens become real.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- L x 3, M x 5
+- Load-bearing items skipped:
+  - Client State.Optimistic updates: acceptable because confirmation correctness matters more than perceived speed.
+
+### Review trigger
+
+- Escalate when fact review state is reused by findings, exports, history, or multi-device sessions.
+
+### Status
+
+- accepted
