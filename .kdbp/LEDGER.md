@@ -487,3 +487,9 @@ FIXES: #1 separated POST success from refresh failure in handleUpload to prevent
 FINDINGS: 1 (0 critical, 0 high, 0 medium, 1 low)
 ACTIONS: 1:update-docs (README.md — added VITE_API_BASE_URL mention)
 DEFERRED: none
+
+## 2026-05-15 15:33 — PUSH main -> main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P6 (added row to .kdbp/DEPLOYMENTS.md)
