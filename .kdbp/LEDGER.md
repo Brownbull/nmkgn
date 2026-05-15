@@ -1,5 +1,67 @@
 # Session Ledger
 
+## 2026-05-15 17:55 — PHASE 2 COMMIT GATE
+
+Prepared `/gabe-next` routed through the Phase 2 commit gate.
+
+- PLAN: Phase 2 `Commit` marked `✅`; Push remains pending.
+- Included deterministic fact extraction, review fixes, regression coverage, and
+  architecture/KDBP bookkeeping in the commit scope.
+
+Verification:
+
+- `uv run pytest` — passed, 44 backend tests.
+- `npm test` — passed, 21 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-15 17:45 — PHASE 2 REVIEW: MVP fact extraction service
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 2 high, 0 medium, 0 low)
+COVERAGE: HIGH — bare-currency regression test and fact-extraction-failure isolation test added during triage
+CONFIDENCE: 71 → 95/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/2 strict overlap, union consolidation
+FIXES: #1 require explicit CLP marker ($, clp, pesos) before setting value_currency — bare numbers leave currency unresolved, #2 wrap fact extraction in savepoint so text extraction completes independently on failure
+
+## 2026-05-15 16:40 — PHASE 2 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 2: MVP fact extraction service.
+
+- PLAN: Phase 2 `Exec` marked `🔄`.
+- Scope remains deterministic local extraction from existing extracted text
+  segments; OCR, LLM extraction, confirmation APIs, readiness gates, and
+  findings stay out of scope.
+
+## 2026-05-15 17:15 — PHASE 2 EXECUTION COMPLETE
+
+Implemented deterministic MVP fact extraction from persisted text segments.
+
+- Added `api/services/fact_extraction.py` with local rules for principal amount,
+  currency, contract date, term, payment count, installment amount, interest
+  rate, CAE, total cost, fees, insurance signals, linked products, and relevant
+  clauses.
+- Wired text extraction to clear stale pending facts and create pending fact
+  candidates after successful consumer-credit text extraction.
+- Missing or ambiguous required high-impact values are persisted as warning
+  candidates instead of fabricated facts.
+- Updated `docs/architecture.md` with the new fact-candidate boundary.
+- PLAN: Phase 2 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `uv run pytest tests/api/test_fact_extraction.py tests/api/test_documents_api.py`
+  — passed, 21 tests.
+- `uv run pytest` — passed, 42 tests.
+- `npm test` — passed, 21 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+
 ## 2026-05-12 - gabe-init
 
 Initialized KDBP for `nmkgn` as a hybrid MVP and agent-app documentation

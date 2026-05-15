@@ -37,8 +37,14 @@ class ExtractionOutcome:
 def extract_document_text(
     session: Session, document: Document, settings: UploadStorageSettings
 ) -> list[ExtractedTextSegment]:
+    from api.services.fact_extraction import (
+        clear_pending_facts,
+        extract_consumer_credit_facts,
+    )
+
     document.extraction_status = "extracting"
     session.flush()
+    clear_pending_facts(session, document.id)
     _clear_existing_segments(session, document.id)
 
     path = settings.root_path / document.storage_key
@@ -59,6 +65,13 @@ def extract_document_text(
         for segment in outcome.segments
     ]
     session.add_all(segments)
+    session.flush()
+    if outcome.status == "extracted":
+        try:
+            with session.begin_nested():
+                extract_consumer_credit_facts(session, document, clear_existing=False)
+        except Exception:
+            pass
     document.extraction_status = outcome.status
     session.commit()
     session.refresh(document)

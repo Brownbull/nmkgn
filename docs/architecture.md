@@ -18,9 +18,9 @@ rules.
 ## Data Model
 
 The current backend persists the case shell, uploaded document metadata,
-extracted text segments, and the storage contract for normalized
-consumer-credit fact candidates plus user confirmation records. It still does
-not run normalized fact extraction automatically, agent analysis, or findings.
+extracted text segments, deterministic normalized consumer-credit fact
+candidates, and user confirmation records. It still does not run agent
+analysis or findings.
 
 ```mermaid
 erDiagram
@@ -265,11 +265,15 @@ The document API scopes uploads under their parent case:
   span-based segments, text-bearing PDFs produce page-based segments, and
   image or scanned-PDF inputs stay visible as `needs_ocr` instead of silently
   becoming empty evidence.
-- Extraction output is text-segment level evidence only. It is not a normalized
-  fact, confirmed fact, inference, or finding.
-- The normalized fact contract stores fact candidates separately from extracted
-  text. A fact candidate is still not a finding: it must be confirmed, corrected,
-  or rejected before later analysis can treat it as trusted input.
+- For extracted consumer-credit text, the backend runs a deterministic MVP fact
+  extractor that stores pending candidates for common high-impact fields such
+  as amounts, dates, payment terms, CAE, total cost, fees, insurance signals,
+  linked products, and relevant clauses.
+- Missing or ambiguous high-impact fields are stored as warning candidates
+  instead of invented values.
+- A fact candidate is still not a confirmed fact, inference, or finding: it
+  must be confirmed, corrected, or rejected before later analysis can treat it
+  as trusted input.
 
 The central contract is document-type-specific structured output:
 
@@ -306,17 +310,21 @@ Current service boundaries:
   up partial files on failure, and enforces owner scoping on all queries.
 - Text extraction service for local MVP extraction. It reads stored upload bytes,
   persists extracted segments, marks non-text image/scanned documents as
-  `needs_ocr`, and marks malformed/unreadable files as `failed` without
-  creating findings or normalized facts.
+  `needs_ocr`, marks malformed/unreadable files as `failed`, and hands
+  extracted consumer-credit text to the local fact extractor.
+- Fact extraction service for deterministic MVP consumer-credit candidates.
+  It extracts common high-impact values from stored text segments, preserves
+  source segment/page/span/snippet provenance, emits warnings for missing or
+  ambiguous fields, and leaves all candidates pending confirmation.
 - Fact persistence contract for normalized consumer-credit candidates and
-  confirmation records. Extraction and confirmation services are planned next;
-  the schema already enforces provenance locator and correction boundaries.
+  confirmation records. The schema enforces provenance locator and correction
+  boundaries.
 
 Expected future service boundaries:
 
 - OCR provider integration
 - document type detection
-- normalized fact extraction
+- OCR/LLM-backed fact extraction
 - confirmation API and analysis readiness gate
 - document-specific agent analysis
 - deterministic calculations

@@ -16,7 +16,7 @@ from api.main import app
 from api.models import Base
 from api.models.case import Case
 from api.models.document import Document
-from api.models.extraction import ExtractedTextSegment
+from api.models.extraction import ConsumerCreditFact, ExtractedTextSegment
 from api.services.database import get_session
 
 
@@ -147,6 +147,9 @@ def test_upload_plain_text_persists_metadata_file_bytes_and_text_segment(
         assert document is not None
         assert (tmp_path / "uploads" / document.storage_key).read_bytes() == payload
         assert session.query(ExtractedTextSegment).count() == 1
+        facts = session.query(ConsumerCreditFact).all()
+        assert {fact.fact_key for fact in facts} >= {"cae", "total_cost"}
+        assert all(fact.confirmation_status == "pending" for fact in facts)
 
     segment_response = client.get(
         f"/api/cases/{case_id}/documents/{body['id']}/text-segments"
@@ -446,6 +449,37 @@ def test_plain_text_with_invalid_utf8_records_decode_warning(
     assert segment["warning_code"] == "decode_replacement"
     assert "UTF-8" in segment["warning_message"]
     assert segment["confidence"] is None
+
+
+def test_upload_completes_text_extraction_when_fact_extraction_fails(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    case_id = create_case(client)
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("fact extraction failure")
+
+    monkeypatch.setattr(
+        "api.services.fact_extraction.extract_consumer_credit_facts",
+        _raise,
+    )
+
+    payload = b"CAE 12% anual\nCosto total: $3.000.000\n"
+    response = client.post(
+        f"/api/cases/{case_id}/documents",
+        data={"role": "primary", "document_type": "consumer_credit"},
+        files={"file": ("contrato.txt", payload, "text/plain")},
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["extraction_status"] == "extracted"
+
+    segment_response = client.get(
+        f"/api/cases/{case_id}/documents/{body['id']}/text-segments"
+    )
+    assert segment_response.status_code == 200
+    assert len(segment_response.json()) > 0
 
 
 def test_pdf_with_mixed_blank_and_text_pages_records_partial_warning(
