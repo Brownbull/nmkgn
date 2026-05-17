@@ -210,3 +210,16 @@ class FactConfirmationRead(BaseModel):
     corrected_value_date: date | None
     note: str | None
     created_at: datetime
+
+
+class FactReadinessRead(BaseModel):
+    case_id: str
+    ready_for_analysis: bool
+    blockers: list[str]
+    required_fact_keys: list[FactKey]
+    missing_required_fact_keys: list[FactKey]
+    total_fact_count: int
+    high_impact_fact_count: int
+    unresolved_high_impact_count: int
+    unresolved_fact_ids: list[str]
+    status_counts: dict[FactConfirmationStatus, int]

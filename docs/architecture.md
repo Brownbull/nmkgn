@@ -275,6 +275,17 @@ The document API scopes uploads under their parent case:
   must be confirmed, corrected, or rejected before later analysis can treat it
   as trusted input.
 
+The fact review API exposes the confirmation gate without starting analysis:
+
+- Fact candidate reads are case-scoped and owner-scoped through the source
+  document owner.
+- Confirmation decisions append a `FactConfirmation` record and update the
+  candidate status to `confirmed`, `corrected`, or `rejected`.
+- Corrections preserve the original extracted value and store the corrected
+  value on the confirmation record.
+- Case readiness remains blocked while any high-impact candidate is still
+  pending or while a required high-impact fact type has no candidate.
+
 The central contract is document-type-specific structured output:
 
 - `ConsumerCreditAgent` returns `ConsumerCreditAnalysis`.
@@ -293,6 +304,13 @@ The central contract is document-type-specific structured output:
 - `GET /api/cases/{case_id}/documents/{document_id}` — single document metadata
 - `GET /api/cases/{case_id}/documents/{document_id}/text-segments` — extracted
   text segments for one owner-scoped document
+- `GET /api/cases/{case_id}/facts` — list owner-scoped consumer-credit fact
+  candidates for a case
+- `GET /api/cases/{case_id}/facts/readiness` — case-level analysis readiness,
+  blockers, required fact keys, unresolved fact ids, and confirmation status
+  counts
+- `POST /api/cases/{case_id}/facts/{fact_id}/confirmations` — record a
+  confirm, correct, or reject decision for one owner-scoped fact
 
 ## Services
 
@@ -316,6 +334,10 @@ Current service boundaries:
   It extracts common high-impact values from stored text segments, preserves
   source segment/page/span/snippet provenance, emits warnings for missing or
   ambiguous fields, and leaves all candidates pending confirmation.
+- Fact review service for owner-scoped candidate listing, confirmation
+  decisions, and case readiness. It gates later analysis on all high-impact
+  facts being resolved and all required high-impact fact keys having a
+  candidate.
 - Fact persistence contract for normalized consumer-credit candidates and
   confirmation records. The schema enforces provenance locator and correction
   boundaries.
@@ -325,7 +347,6 @@ Expected future service boundaries:
 - OCR provider integration
 - document type detection
 - OCR/LLM-backed fact extraction
-- confirmation API and analysis readiness gate
 - document-specific agent analysis
 - deterministic calculations
 - benchmark and rule-source lookup

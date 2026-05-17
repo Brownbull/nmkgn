@@ -1,5 +1,70 @@
 # Session Ledger
 
+## 2026-05-17 17:21 — PHASE 3 COMMIT GATE
+
+Prepared `/gabe-next` routed through the Phase 3 commit gate.
+
+- PLAN: Phase 3 `Commit` marked `✅`; Push remains pending.
+- Included owner-scoped fact listing, confirmation/correction/rejection,
+  case-level readiness blockers, review fixes, API tests, architecture docs,
+  and review inbox state in the commit scope.
+
+Verification:
+
+- `uv run pytest` — passed, 51 backend tests.
+- `npm test` — passed, 21 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `uv run ruff check` — passed.
+- `uv run ruff format --check api/main.py api/schemas/__init__.py api/schemas/facts.py api/routes/facts.py api/services/facts.py tests/api/test_facts_api.py` — passed, changed Python files already formatted.
+- `git diff --check` — passed.
+- Note: repo-wide `uv run ruff format --check` still reports pre-existing
+  formatting drift in untouched Python files.
+
+## 2026-05-15 18:42 — PHASE 3 REVIEW: Confirmation API and analysis gate
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 1 high, 0 medium, 1 low)
+COVERAGE: HIGH — type-incompatible correction validation test and list/readiness 404 tests added during triage
+CONFIDENCE: 81 → 95/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/2 strict overlap, union consolidation
+FIXES: #1 added value_kind-compatible correction validation with _validate_correction_compatibility() and InvalidCorrectionError → 422, #2 added 404 tests for list_facts and readiness on nonexistent case
+
+## 2026-05-15 18:16 — PHASE 3 EXECUTION COMPLETE
+
+Implemented the owner-scoped fact confirmation API and readiness gate.
+
+- Added fact review service and routes for listing fact candidates, recording
+  confirm/correct/reject decisions, and reporting case-level readiness blockers.
+- Readiness now blocks analysis while any high-impact candidate remains pending
+  or a required high-impact fact key has no candidate.
+- Corrections preserve original extracted values and store corrected values on
+  confirmation records.
+- Updated architecture docs with the fact review boundary and API endpoints.
+- PLAN: Phase 3 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `uv run pytest tests/api/test_facts_api.py` — passed, 5 tests.
+- `uv run pytest` — passed, 49 backend tests.
+- `npm test` — passed, 21 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-15 18:10 — PHASE 3 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 3: Confirmation API and
+analysis gate.
+
+- PLAN: Phase 3 `Exec` marked `🔄`.
+- Scope is owner-scoped fact listing, confirmation/correction/rejection, and a
+  case-level readiness state that blocks analysis until required high-impact
+  facts are resolved.
+
 ## 2026-05-15 18:03 — PUSH main -> main
 PR: —
 CI: — (no CI configured)

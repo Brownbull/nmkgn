@@ -10,6 +10,7 @@ from api.schemas.facts import (
     ConsumerCreditFactRead,
     FactConfirmationCreate,
     FactConfirmationRead,
+    FactReadinessRead,
 )
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "ExtractedTextSegmentRead",
     "FactConfirmationCreate",
     "FactConfirmationRead",
+    "FactReadinessRead",
 ]
