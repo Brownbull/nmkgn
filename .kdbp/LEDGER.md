@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-17 17:27 — PUSH main -> main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P9 (added row to .kdbp/DEPLOYMENTS.md)
+
 ## 2026-05-17 17:21 — PHASE 3 COMMIT GATE
 
 Prepared `/gabe-next` routed through the Phase 3 commit gate.
