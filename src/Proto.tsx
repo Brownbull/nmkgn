@@ -124,7 +124,11 @@ export function Proto() {
   const go = useCallback((nextStep: string) => {
     let navigated = false;
     setState(prev => {
-      if (prev.caseId && !prev.mockAnalysisAcknowledged && MOCK_ANALYSIS_STEPS.has(nextStep)) {
+      if (
+        prev.caseId
+        && MOCK_ANALYSIS_STEPS.has(nextStep)
+        && (!prev.factReviewReady || !prev.mockAnalysisAcknowledged)
+      ) {
         return prev;
       }
       navigated = true;

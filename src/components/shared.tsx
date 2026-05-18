@@ -153,7 +153,7 @@ export function PrototypeNotice({ compact = false }: { compact?: boolean }) {
       <Icon name="shield-check" size={16} color="var(--amber)" />
       <div>
         <strong>Estado simulado.</strong>{' '}
-        Lectura, plan y resultados siguen siendo prototipo hasta conectar carga real, OCR, agentes y procedencia.
+        Plan y resultados siguen siendo prototipo hasta conectar agentes, reglas verificadas y hallazgos con evidencia.
       </div>
     </div>
   );

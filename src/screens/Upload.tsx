@@ -1,4 +1,4 @@
-import { type DragEvent, type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type DragEvent, type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   listDocuments,
   listTextSegments,
@@ -8,6 +8,16 @@ import {
   type ExtractionStatus,
   type ExtractedTextSegment,
 } from '../api/documents';
+import {
+  getFactReadiness,
+  listFacts,
+  recordFactConfirmation,
+  type ConsumerCreditFact,
+  type FactConfirmationAction,
+  type FactConfirmationPayload,
+  type FactConfirmationStatus,
+  type FactReadiness,
+} from '../api/facts';
 import { Icon } from '../components/Icon';
 import { AppShell, CaseContextStrip, ProgressBar } from '../components/shared';
 import { useNav, type NavState } from '../components/NavContext';
@@ -31,6 +41,30 @@ const DOCUMENT_ROLES: Array<{ value: DocumentRole; label: string; sub: string }>
 ];
 
 const EMPTY_DOCUMENTS: DocumentRecord[] = [];
+const EMPTY_FACTS: ConsumerCreditFact[] = [];
+
+const STATUS_COPY: Record<FactConfirmationStatus, { label: string; className: string }> = {
+  pending: { label: 'Pendiente', className: 'pill-amber' },
+  confirmed: { label: 'Confirmado', className: 'pill-green' },
+  corrected: { label: 'Corregido', className: 'pill-green' },
+  rejected: { label: 'Rechazado', className: 'pill-red' },
+};
+
+const FACT_KEY_LABELS: Record<string, string> = {
+  principal_amount: 'Monto del credito',
+  currency: 'Moneda',
+  contract_date: 'Fecha de contrato',
+  term_months: 'Plazo',
+  payment_count: 'Numero de cuotas',
+  installment_amount: 'Valor de cuota',
+  interest_rate: 'Tasa de interes',
+  cae: 'CAE',
+  total_cost: 'Costo total',
+  fee: 'Comision o cargo',
+  insurance: 'Seguro asociado',
+  linked_product: 'Producto vinculado',
+  clause: 'Clausula relevante',
+};
 
 const EXTRACTION_COPY: Record<ExtractionStatus, { label: string; className: string; detail: string }> = {
   pending: {
@@ -89,6 +123,83 @@ function previewText(segments: ExtractedTextSegment[]): string {
     .slice(0, 1200);
 }
 
+function formatFactValue(fact: ConsumerCreditFact): string {
+  if (fact.warning_code) return fact.warning_message ?? 'Necesita revision manual';
+  if (fact.value_kind === 'money' && fact.value_number !== null) {
+    const currency = fact.value_currency ? ` ${fact.value_currency}` : '';
+    return `${new Intl.NumberFormat('es-CL').format(fact.value_number)}${currency}`;
+  }
+  if (fact.value_kind === 'percentage' && fact.value_number !== null) {
+    return `${fact.value_number.toLocaleString('es-CL')}%`;
+  }
+  if (fact.value_kind === 'integer' && fact.value_number !== null) {
+    const unit = fact.unit ? ` ${fact.unit}` : '';
+    return `${fact.value_number.toLocaleString('es-CL')}${unit}`;
+  }
+  if (fact.value_kind === 'currency' && fact.value_currency) return fact.value_currency;
+  if (fact.value_kind === 'date' && fact.value_date) return fact.value_date;
+  if (fact.value_text) return fact.value_text;
+  return 'Sin valor normalizado';
+}
+
+function factLocator(fact: ConsumerCreditFact): string {
+  const parts = [];
+  if (fact.source_page_number) parts.push(`pag. ${fact.source_page_number}`);
+  if (fact.source_start_offset !== null && fact.source_end_offset !== null) {
+    parts.push(`chars ${fact.source_start_offset}-${fact.source_end_offset}`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : 'segmento extraido';
+}
+
+function parseCorrectionNumber(raw: string): number {
+  const normalized = raw
+    .replace(/\./g, '')
+    .replace(',', '.')
+    .replace(/[^\d.-]/g, '');
+  if (!/\d/.test(normalized)) {
+    throw new Error('Ingresa un numero valido para corregir este hecho.');
+  }
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    throw new Error('Ingresa un numero valido para corregir este hecho.');
+  }
+  return parsed;
+}
+
+function buildConfirmationPayload(
+  fact: ConsumerCreditFact,
+  action: FactConfirmationAction,
+  correctionRaw: string,
+): FactConfirmationPayload {
+  const payload: FactConfirmationPayload = { fact_id: fact.id, action };
+  if (action !== 'correct') return payload;
+
+  const value = correctionRaw.trim();
+  if (!value) {
+    throw new Error('Ingresa una correccion antes de guardar.');
+  }
+
+  if (fact.value_kind === 'money') {
+    payload.corrected_value_number = parseCorrectionNumber(value);
+    payload.corrected_value_currency = fact.value_currency ?? 'CLP';
+    return payload;
+  }
+  if (fact.value_kind === 'percentage' || fact.value_kind === 'integer') {
+    payload.corrected_value_number = parseCorrectionNumber(value);
+    return payload;
+  }
+  if (fact.value_kind === 'currency') {
+    payload.corrected_value_currency = value.toUpperCase();
+    return payload;
+  }
+  if (fact.value_kind === 'date') {
+    payload.corrected_value_date = value;
+    return payload;
+  }
+  payload.corrected_value_text = value;
+  return payload;
+}
+
 export function Upload() {
   const nav = useNav();
   const caseId = nav.state.caseId;
@@ -104,6 +215,11 @@ export function Upload() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [segmentsByDocumentId, setSegmentsByDocumentId] = useState<Record<string, ExtractedTextSegment[]>>({});
   const [segmentErrorsByDocumentId, setSegmentErrorsByDocumentId] = useState<Record<string, string>>({});
+  const [facts, setFacts] = useState<ConsumerCreditFact[] | null>(hasPersisted ? null : []);
+  const [readiness, setReadiness] = useState<FactReadiness | null>(hasPersisted ? null : null);
+  const [factsError, setFactsError] = useState<string | null>(null);
+  const [factActionById, setFactActionById] = useState<Record<string, FactConfirmationAction>>({});
+  const [correctionById, setCorrectionById] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const documentRecords = documents ?? EMPTY_DOCUMENTS;
@@ -114,8 +230,12 @@ export function Upload() {
   );
   const primaryDocument = documentRecords.find(document => document.role === 'primary') ?? documentRecords[0];
   const hasDocuments = documentRecords.length > 0;
-  const requiresPrototypeAck = hasPersisted && hasDocuments && !nav.state.mockAnalysisAcknowledged;
-  const canContinue = hasPersisted && hasDocuments && !requiresPrototypeAck;
+  const factRecords = facts ?? EMPTY_FACTS;
+  const factsLoading = hasPersisted && facts === null && !factsError;
+  const readinessReady = Boolean(readiness?.ready_for_analysis);
+  const factReviewBlocked = hasPersisted && hasDocuments && !readinessReady;
+  const requiresPrototypeAck = hasPersisted && hasDocuments && readinessReady && !nav.state.mockAnalysisAcknowledged;
+  const canContinue = hasPersisted && hasDocuments && readinessReady && !requiresPrototypeAck;
   const progressPct = uploadStage === 'uploading' ? 45 : uploadStage === 'refreshing' ? 78 : uploadStage === 'complete' ? 100 : 0;
   const selectedDocumentIdForSegments = selectedDocument?.id;
   const segments = selectedDocumentIdForSegments ? segmentsByDocumentId[selectedDocumentIdForSegments] ?? [] : [];
@@ -126,6 +246,22 @@ export function Upload() {
       && !(selectedDocumentIdForSegments in segmentErrorsByDocumentId),
   );
   const preview = previewText(segments);
+  const updateNav = nav.set;
+
+  const refreshFactReview = useCallback(async () => {
+    if (!caseId) return;
+    setFactsError(null);
+    const [nextFacts, nextReadiness] = await Promise.all([
+      listFacts(caseId),
+      getFactReadiness(caseId),
+    ]);
+    setFacts(nextFacts);
+    setReadiness(nextReadiness);
+    updateNav({
+      factReviewReady: nextReadiness.ready_for_analysis,
+      unresolvedHighImpactFactCount: nextReadiness.unresolved_high_impact_count,
+    });
+  }, [caseId, updateNav]);
 
   useEffect(() => {
     if (!caseId) {
@@ -151,6 +287,37 @@ export function Upload() {
       ignore = true;
     };
   }, [caseId]);
+
+  useEffect(() => {
+    if (!caseId) {
+      return;
+    }
+
+    let ignore = false;
+    Promise.all([
+      listFacts(caseId),
+      getFactReadiness(caseId),
+    ])
+      .then(([nextFacts, nextReadiness]) => {
+        if (ignore) return;
+        setFacts(nextFacts);
+        setReadiness(nextReadiness);
+        updateNav({
+          factReviewReady: nextReadiness.ready_for_analysis,
+          unresolvedHighImpactFactCount: nextReadiness.unresolved_high_impact_count,
+        });
+      })
+      .catch(err => {
+        if (!ignore) {
+          setFactsError(errorText(err, 'No pudimos cargar los hechos del caso.'));
+          updateNav({ factReviewReady: false });
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [caseId, updateNav]);
 
   useEffect(() => {
     if (!caseId || !selectedDocumentIdForSegments) {
@@ -215,6 +382,8 @@ export function Upload() {
         fileName: uploaded.original_filename,
         detectionScenario: statusToScenario(uploaded.extraction_status),
         mockAnalysisAcknowledged: false,
+        factReviewReady: false,
+        unresolvedHighImpactFactCount: undefined,
       });
 
       setUploadStage('refreshing');
@@ -226,12 +395,45 @@ export function Upload() {
         setUploadError('Documento guardado, pero no pudimos actualizar la lista. Recarga la pagina para ver el estado completo.');
       }
       setSelectedDocumentId(uploaded.id);
+      try {
+        await refreshFactReview();
+      } catch {
+        setFactsError('Documento guardado, pero no pudimos actualizar los hechos extraidos. Recarga la pagina para revisar la confirmacion.');
+        nav.set({ factReviewReady: false });
+      }
       setUploadStage('complete');
     } catch (err) {
       setUploadStage('idle');
       setUploadError(errorText(err, 'No pudimos guardar el documento.'));
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleFactAction(fact: ConsumerCreditFact, action: FactConfirmationAction) {
+    if (!caseId || factActionById[fact.id]) return;
+
+    try {
+      setFactsError(null);
+      setFactActionById(previous => ({ ...previous, [fact.id]: action }));
+      const payload = buildConfirmationPayload(fact, action, correctionById[fact.id] ?? '');
+      await recordFactConfirmation({ caseId, factId: fact.id, payload });
+      if (action === 'correct') {
+        setCorrectionById(previous => {
+          const next = { ...previous };
+          delete next[fact.id];
+          return next;
+        });
+      }
+      await refreshFactReview();
+    } catch (err) {
+      setFactsError(errorText(err, 'No pudimos registrar la decision.'));
+    } finally {
+      setFactActionById(previous => {
+        const next = { ...previous };
+        delete next[fact.id];
+        return next;
+      });
     }
   }
 
@@ -245,6 +447,7 @@ export function Upload() {
       nav.set({
         fileName: primaryDocument.original_filename,
         detectionScenario: statusToScenario(primaryDocument.extraction_status),
+        factReviewReady: true,
       });
     }
     nav.go('process');
@@ -475,7 +678,7 @@ export function Upload() {
                   {selectedDocument.original_filename}
                 </h2>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.45 }}>
-                  Vista corta para verificar que el lector encontro texto. La confirmacion de hechos y los hallazgos quedan fuera de esta fase.
+                  Vista corta para verificar que el lector encontro texto. La confirmacion se revisa abajo y los hallazgos quedan fuera de esta fase.
                 </div>
               </div>
               <span className={`pill ${EXTRACTION_COPY[selectedDocument.extraction_status].className}`}>
@@ -494,28 +697,139 @@ export function Upload() {
           </section>
         )}
 
+        {hasPersisted && hasDocuments && (
+          <section className="card" style={{ padding: 20, marginTop: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+              <div>
+                <div className="label">Hechos por confirmar</div>
+                <h2 className="display" style={{ fontSize: 20, margin: '6px 0 4px', letterSpacing: 0 }}>
+                  Revisa los datos antes de analizar
+                </h2>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.45 }}>
+                  Estos son candidatos extraidos del texto. Solo los hechos confirmados, corregidos o rechazados abren el siguiente paso.
+                </div>
+              </div>
+              <span className={`pill ${readinessReady ? 'pill-green' : 'pill-amber'}`}>
+                {readinessReady ? 'Listo para prototipo' : 'Bloqueado'}
+              </span>
+            </div>
+
+            {readiness && (
+              <div className="fact-review-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10, marginTop: 16 }}>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Total</div>
+                  <strong>{readiness.total_fact_count}</strong>
+                </div>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Alto impacto</div>
+                  <strong>{readiness.high_impact_fact_count}</strong>
+                </div>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Pendientes</div>
+                  <strong>{readiness.unresolved_high_impact_count}</strong>
+                </div>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Resueltos</div>
+                  <strong>{readiness.status_counts.confirmed + readiness.status_counts.corrected + readiness.status_counts.rejected}</strong>
+                </div>
+              </div>
+            )}
+
+            {factsLoading && <div style={emptyStateStyle}>Cargando hechos extraidos...</div>}
+            {factsError && <div style={errorBoxStyle}>{factsError}</div>}
+            {!factsLoading && !factsError && factRecords.length === 0 && (
+              <div style={emptyStateStyle}>
+                Todavia no hay hechos extraidos para confirmar. Sube un documento con texto de credito de consumo o revisa si la lectura quedo pendiente.
+              </div>
+            )}
+
+            {readiness && readiness.missing_required_fact_keys.length > 0 && (
+              <div style={{ ...errorBoxStyle, background: 'var(--amber-soft)', color: 'var(--amber)' }}>
+                Faltan datos obligatorios: {readiness.missing_required_fact_keys.map(key => FACT_KEY_LABELS[key] ?? key).join(', ')}.
+              </div>
+            )}
+
+            {factRecords.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
+                {factRecords.map(fact => {
+                  const status = STATUS_COPY[fact.confirmation_status];
+                  const resolved = fact.confirmation_status !== 'pending';
+                  const busy = Boolean(factActionById[fact.id]);
+                  const correction = correctionById[fact.id] ?? '';
+                  return (
+                    <div key={fact.id} style={factRowStyle}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: fact.high_impact ? 'var(--amber-soft)' : 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+                          <Icon name={fact.high_impact ? 'shield-check' : 'file'} size={16} color={fact.high_impact ? 'var(--amber)' : 'var(--ink-faint)'} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <strong style={{ fontSize: 13.5 }}>{fact.label}</strong>
+                            <span className={`pill ${status.className}`} style={{ fontSize: 10.5 }}>{status.label}</span>
+                            {fact.high_impact && <span className="pill" style={{ fontSize: 10.5 }}>alto impacto</span>}
+                          </div>
+                          <div style={{ marginTop: 5, fontSize: 13, color: fact.warning_code ? 'var(--amber)' : 'var(--ink)', fontWeight: 700 }}>
+                            {formatFactValue(fact)}
+                          </div>
+                          <div style={{ marginTop: 5, fontSize: 11.5, color: 'var(--ink-faint)' }}>
+                            {fact.extraction_provider} · {factLocator(fact)}
+                            {fact.confidence !== null ? ` · ${Math.round(fact.confidence * 100)}% confianza` : ''}
+                          </div>
+                          {fact.source_snippet && (
+                            <blockquote style={snippetStyle}>{fact.source_snippet}</blockquote>
+                          )}
+                          {!resolved && (
+                            <div className="fact-action-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) auto auto auto', gap: 8, marginTop: 10 }}>
+                              <input
+                                aria-label={`Correccion para ${fact.label}`}
+                                value={correction}
+                                onChange={event => setCorrectionById(previous => ({ ...previous, [fact.id]: event.target.value }))}
+                                placeholder="Correccion opcional"
+                                style={correctionInputStyle}
+                              />
+                              <button type="button" className="btn btn-small" disabled={busy} onClick={() => handleFactAction(fact, 'correct')}>
+                                Corregir
+                              </button>
+                              <button type="button" className="btn btn-small btn-accent" disabled={busy} onClick={() => handleFactAction(fact, 'confirm')}>
+                                Confirmar
+                              </button>
+                              <button type="button" className="btn btn-small btn-ghost" disabled={busy} onClick={() => handleFactAction(fact, 'reject')} style={{ color: 'var(--red)' }}>
+                                Rechazar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
         {hasPersisted && (
           <div className="card" style={{
             marginTop: 18,
             padding: '14px 16px',
-            borderColor: requiresPrototypeAck ? 'var(--amber)' : 'var(--line)',
-            background: requiresPrototypeAck ? 'var(--amber-soft)' : '#fff',
+            borderColor: factReviewBlocked || requiresPrototypeAck ? 'var(--amber)' : 'var(--line)',
+            background: factReviewBlocked || requiresPrototypeAck ? 'var(--amber-soft)' : '#fff',
           }}>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-              <Icon name="shield-check" size={18} color={requiresPrototypeAck ? 'var(--amber)' : 'var(--accent)'} />
+              <Icon name="shield-check" size={18} color={factReviewBlocked || requiresPrototypeAck ? 'var(--amber)' : 'var(--accent)'} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 800 }}>Los siguientes pasos siguen siendo prototipo</div>
+                <div style={{ fontSize: 13.5, fontWeight: 800 }}>La confirmacion abre el prototipo</div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 3, lineHeight: 1.45 }}>
-                  El documento ya puede guardarse y mostrar texto, pero lectura de hechos, plan y resultados todavia usan datos simulados.
+                  Los hechos de alto impacto deben estar confirmados, corregidos o rechazados antes de entrar a pantallas simuladas de analisis.
                 </div>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10, fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>
                   <input
                     type="checkbox"
                     checked={Boolean(nav.state.mockAnalysisAcknowledged)}
-                    disabled={!hasDocuments}
+                    disabled={!hasDocuments || !readinessReady}
                     onChange={event => nav.set({ mockAnalysisAcknowledged: event.target.checked })}
                   />
-                  Entiendo que los hallazgos posteriores no son analisis real todavia.
+                  Entiendo que las pantallas posteriores siguen siendo prototipo hasta construir el motor de analisis.
                 </label>
               </div>
             </div>
@@ -567,6 +881,43 @@ const errorBoxStyle = {
   color: 'var(--red)',
   fontSize: 13,
   fontWeight: 700,
+} as const;
+
+const summaryBoxStyle = {
+  padding: '10px 12px',
+  borderRadius: 10,
+  background: 'var(--paper-2)',
+  border: '1px solid var(--line)',
+  minWidth: 0,
+} as const;
+
+const factRowStyle = {
+  padding: 13,
+  borderRadius: 10,
+  border: '1px solid var(--line)',
+  background: '#fff',
+} as const;
+
+const snippetStyle = {
+  margin: '9px 0 0',
+  padding: '9px 11px',
+  borderLeft: '3px solid var(--line-2)',
+  background: 'var(--paper-2)',
+  color: 'var(--ink-soft)',
+  fontSize: 12,
+  lineHeight: 1.45,
+} as const;
+
+const correctionInputStyle = {
+  minHeight: 34,
+  borderRadius: 8,
+  border: '1px solid var(--line)',
+  background: '#fff',
+  color: 'var(--ink)',
+  padding: '0 10px',
+  fontFamily: 'Manrope',
+  fontSize: 12.5,
+  outline: 'none',
 } as const;
 
 const emptyStateStyle = {

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Upload } from '../../src/screens/Upload';
 import { NavCtx, type NavState, type NavValue } from '../../src/components/NavContext';
 import type { DocumentRecord, ExtractedTextSegment } from '../../src/api/documents';
+import type { ConsumerCreditFact, FactReadiness } from '../../src/api/facts';
 
 const DOCUMENT: DocumentRecord = {
   id: 'doc-123',
@@ -37,6 +38,67 @@ const SEGMENT: ExtractedTextSegment = {
   warning_message: null,
 };
 
+const FACT: ConsumerCreditFact = {
+  id: 'fact-123',
+  case_id: 'case-123',
+  document_id: 'doc-123',
+  text_segment_id: 'seg-123',
+  fact_key: 'cae',
+  label: 'CAE',
+  value_kind: 'percentage',
+  value_text: null,
+  value_number: 12,
+  value_currency: null,
+  value_date: null,
+  unit: 'percent_annual',
+  high_impact: true,
+  confirmation_status: 'confirmed',
+  source_type: 'uploaded_document',
+  source_page_number: null,
+  source_start_offset: 0,
+  source_end_offset: 12,
+  source_snippet: 'CAE 12% anual',
+  extraction_provider: 'local-facts-v1',
+  extracted_at: '2026-05-15T00:00:00Z',
+  confidence: 0.9,
+  warning_code: null,
+  warning_message: null,
+  created_at: '2026-05-15T00:00:00Z',
+  updated_at: '2026-05-15T00:00:00Z',
+};
+
+const READY_READINESS: FactReadiness = {
+  case_id: 'case-123',
+  ready_for_analysis: true,
+  blockers: [],
+  required_fact_keys: ['cae'],
+  missing_required_fact_keys: [],
+  total_fact_count: 1,
+  high_impact_fact_count: 1,
+  unresolved_high_impact_count: 0,
+  unresolved_fact_ids: [],
+  status_counts: {
+    pending: 0,
+    confirmed: 1,
+    corrected: 0,
+    rejected: 0,
+  },
+};
+
+const BLOCKED_READINESS: FactReadiness = {
+  ...READY_READINESS,
+  ready_for_analysis: false,
+  blockers: ['unresolved_high_impact_facts'],
+  unresolved_high_impact_count: 1,
+  unresolved_fact_ids: ['fact-123'],
+  status_counts: {
+    pending: 1,
+    confirmed: 0,
+    corrected: 0,
+    rejected: 0,
+  },
+};
+
 function jsonResponse(body: unknown, ok = true): Response {
   return {
     ok,
@@ -48,15 +110,28 @@ function stubUploadFetch({
   documents = [],
   segments = [],
   uploadedDocument = DOCUMENT,
+  facts = [FACT],
+  readiness = READY_READINESS,
 }: {
   documents?: DocumentRecord[];
   segments?: ExtractedTextSegment[];
   uploadedDocument?: DocumentRecord;
+  facts?: ConsumerCreditFact[];
+  readiness?: FactReadiness;
 } = {}) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? 'GET';
 
+    if (method === 'GET' && url.endsWith('/api/cases/case-123/facts/readiness')) {
+      return jsonResponse(readiness);
+    }
+    if (method === 'GET' && url.endsWith('/api/cases/case-123/facts')) {
+      return jsonResponse(facts);
+    }
+    if (method === 'POST' && url.endsWith('/api/cases/case-123/facts/fact-123/confirmations')) {
+      return jsonResponse({ id: 'confirmation-123', fact_id: 'fact-123', owner_ref: 'demo-user', action: 'confirm' }, true);
+    }
     if (method === 'POST' && url.endsWith('/api/cases/case-123/documents')) {
       return jsonResponse(uploadedDocument);
     }
@@ -166,18 +241,73 @@ describe('Upload persistence flow', () => {
 
     expect((await screen.findAllByText('contrato.txt')).length).toBeGreaterThan(0);
     expect(screen.getByText('Documento principal · 34 B · text/plain')).toBeTruthy();
-    expect(await screen.findByText(/CAE 12% anual/)).toBeTruthy();
+    expect((await screen.findAllByText(/CAE 12% anual/)).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Texto extraido').length).toBeGreaterThan(0);
+  });
+
+  it('renders fact readiness and records a confirmation decision', async () => {
+    const user = userEvent.setup();
+    const pendingFact = { ...FACT, confirmation_status: 'pending' as const };
+    const fetchMock = stubUploadFetch({
+      documents: [DOCUMENT],
+      segments: [SEGMENT],
+      facts: [pendingFact],
+      readiness: BLOCKED_READINESS,
+    });
+    renderUpload({ caseId: 'case-123', mockAnalysisAcknowledged: false });
+
+    expect(await screen.findByText('Revisa los datos antes de analizar')).toBeTruthy();
+    expect(screen.getByText('Bloqueado')).toBeTruthy();
+    expect(screen.getByText('12%')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /confirmar/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:18080/api/cases/case-123/facts/fact-123/confirmations',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ fact_id: 'fact-123', action: 'confirm' }),
+        }),
+      );
+    });
+  });
+
+  it('rejects non-numeric corrections before sending them to the API', async () => {
+    const user = userEvent.setup();
+    const pendingFact = { ...FACT, confirmation_status: 'pending' as const };
+    const fetchMock = stubUploadFetch({
+      documents: [DOCUMENT],
+      segments: [SEGMENT],
+      facts: [pendingFact],
+      readiness: BLOCKED_READINESS,
+    });
+    renderUpload({ caseId: 'case-123', mockAnalysisAcknowledged: false });
+
+    await screen.findByText('Revisa los datos antes de analizar');
+    await user.type(screen.getByLabelText('Correccion para CAE'), '$');
+    await user.click(screen.getByRole('button', { name: /corregir/i }));
+
+    expect(await screen.findByText('Ingresa un numero valido para corregir este hecho.')).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([input, init]) => (
+      String(input).includes('/api/cases/case-123/facts/fact-123/confirmations')
+      && init?.method === 'POST'
+    ))).toBe(false);
   });
 
   it('surfaces OCR-pending status without enabling real analysis claims', async () => {
     const needsOcr = { ...DOCUMENT, extraction_status: 'needs_ocr' as const, original_filename: 'escaneo.png', content_type: 'image/png' };
-    stubUploadFetch({ documents: [needsOcr], segments: [] });
+    stubUploadFetch({
+      documents: [needsOcr],
+      segments: [],
+      facts: [{ ...FACT, confirmation_status: 'pending' }],
+      readiness: BLOCKED_READINESS,
+    });
     renderUpload({ caseId: 'case-123', mockAnalysisAcknowledged: true });
 
     expect((await screen.findAllByText('Necesita OCR')).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/OCR queda pendiente/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/hallazgos posteriores no son analisis real/i)).toBeTruthy();
+    expect(screen.getByText(/deben estar confirmados, corregidos o rechazados/i)).toBeTruthy();
   });
 
   it('shows an upload error when the POST fails', async () => {
@@ -211,6 +341,8 @@ describe('Upload persistence flow', () => {
         return jsonResponse(DOCUMENT);
       }
       if (method === 'GET' && url.endsWith('/text-segments')) return jsonResponse([SEGMENT]);
+      if (method === 'GET' && url.endsWith('/facts/readiness')) return jsonResponse(READY_READINESS);
+      if (method === 'GET' && url.endsWith('/facts')) return jsonResponse([FACT]);
       if (method === 'GET' && url.endsWith('/documents')) {
         listCallCount++;
         if (listCallCount === 1) return jsonResponse([]);
@@ -226,6 +358,49 @@ describe('Upload persistence flow', () => {
     await user.click(screen.getByRole('button', { name: /guardar documento/i }));
 
     expect(await screen.findByText(/Documento guardado, pero no pudimos actualizar la lista/)).toBeTruthy();
+    expect(nav.set).toHaveBeenCalledWith(expect.objectContaining({
+      fileName: 'contrato.txt',
+      detectionScenario: 'ready',
+    }));
+  });
+
+  it('keeps the saved upload state when fact readiness refresh fails after a successful POST', async () => {
+    const user = userEvent.setup();
+    let documentsCallCount = 0;
+    let factsCallCount = 0;
+    let readinessCallCount = 0;
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = init?.method ?? 'GET';
+      if (method === 'POST' && url.endsWith('/documents')) {
+        return jsonResponse(DOCUMENT);
+      }
+      if (method === 'GET' && url.endsWith('/text-segments')) return jsonResponse([SEGMENT]);
+      if (method === 'GET' && url.endsWith('/facts/readiness')) {
+        readinessCallCount++;
+        if (readinessCallCount === 1) return jsonResponse(READY_READINESS);
+        throw new Error('Readiness refresh failed');
+      }
+      if (method === 'GET' && url.endsWith('/facts')) {
+        factsCallCount++;
+        if (factsCallCount === 1) return jsonResponse([FACT]);
+        throw new Error('Facts refresh failed');
+      }
+      if (method === 'GET' && url.endsWith('/documents')) {
+        documentsCallCount++;
+        return jsonResponse(documentsCallCount === 1 ? [] : [DOCUMENT]);
+      }
+      throw new Error(`Unhandled fetch: ${method} ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const nav = renderUpload({ caseId: 'case-123', mockAnalysisAcknowledged: true });
+    const file = new File(['CAE 12%'], 'contrato.txt', { type: 'text/plain' });
+
+    await user.upload(screen.getByLabelText('Archivo del documento'), file);
+    await user.click(screen.getByRole('button', { name: /guardar documento/i }));
+
+    expect(await screen.findByText(/Documento guardado, pero no pudimos actualizar los hechos extraidos/)).toBeTruthy();
+    expect(screen.queryByText(/No pudimos guardar el documento/)).toBeNull();
     expect(nav.set).toHaveBeenCalledWith(expect.objectContaining({
       fileName: 'contrato.txt',
       detectionScenario: 'ready',

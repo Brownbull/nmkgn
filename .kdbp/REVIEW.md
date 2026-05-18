@@ -3,16 +3,12 @@
 sources:
   - cli: codex
     model: gpt-5
-    timestamp: 2026-05-15T22:24:03Z
-    findings: 1
-  - cli: claude
-    model: claude-opus-4-6
-    timestamp: 2026-05-15T22:35:00Z
+    timestamp: 2026-05-18T14:22:46Z
     findings: 2
-consolidated_at: 2026-05-15T22:35:00Z
-consolidation: union
+consolidated_at: 2026-05-18T14:22:46Z
+consolidation: single-source
 project_root: /home/khujta/projects/apps/nmkgn
-target: Phase 3 - Confirmation API and analysis gate
+target: Phase 4 - Frontend fact review handoff
 maturity: mvp
 status: resolved
 ---
@@ -20,28 +16,29 @@ status: resolved
 # Gabe Review — Live Document
 
 **Verdict:** APPROVE
-**Confidence:** 95/100
+**Confidence:** 96/100
 **Coverage:** HIGH
-**Findings:** 2 (CRITICAL: 0, HIGH: 1, MEDIUM: 0, LOW: 1) | **Sources:** codex+claude
+**Findings:** 2 (CRITICAL: 0, HIGH: 2, MEDIUM: 0, LOW: 0) | **Sources:** codex
 **Resolution:** 2 fixed / 0 deferred / 0 dismissed (pending: 0)
 
 ## Findings
 
 | # | Status | Severity | Finding | File | Churn | Fix Cost | Defer Risk | Maturity Gate | Escalation | Sources |
 |---|--------|----------|---------|------|-------|----------|------------|---------------|------------|---------|
-| 1 | fixed | HIGH | `correct` accepts any corrected field regardless of the target fact's `value_kind`; a money, date, integer, or percentage fact can be corrected with an unrelated field, opening the readiness gate without a usable corrected value. Architecture principles: AP3 allowed means used, AP8 explicit state. | `api/services/facts.py:66` | ✅ STABLE | M | INVALID CORRECTION TRUSTED — P(medium), I(high) | MVP | - | codex, claude |
-| 2 | fixed | LOW | `list_facts` and `readiness` route 404 paths for nonexistent case are implemented but not exercised by any test. The pattern works (tested via confirmation endpoint) but these specific endpoints lack coverage. | `api/routes/facts.py:28-43` | ✅ STABLE | S | UNTESTED ERROR PATH — P(low), I(low) | MVP | - | claude |
+| 1 | fixed | HIGH | A successful document upload still flowed into the outer upload-failure path when the new fact-readiness refresh failed, so the UI could tell the user the document was not saved even after `POST /documents` succeeded. | `src/screens/Upload.tsx:398` | ⚠️ WARM | S | SAVED UPLOAD MISREPORTED FAILED — P(medium), I(high) | MVP | - | codex |
+| 2 | fixed | HIGH | Numeric corrections stripped non-digits before parsing but accepted strings with no digits as `0`, so input such as `$` could submit a zero correction and resolve a high-impact fact with bad data. | `src/screens/Upload.tsx:154` | ⚠️ WARM | S | INVALID CORRECTION TRUSTED — P(medium), I(high) | MVP | - | codex |
 
 ## Fixes Applied
 
-- #1: Added `_validate_correction_compatibility()` in `api/services/facts.py` that checks the correction payload has a value field compatible with the fact's `value_kind` (money/integer/percentage require `corrected_value_number`, date requires `corrected_value_date`, currency requires `corrected_value_currency`, text/boolean require `corrected_value_text`). Added `InvalidCorrectionError` mapped to 422 in the route. Added `test_correction_rejects_type_incompatible_value` verifying money-with-date and date-with-number are rejected and fact status remains pending.
-- #2: Added `test_list_and_readiness_return_404_for_nonexistent_case` verifying both endpoints return 404.
+- #1: Wrapped the post-upload `refreshFactReview()` call in its own catch so the saved document remains visible and fact refresh errors are shown as fact-review errors rather than upload failures. Added a regression test for fact-refresh failure after successful upload.
+- #2: Required at least one digit after numeric correction normalization before parsing. Added a regression test proving a non-numeric correction does not call the confirmation API.
 
 ## Plan Alignment (5a)
 
-ALIGNED — Phase 3 asks for owner-scoped fact review and confirmation endpoints
-plus a readiness gate. The diff adds fact service/routes/schemas, API wiring,
-focused API tests, architecture docs, and KDBP execution bookkeeping.
+ALIGNED — Phase 4 asks for a frontend fact review handoff with source snippets,
+correction controls, status summaries, and prototype-analysis guardrails. The
+diff changes the upload/fact-review screen, typed facts API client, nav guard
+state, focused frontend tests, documentation, and KDBP bookkeeping.
 
 ## Stale Verified Topics (5c)
 
@@ -49,7 +46,7 @@ None. `.kdbp/KNOWLEDGE.md` has no verified topics.
 
 ## Architectural Decisions (5b)
 
-None proposed. D10 already records the Phase 3 MVP decision.
+None proposed. D11 already records the Phase 4 MVP decision.
 
 ## Tier Drift (5d)
 
@@ -61,11 +58,13 @@ No open deferred code-review items were found in `.kdbp/PENDING.md`.
 
 ## Verification
 
-- `uv run pytest tests/api/test_facts_api.py` — passed, 7 tests.
+- `npm test -- --run tests/frontend/Upload.test.tsx` — passed, 14 tests.
+- `npm test` — passed, 24 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
 - `uv run pytest` — passed, 51 backend tests.
-- `npm test` — passed, 21 frontend tests.
 - `uv run ruff check` — passed.
-- `uv run ruff format --check` — passed (changed files).
+- `git diff --check` — passed.
 
 ---
-_Review resolved. Archived via Step 6._
+_Review resolved. Phase 4 Review ticked in PLAN.md._

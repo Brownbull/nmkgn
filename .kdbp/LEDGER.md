@@ -1,5 +1,85 @@
 # Session Ledger
 
+## 2026-05-18 10:26 — PHASE 4 COMMIT GATE
+
+Prepared `/gabe-next` routed through the Phase 4 commit gate.
+
+- PLAN: Phase 4 `Commit` marked `✅`; Push remains pending.
+- Included the frontend fact review handoff, typed facts API client, prototype
+  analysis guard, review fixes, regression tests, docs, and resolved review
+  inbox state in the commit scope.
+
+Verification:
+
+- `npm test` — passed, 24 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `uv run pytest` — passed, 51 backend tests.
+- `uv run ruff check` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-18 10:22 — PHASE 4 REVIEW: Frontend fact review handoff
+
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 2 high, 0 medium, 0 low)
+COVERAGE: HIGH — upload/fact-refresh and correction-validation regressions
+added during review
+CONFIDENCE: 76 -> 96/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5)
+FIXES: #1 kept a successfully saved upload out of the outer upload-failure path
+when fact-readiness refresh fails; #2 rejected correction strings with no digits
+before they can normalize to `0`.
+
+Verification:
+
+- `npm test -- --run tests/frontend/Upload.test.tsx` — passed, 14 tests.
+- `npm test` — passed, 24 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `uv run pytest` — passed, 51 backend tests.
+- `uv run ruff check` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-17 18:32 — PHASE 4 EXECUTION COMPLETE
+
+Implemented the frontend fact review handoff.
+
+- Added a typed facts API client for listing candidates, reading readiness, and
+  recording confirm/correct/reject decisions.
+- Extended the upload handoff with fact-candidate review, source snippets,
+  status summaries, missing-required-field blockers, and correction controls.
+- Added navigation state and a prototype-analysis guard that blocks later
+  analysis screens until case readiness is open and the prototype acknowledgement
+  is accepted.
+- Updated docs to reflect that facts can now be reviewed while analysis/results
+  remain prototype surfaces.
+- PLAN: Phase 4 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `npm test -- --run tests/frontend/Upload.test.tsx` — passed, 12 tests.
+- `npm test` — passed, 22 frontend tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `uv run pytest tests/api/test_facts_api.py` — passed, 7 backend tests.
+- `uv run pytest` — passed, 51 backend tests.
+- `git diff --check` — passed.
+
+## 2026-05-17 18:25 — PHASE 4 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 4: Frontend fact review
+handoff.
+
+- PLAN: advanced from completed Phase 3 to Phase 4; Phase 4 `Exec` marked
+  `🔄`.
+- Scope is the frontend fact review handoff: API client/state, source snippets,
+  confirm/correct/reject controls, unresolved fact summaries, and guardrails
+  before prototype analysis.
+
 ## 2026-05-17 17:27 — PUSH main -> main
 PR: —
 CI: — (no CI configured)

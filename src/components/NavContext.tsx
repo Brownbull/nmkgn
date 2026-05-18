@@ -13,6 +13,8 @@ export interface NavState {
   analysisPlan?: 'before_signing_review' | 'after_signing_discrepancy';
   institutionName?: string;
   mockAnalysisAcknowledged?: boolean;
+  factReviewReady?: boolean;
+  unresolvedHighImpactFactCount?: number;
 }
 
 export interface NavValue {

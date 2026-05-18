@@ -188,7 +188,9 @@ body {
 .plan-workspace,
 .coach-main-grid,
 .coach-stats-grid,
-.intl-ref-grid {
+.intl-ref-grid,
+.fact-review-summary-grid,
+.fact-action-grid {
   width: 100%;
 }
 
@@ -226,7 +228,9 @@ body {
 
   .upload-type-grid,
   .coach-stats-grid,
-  .intl-ref-grid {
+  .intl-ref-grid,
+  .fact-review-summary-grid,
+  .fact-action-grid {
     grid-template-columns: 1fr !important;
   }
 

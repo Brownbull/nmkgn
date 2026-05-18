@@ -357,13 +357,14 @@ Expected future service boundaries:
 Current screens live under `src/screens/`. The case setup and upload steps now
 cross the real backend boundary: case setup creates persisted consumer-credit
 cases, and upload calls the document API to store files, list document metadata,
-and show extracted text segments. Later analysis, plan, finding, and email
-screens remain prototype surfaces until normalized facts, confirmations, agents,
-and evidence-backed findings exist.
+show extracted text segments, list fact candidates, record confirm/correct/reject
+decisions, and read the case-level readiness gate. Later analysis, plan,
+finding, and email screens remain prototype surfaces until agents and
+evidence-backed findings exist.
 
 Frontend API helpers live under `src/api/`. `src/api/client.ts` owns the Vite
-API base URL, while endpoint-specific clients such as `cases.ts` and
-`documents.ts` own request payloads and response types.
+API base URL, while endpoint-specific clients such as `cases.ts`,
+`documents.ts`, and `facts.ts` own request payloads and response types.
 
 ## Integrations
 

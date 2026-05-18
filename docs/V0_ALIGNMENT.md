@@ -109,18 +109,20 @@ validated rule and the product clearly explains the evidence.
 ## UX Structure From Current Mockups
 
 Keep the current mockup flow as the starting structure, with Phase 1 narrowing
-the active path to persisted case intake and Phase 4 replacing the upload
-handoff with real document persistence:
+the active path to persisted case intake and the current handoff replacing the
+upload prototype with real document persistence plus fact confirmation:
 
 1. login with the fixed demo identity
 2. case setup with fixed lean fields and required stage selection
 3. persisted consumer-credit case creation
 4. document upload, status display, and extracted-text preview using the
    returned `caseId`
-5. simulated analysis acknowledgement before entering later prototype screens
-6. findings by perspective
-7. next actions
-8. export, compare, or draft communication
+5. fact-candidate review with source snippets, confirm/correct/reject controls,
+   and readiness blockers
+6. simulated analysis acknowledgement before entering later prototype screens
+7. findings by perspective
+8. next actions
+9. export, compare, or draft communication
 
 The mockups are not final implementation quality. The real app still needs
 responsive layout work, accessible controls, source inspection, and state/error
@@ -130,10 +132,11 @@ Phase 1 keeps persisted cases limited to `consumer_credit`. Other document-type
 labels may remain visible as future options, but they must not mutate a persisted
 case into an unsupported document type.
 
-Phase 4 lets persisted cases upload primary and comparison documents, but it
-does not turn extracted text into confirmed facts, analysis, or findings. The UI
-must keep OCR-pending, failed extraction, and later prototype analysis visibly
-separate from real document storage.
+The current fact-review handoff lets persisted cases review deterministic
+consumer-credit fact candidates before the prototype analysis path. It can
+confirm, correct, or reject candidates and shows readiness blockers, but it
+still must keep OCR-pending documents, missing facts, and later prototype
+analysis visibly separate from evidence-backed findings.
 
 ## Implementation Implications
 
