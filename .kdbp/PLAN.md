@@ -16,7 +16,7 @@ require user confirmation before those facts can drive analysis or findings.
 - **Maturity:** mvp
 - **Domain:** Chilean consumer-credit case reviewer.
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-05-15
+- **Last Updated:** 2026-05-18
 - **Roadmap coverage:** ROADMAP Phase 3 (`REQ-03`, `REQ-05`) building on the
   completed document ingestion and extracted-text foundation from ROADMAP
   Phase 2.
@@ -56,7 +56,7 @@ require user confirmation before those facts can drive analysis or findings.
 | 1 | Fact contract and schema | Add normalized fact and confirmation persistence contracts, schemas, migration, and architecture docs. | `persistence, data-migration, data-validation` | mvp | high | ✅ | ✅ | ✅ | ✅ |
 | 2 | MVP fact extraction service | Extract common high-impact consumer-credit facts from stored text segments with provenance and warnings. | `persistence, extraction, data-processing` | mvp | high | ✅ | ✅ | ✅ | ✅ |
 | 3 | Confirmation API and analysis gate | Expose owner-scoped fact review/confirmation endpoints and block downstream analysis until high-impact facts are confirmed or rejected. | `api, user-facing, data-validation` | mvp | med | ✅ | ✅ | ✅ | ✅ |
-| 4 | Frontend fact review handoff | Add a fact confirmation screen/state with source snippets, correction controls, status summaries, and prototype-analysis guardrails. | `user-facing, client-state` | mvp | med | ✅ | ✅ | ✅ | ⬜ |
+| 4 | Frontend fact review handoff | Add a fact confirmation screen/state with source snippets, correction controls, status summaries, and prototype-analysis guardrails. | `user-facing, client-state` | mvp | med | ✅ | ✅ | ✅ | ✅ |
 
 <!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->
 <!-- Review/Commit/Push auto-ticked by /gabe-review, /gabe-commit, /gabe-push -->
