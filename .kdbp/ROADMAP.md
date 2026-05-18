@@ -4,9 +4,9 @@ scope_version: 1
 roadmap_version: 1
 granularity: standard
 phases_total: 7
-phases_complete: 0
+phases_complete: 3
 created: 2026-05-13
-last_change: 2026-05-13
+last_change: 2026-05-18
 ---
 
 # ROADMAP — nmkgn
@@ -22,9 +22,9 @@ last_change: 2026-05-13
 
 | ID | Name | Status | Depends-on | Parallel-with | Covers REQs |
 |---|---|---|---|---|---|
-| 1 | Product Backbone and Case Intake | pending | — | — | [REQ-01](SCOPE.md#req-01) |
-| 2 | Document Ingestion and Provenance Store | pending | 1 | — | [REQ-02](SCOPE.md#req-02), [REQ-04](SCOPE.md#req-04) |
-| 3 | Fact Extraction and Confirmation | pending | 2 | — | [REQ-03](SCOPE.md#req-03), [REQ-05](SCOPE.md#req-05) |
+| 1 | Product Backbone and Case Intake | complete | — | — | [REQ-01](SCOPE.md#req-01) |
+| 2 | Document Ingestion and Provenance Store | complete | 1 | — | [REQ-02](SCOPE.md#req-02), [REQ-04](SCOPE.md#req-04) |
+| 3 | Fact Extraction and Confirmation | complete | 2 | — | [REQ-03](SCOPE.md#req-03), [REQ-05](SCOPE.md#req-05) |
 | 4 | Consumer-Credit Analysis Engine | pending | 3 | — | [REQ-06](SCOPE.md#req-06), [REQ-07](SCOPE.md#req-07), [REQ-08](SCOPE.md#req-08), [REQ-11](SCOPE.md#req-11) |
 | 5 | Before-Signing Review Path | pending | 4 | 6 | [REQ-09](SCOPE.md#req-09) |
 | 6 | After-Signing Discrepancy Path | pending | 4 | 5 | [REQ-10](SCOPE.md#req-10) |
@@ -47,7 +47,7 @@ Each phase below is deep-linkable via `{#phase-N}` anchor. `/gabe-teach` SCOPE m
 
 ### Phase 1 — Product Backbone and Case Intake {#phase-1}
 
-**Status:** pending
+**Status:** complete
 **Goal:** By end of this phase, a user can create a persisted Chilean consumer-credit case through the React app, FastAPI backend, and PostgreSQL database.
 
 **Why (business intent):** The product must begin with the case, not the document. This phase establishes the fixed-field intake, `case_stage` routing, and committed FastAPI/PostgreSQL backbone that every later extraction and analysis step depends on.
@@ -65,7 +65,7 @@ Each phase below is deep-linkable via `{#phase-N}` anchor. `/gabe-teach` SCOPE m
 
 ### Phase 2 — Document Ingestion and Provenance Store {#phase-2}
 
-**Status:** pending
+**Status:** complete
 **Goal:** By end of this phase, a user can upload primary and comparison documents and see document status backed by stored metadata and provenance-ready records.
 
 **Why (business intent):** Trust starts before analysis. The app needs a reliable ingestion path, document identity, run state, and storage model before it can make any claim about what the contract says.
@@ -83,7 +83,7 @@ Each phase below is deep-linkable via `{#phase-N}` anchor. `/gabe-teach` SCOPE m
 
 ### Phase 3 — Fact Extraction and Confirmation {#phase-3}
 
-**Status:** pending
+**Status:** complete
 **Goal:** By end of this phase, a user can inspect extracted high-impact facts with coordinates, dates, provider metadata, confidence, and confirmation controls.
 
 **Why (business intent):** OCR and extraction errors are the fastest way to create false trust. This phase makes source visibility and confirmation a required bridge between documents and findings.
@@ -212,3 +212,4 @@ Append-only. Tracks phase splits, merges, insertions, reorderings, and the `/gab
 | Date | Event | Summary |
 |---|---|---|
 | 2026-05-13 | init | Initial 7-phase roadmap derived from SCOPE.md v1. Granularity: standard. |
+| 2026-05-18 | status-sync | Marked Phases 1-3 complete from archived KDBP plans; next planning target remains Phase 4. |

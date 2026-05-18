@@ -1,1 +1,2 @@
 {"ts":"2026-05-13T19:43:38Z","event":"scope_init","scope_version":1,"roadmap_version":1,"tombstone":".kdbp/archive/tombstones/scope-session-2026-05-13T19-43-38Z.json"}
+{"ts":"2026-05-18T15:53:26Z","event":"roadmap_status_sync","scope_version":1,"roadmap_version":1,"phases_complete":[1,2,3],"source":"archived KDBP plans","next_phase":4}

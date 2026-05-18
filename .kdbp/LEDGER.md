@@ -1,5 +1,9 @@
 # Session Ledger
 
+## 2026-05-18 11:40 — PLAN COMPLETED: Normalize consumer-credit facts and add confirmation gate
+ARCHIVE: .kdbp/archive/completed_PLAN_2026-05-18_normalize-consumer-credit-facts.md
+PHASES COMPLETED: 4 of 4
+
 ## 2026-05-18 11:29 — PUSH main -> main
 PR: —
 CI: no CI
