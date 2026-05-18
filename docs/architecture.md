@@ -19,8 +19,9 @@ rules.
 
 The current backend persists the case shell, uploaded document metadata,
 extracted text segments, deterministic normalized consumer-credit fact
-candidates, and user confirmation records. It still does not run agent
-analysis or findings.
+candidates, user confirmation records, and the versioned analysis/finding
+persistence contract. It still does not execute analysis, call an agent, or
+expose analysis endpoints.
 
 ```mermaid
 erDiagram
@@ -29,6 +30,13 @@ erDiagram
   DOCUMENT ||--o{ CONSUMER_CREDIT_FACT : sources
   EXTRACTED_TEXT_SEGMENT ||--o{ CONSUMER_CREDIT_FACT : anchors
   CONSUMER_CREDIT_FACT ||--o{ FACT_CONFIRMATION : receives
+  CASE ||--o{ ANALYSIS_RUN : analyzes
+  ANALYSIS_RUN ||--o{ ANALYSIS_CALCULATION : computes
+  ANALYSIS_RUN ||--o{ ANALYSIS_FINDING : records
+  ANALYSIS_RUN ||--o{ UNSUPPORTED_ANALYSIS_OUTPUT : audits
+  ANALYSIS_FINDING ||--o{ ANALYSIS_EVIDENCE : cites
+  CONSUMER_CREDIT_FACT ||--o{ ANALYSIS_EVIDENCE : supports
+  ANALYSIS_CALCULATION ||--o{ ANALYSIS_EVIDENCE : supports
 
   CASE {
     uuid id PK
@@ -116,6 +124,90 @@ erDiagram
     string corrected_value_currency
     date corrected_value_date
     text note
+    datetime created_at
+  }
+
+  ANALYSIS_RUN {
+    uuid id PK
+    uuid case_id FK
+    string owner_ref
+    string schema_version
+    string status
+    json readiness_snapshot
+    json input_fact_ids
+    string agent_provider
+    string model_name
+    string prompt_version
+    integer prompt_tokens
+    integer completion_tokens
+    integer latency_ms
+    float cost_usd
+    text error_message
+    datetime started_at
+    datetime completed_at
+    datetime created_at
+    datetime updated_at
+  }
+
+  ANALYSIS_CALCULATION {
+    uuid id PK
+    uuid analysis_run_id FK
+    uuid case_id FK
+    string calculation_key
+    string label
+    string formula_version
+    json input_fact_ids
+    json inputs
+    json result
+    json missing_input_keys
+    datetime created_at
+  }
+
+  ANALYSIS_FINDING {
+    uuid id PK
+    uuid analysis_run_id FK
+    uuid case_id FK
+    string owner_ref
+    string finding_key
+    string title
+    text summary
+    string severity
+    string claim_type
+    string uncertainty_state
+    float confidence
+    integer display_order
+    datetime created_at
+    datetime updated_at
+  }
+
+  ANALYSIS_EVIDENCE {
+    uuid id PK
+    uuid analysis_run_id FK
+    uuid case_id FK
+    uuid finding_id FK
+    string evidence_type
+    uuid fact_id FK
+    uuid calculation_id FK
+    string calculation_key
+    string reference_key
+    string citation_url
+    string citation_label
+    datetime citation_retrieved_at
+    datetime citation_verified_at
+    text excerpt
+    text inference_summary
+    string model_name
+    string schema_version
+    datetime created_at
+  }
+
+  UNSUPPORTED_ANALYSIS_OUTPUT {
+    uuid id PK
+    uuid analysis_run_id FK
+    uuid case_id FK
+    string output_key
+    json raw_output
+    text reason
     datetime created_at
   }
 ```
@@ -231,12 +323,84 @@ Fact confirmation constraints:
 - Confirmation records preserve the user's decision separately from the
   original extraction evidence.
 
+Analysis run fields:
+
+- `id`
+- `case_id`
+- `owner_ref`
+- `schema_version`: starts at `consumer_credit_analysis.v1`
+- `status`: `pending`, `running`, `completed`, or `failed`
+- JSON snapshots for readiness inputs and fact ids used by the run
+- optional provider, model, prompt version, token, latency, cost, and error
+  metadata
+- optional `started_at` and `completed_at`
+- `created_at`
+- `updated_at`
+
+Analysis calculation fields:
+
+- `id`
+- `analysis_run_id`
+- `case_id`
+- `calculation_key`
+- `label`
+- `formula_version`: starts at `consumer_credit_calculations.v1`
+- JSON `input_fact_ids`, `inputs`, `result`, and `missing_input_keys`
+- `created_at`
+
+Analysis finding fields:
+
+- `id`
+- `analysis_run_id`
+- `case_id`
+- `owner_ref`
+- `finding_key`
+- `title`
+- `summary`
+- `severity`: `low`, `medium`, `high`, or `critical`
+- `claim_type`: `fact`, `calculation`, `reference`, or `inference`
+- `uncertainty_state`: `supported`, `uncertain`, or `missing_context`
+- optional `confidence`
+- `display_order`
+- `created_at`
+- `updated_at`
+
+Analysis evidence fields:
+
+- `id`
+- `analysis_run_id`
+- `case_id`
+- `finding_id`
+- `evidence_type`: `fact`, `calculation`, `reference`, or `inference`
+- optional fact and calculation anchors
+- optional reference key, citation URL, citation label, retrieved date, and
+  verified date
+- optional excerpt, inference summary, model name, and schema version
+- `created_at`
+
+Unsupported analysis output fields:
+
+- `id`
+- `analysis_run_id`
+- `case_id`
+- `output_key`
+- JSON `raw_output`
+- `reason`
+- `created_at`
+
+Analysis contract constraints:
+
+- An analysis run is case-scoped and owner-scoped.
+- Findings can only use trusted claim types. Unsupported model output cannot be
+  stored as a finding.
+- Evidence must be anchored by its type: fact id for fact evidence,
+  calculation id/key for calculation evidence, citation URL/label for reference
+  evidence, and inference summary/model name for inference evidence.
+- Unsupported model output is persisted only for audit/debug and is not linked
+  into the trusted finding list.
+
 Future domain objects:
 
-- AnalysisRun
-- ConsumerCreditAnalysis
-- Finding
-- Citation
 - AnalysisPlan
 - NextAction
 
@@ -288,7 +452,9 @@ The fact review API exposes the confirmation gate without starting analysis:
 
 The central contract is document-type-specific structured output:
 
-- `ConsumerCreditAgent` returns `ConsumerCreditAnalysis`.
+- `ConsumerCreditAgent` will return the stable `ConsumerCreditAnalysis` schema.
+- Analysis persistence stores versioned runs, calculations, findings, evidence,
+  and unsupported outputs before endpoints are exposed.
 - Future document agents return their own stable analysis models.
 - Shared primitives can cover money, dates, source citations, confidence,
   warnings, and next actions.
@@ -341,6 +507,9 @@ Current service boundaries:
 - Fact persistence contract for normalized consumer-credit candidates and
   confirmation records. The schema enforces provenance locator and correction
   boundaries.
+- Analysis persistence contract for versioned consumer-credit analysis runs,
+  deterministic calculation evidence, evidence-backed findings, citation
+  metadata, inference metadata, and audit-only unsupported outputs.
 
 Expected future service boundaries:
 

@@ -147,6 +147,7 @@ class ConsumerCreditFact(Base):
             "confidence is null or (confidence >= 0 and confidence <= 1)",
             name="ck_consumer_credit_facts_confidence",
         ),
+        UniqueConstraint("id", "case_id", name="uq_consumer_credit_facts_id_case_id"),
         ForeignKeyConstraint(
             ["document_id", "case_id"],
             ["documents.id", "documents.case_id"],

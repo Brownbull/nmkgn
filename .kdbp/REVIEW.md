@@ -3,12 +3,16 @@
 sources:
   - cli: codex
     model: gpt-5
-    timestamp: 2026-05-18T14:22:46Z
-    findings: 2
-consolidated_at: 2026-05-18T14:22:46Z
-consolidation: single-source
+    timestamp: 2026-05-18T17:04:10Z
+    findings: 1
+  - cli: claude
+    model: claude-opus-4-6
+    timestamp: 2026-05-18T13:20:00Z
+    findings: 1
+consolidated_at: 2026-05-18T13:20:00Z
+consolidation: union
 project_root: /home/khujta/projects/apps/nmkgn
-target: Phase 4 - Frontend fact review handoff
+target: Phase 1 - Analysis contract and persistence
 maturity: mvp
 status: resolved
 ---
@@ -16,55 +20,52 @@ status: resolved
 # Gabe Review — Live Document
 
 **Verdict:** APPROVE
-**Confidence:** 96/100
+**Confidence:** 95/100
 **Coverage:** HIGH
-**Findings:** 2 (CRITICAL: 0, HIGH: 2, MEDIUM: 0, LOW: 0) | **Sources:** codex
-**Resolution:** 2 fixed / 0 deferred / 0 dismissed (pending: 0)
+**Findings:** 1 (CRITICAL: 1, HIGH: 0, MEDIUM: 0, LOW: 0) | **Sources:** codex+claude
+**Resolution:** 1 fixed / 0 deferred / 0 dismissed (pending: 0)
 
 ## Findings
 
 | # | Status | Severity | Finding | File | Churn | Fix Cost | Defer Risk | Maturity Gate | Escalation | Sources |
 |---|--------|----------|---------|------|-------|----------|------------|---------------|------------|---------|
-| 1 | fixed | HIGH | A successful document upload still flowed into the outer upload-failure path when the new fact-readiness refresh failed, so the UI could tell the user the document was not saved even after `POST /documents` succeeded. | `src/screens/Upload.tsx:398` | ⚠️ WARM | S | SAVED UPLOAD MISREPORTED FAILED — P(medium), I(high) | MVP | - | codex |
-| 2 | fixed | HIGH | Numeric corrections stripped non-digits before parsing but accepted strings with no digits as `0`, so input such as `$` could submit a zero correction and resolve a high-impact fact with bad data. | `src/screens/Upload.tsx:154` | ⚠️ WARM | S | INVALID CORRECTION TRUSTED — P(medium), I(high) | MVP | - | codex |
+| 1 | fixed | CRITICAL | Evidence anchors (`finding_id`, `fact_id`, `calculation_id`) used single-column FKs that could point at entities from a different run or case, breaking the evidence trust boundary | `api/models/analysis.py:257` | ✅ STABLE | M | MISATTRIBUTED EVIDENCE TRAIL — P(medium), I(catastrophic) | MVP | - | codex, claude |
 
-## Fixes Applied
+## Fix Applied
 
-- #1: Wrapped the post-upload `refreshFactReview()` call in its own catch so the saved document remains visible and fact refresh errors are shown as fact-review errors rather than upload failures. Added a regression test for fact-refresh failure after successful upload.
-- #2: Required at least one digit after numeric correction normalization before parsing. Added a regression test proving a non-numeric correction does not call the confirmation API.
-
-## Plan Alignment (5a)
-
-ALIGNED — Phase 4 asks for a frontend fact review handoff with source snippets,
-correction controls, status summaries, and prototype-analysis guardrails. The
-diff changes the upload/fact-review screen, typed facts API client, nav guard
-state, focused frontend tests, documentation, and KDBP bookkeeping.
-
-## Stale Verified Topics (5c)
-
-None. `.kdbp/KNOWLEDGE.md` has no verified topics.
-
-## Architectural Decisions (5b)
-
-None proposed. D11 already records the Phase 4 MVP decision.
-
-## Tier Drift (5d)
-
-None detected. The implementation stays within the declared MVP tier.
-
-## Deferred Backlog Status
-
-No open deferred code-review items were found in `.kdbp/PENDING.md`.
+Added composite FK targets on `AnalysisFinding`, `AnalysisCalculation`, and
+`ConsumerCreditFact` (unique constraints on `(id, run, case)` or `(id, case)`)
+and replaced the three single-column evidence FKs with composite FKs that scope
+to the same run/case. Updated the Alembic migration to match (batch mode for
+the pre-existing facts table). Added three regression tests that verify the DB
+rejects cross-run finding evidence, cross-run calculation evidence, and
+cross-case fact evidence.
 
 ## Verification
 
-- `npm test -- --run tests/frontend/Upload.test.tsx` — passed, 14 tests.
-- `npm test` — passed, 24 frontend tests.
+- `uv run pytest` — passed, 58 tests.
+- `npm test` — passed, 24 tests.
 - `npm run lint` — passed.
 - `npm run build` — passed.
-- `uv run pytest` — passed, 51 backend tests.
 - `uv run ruff check` — passed.
-- `git diff --check` — passed.
+- `uv run ruff format --check` — changed files formatted.
 
----
-_Review resolved. Phase 4 Review ticked in PLAN.md._
+## Plan Alignment (5a)
+
+ALIGNED — all changed files match Phase 1 scope.
+
+## Stale Verified Topics (5c)
+
+None.
+
+## Architectural Decisions (5b)
+
+None proposed.
+
+## Tier Drift (5d)
+
+None detected.
+
+## Deferred Backlog Status
+
+No open deferred items.

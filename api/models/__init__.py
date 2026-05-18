@@ -6,12 +6,24 @@ from api.models.extraction import (
     ExtractedTextSegment,
     FactConfirmation,
 )
+from api.models.analysis import (
+    AnalysisCalculation,
+    AnalysisEvidence,
+    AnalysisFinding,
+    AnalysisRun,
+    UnsupportedAnalysisOutput,
+)
 
 __all__ = [
+    "AnalysisCalculation",
+    "AnalysisEvidence",
+    "AnalysisFinding",
+    "AnalysisRun",
     "Base",
     "Case",
     "ConsumerCreditFact",
     "Document",
     "ExtractedTextSegment",
     "FactConfirmation",
+    "UnsupportedAnalysisOutput",
 ]

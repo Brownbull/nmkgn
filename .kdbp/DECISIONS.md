@@ -386,3 +386,219 @@ dim_overrides: []
 ### Status
 
 - accepted
+
+## D12 — Phase 1 tier: mvp (2026-05-18)
+
+**Phase:** Analysis contract and persistence
+**Types:** persistence, data-migration, data-validation
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; lock the analysis and evidence contract before adding agent behavior or user-facing findings.
+
+### Sections rendered
+
+- Core (always)
+- Data
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Data.Backup/restore — production backup and retention policy remain Roadmap Phase 7 guardrails while this phase defines local MVP persistence.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- XL x 1, L x 2, M x 3
+- Load-bearing items skipped:
+  - Data.Backup/restore: acceptable only while this remains local MVP data and production document intake is still guarded.
+
+### Review trigger
+
+- Escalate before accepting production documents, before exporting findings, or before analysis data becomes multi-user or compliance-relevant.
+
+### Status
+
+- accepted
+
+## D13 — Phase 2 tier: mvp (2026-05-18)
+
+**Phase:** Deterministic discrepancy calculations
+**Types:** data-processing, data-validation
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; deterministic calculations should be small, test-heavy, and grounded in confirmed facts before more advanced rule engines exist.
+
+### Sections rendered
+
+- Core (always)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- none
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- L x 2, M x 1, S x 1
+- Load-bearing items skipped:
+  - Core.Testing beyond known examples: start with golden deterministic fixtures, then expand before adding new discrepancy classes.
+
+### Review trigger
+
+- Escalate before adding stochastic calculations, official-rule interpretation, or more than one consumer-credit discrepancy family.
+
+### Status
+
+- accepted
+
+## D14 — Phase 3 tier: mvp (2026-05-18)
+
+**Phase:** Official reference catalog
+**Types:** persistence, external-api, data-validation
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; a bounded seeded catalog is enough to preserve source metadata and marketplace-safe labels before live reference retrieval exists.
+
+### Sections rendered
+
+- Core (always)
+- Data
+- Integration
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Integration.Retry/backoff — no live runtime fetching in this phase.
+- Integration.Idempotency — reference seeds are local data writes, not mutating external calls.
+- Integration.Rate-limit — no provider API calls in this MVP catalog slice.
+- Data.Backup/restore — production backup policy remains a Roadmap Phase 7 guardrail.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- XL x 2, L x 3, M x 4
+- Load-bearing items skipped:
+  - Integration.Retry/backoff and Rate-limit: acceptable only because references start as bounded local catalog data.
+
+### Review trigger
+
+- Escalate before adding live CMF/SERNAC/Ley Chile fetches, automated refresh jobs, or user-visible benchmark claims without verification dates.
+
+### Status
+
+- accepted
+
+## D15 — Phase 4 tier: ent (2026-05-18)
+
+**Phase:** Structured agent orchestration
+**Types:** ai-agent, llm, async-worker, data-processing
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Structured LLM output is consumed by code and user-visible findings, so U4 requires framework-level schema enforcement and U8 requires run measurement.
+
+### Sections rendered
+
+- Core (always)
+- AI/Agent
+- Background jobs
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Background jobs.Scheduling — analysis runs start on user request only.
+- Background jobs.Concurrency — fixed local execution is enough until real worker capacity exists.
+- AI/Agent.Fallback chain — a single enforced-output path plus explicit failure state is enough before multi-model routing.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- M x 6, S x 1
+- Load-bearing items skipped:
+  - AI/Agent.Fallback chain: multi-model fallback is deferred, but structured output enforcement and run metrics are not.
+
+### Review trigger
+
+- Escalate before adding multiple LLM providers, retries across providers, production traffic, or generated exports/drafts.
+
+### Status
+
+- accepted
+
+## D16 — Phase 5 tier: mvp (2026-05-18)
+
+**Phase:** Analysis API and source inspection UI
+**Types:** api, user-facing, client-state
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2; source inspection should be real and evidence-backed, while broader workflow polish stays outside this roadmap slice.
+
+### Sections rendered
+
+- Core (always)
+- UI/UX
+- Client State
+
+### Dimensions suppressed (Layer 2 filter)
+
+- UI/UX.Streaming — this phase can show persisted analysis status before richer SSE/token streaming exists.
+- UI/UX.Personalization — one consumer-credit v0 path; before/after signing-specific polish belongs to Roadmap Phases 5 and 6.
+- Client State.Cross-tab sync — single-tab source inspection is enough.
+- Client State.Offline support — offline analysis is out of scope.
+- Client State.Optimistic updates — wait for server-confirmed analysis state.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Delta cell overrides
+
+- none
+
+### Delta deferred by tier choice
+
+- L x 5, M x 5
+- Load-bearing items skipped:
+  - UI/UX.Streaming: acceptable only while persisted run status prevents dead air; revisit before long live agent streams.
+
+### Review trigger
+
+- Escalate before adding live token streaming, keyboard-heavy evidence review, export/draft flows, or multi-tab/shared review.
+
+### Status
+
+- accepted

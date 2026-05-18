@@ -1,5 +1,43 @@
 # Session Ledger
 
+## 2026-05-18 13:41 — PHASE 1 COMMIT GATE
+
+Prepared `/gabe-next` routed through the Phase 1 commit gate.
+
+- PLAN: Phase 1 `Commit` marked `✅`; Push remains pending.
+- Included the consumer-credit analysis persistence contract, evidence
+  provenance hardening, schema/migration/test coverage, architecture docs,
+  tier decisions, execution ledger, and resolved review inbox state in the
+  commit scope.
+
+Verification:
+
+- `uv run pytest -q` — passed, 58 tests.
+- `uv run ruff check .` — passed.
+- `uv run ruff format --check api/models/analysis.py api/models/extraction.py api/models/__init__.py api/schemas/analysis.py api/schemas/__init__.py api/migrations/versions/20260518_0004_create_analysis_contract.py tests/api/test_analysis_contract.py` — passed.
+- `DATABASE_URL=sqlite+pysqlite:////tmp/nmkgn-analysis-phase1-commit.db uv run alembic -c api/migrations/alembic.ini upgrade head` — passed.
+- `npm test` — passed, 24 tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` and `git diff --cached --check` — passed.
+
+## 2026-05-18 13:25 — PHASE 1 REVIEW: Analysis contract and persistence
+VERDICT: APPROVE
+FINDINGS: 1 total (1 critical, 0 high, 0 medium, 0 low)
+COVERAGE: HIGH — cross-run finding, cross-run calculation, and cross-case fact regression tests added during triage
+CONFIDENCE: 75 -> 95/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+SOURCES: codex (gpt-5) + claude (claude-opus-4-6) — cross-agent triangulation, 1/1 strict overlap, union consolidation
+FIXES: #1 replaced single-column evidence FKs with composite FKs scoped to run/case, added composite unique targets on findings/calculations/facts tables, added 3 negative regression tests
+
+## 2026-05-18 12:05 — PLAN CREATED: Build the consumer-credit analysis engine with stable structured output, deterministic discrepancy checks, official references, and evidence-backed finding presentation
+PHASES: 5 | COMPLEXITY: high | MATURITY: mvp
+TIERS: mvp × 4, ent × 1, scale × 0 | PROTOTYPES: 0
+DECISIONS: D12 → D16 (5 phase tier decisions logged)
+
 ## 2026-05-18 11:40 — PLAN COMPLETED: Normalize consumer-credit facts and add confirmation gate
 ARCHIVE: .kdbp/archive/completed_PLAN_2026-05-18_normalize-consumer-credit-facts.md
 PHASES COMPLETED: 4 of 4
@@ -789,3 +827,47 @@ PR: —
 CI: — (no CI configured)
 PROMOTION: N/A
 DEPLOYMENTS: P7 (added row to .kdbp/DEPLOYMENTS.md)
+
+## 2026-05-18 12:48 — PHASE 1 EXECUTION STARTED
+
+Started `/gabe-next` routed execution for Phase 1: Analysis contract and
+persistence.
+
+- PLAN: Phase 1 `Exec` marked `🔄`.
+- Scope is contract/persistence only: analysis run, finding, evidence/citation,
+  calculation, unsupported-output schemas, Alembic migration, architecture docs,
+  and focused contract tests.
+- Out of scope: deterministic calculation service, official reference catalog,
+  agent orchestration, analysis API endpoints, and frontend source inspection.
+
+## 2026-05-18 12:56 — PHASE 1 EXECUTION COMPLETE
+
+Implemented Phase 1 analysis contract and persistence.
+
+- Added SQLAlchemy models for versioned analysis runs, deterministic
+  calculations, trusted findings, typed evidence/citations, and audit-only
+  unsupported outputs.
+- Added Alembic migration `20260518_0004` for the analysis contract tables and
+  constraints.
+- Added Pydantic schemas for `ConsumerCreditAnalysis`, analysis runs, findings,
+  evidence anchors, calculation evidence, citations, inference metadata, and
+  unsupported outputs.
+- Added contract tests for supported finding boundaries, typed evidence anchors,
+  analysis persistence, and database rejection of unsupported finding claims.
+- Updated architecture docs with the analysis data model and contract boundary.
+- PLAN: Phase 1 `Exec` marked `✅`; Review remains pending.
+
+Verification:
+
+- `uv run ruff check api/models/analysis.py api/models/__init__.py api/schemas/analysis.py api/schemas/__init__.py api/migrations/versions/20260518_0004_create_analysis_contract.py tests/api/test_analysis_contract.py` — passed.
+- `uv run ruff format --check api/models/analysis.py api/models/__init__.py api/schemas/analysis.py api/schemas/__init__.py api/migrations/versions/20260518_0004_create_analysis_contract.py tests/api/test_analysis_contract.py` — passed.
+- `uv run pytest tests/api/test_analysis_contract.py -q` — passed, 4 tests.
+- `DATABASE_URL=sqlite+pysqlite:////tmp/nmkgn-analysis-phase1-verify.db uv run alembic -c api/migrations/alembic.ini upgrade head` — passed.
+- `uv run pytest -q` — passed, 55 tests.
+- `uv run ruff check .` — passed.
+- `npm test` — passed, 24 tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+- Note: `uv run ruff format --check .` still reports pre-existing untouched
+  files that would be reformatted; changed files are format-clean.
