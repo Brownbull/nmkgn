@@ -21,6 +21,7 @@ from api.schemas.receptionist import (
     GapResolutionRead,
 )
 from api.services import receptionist as receptionist_service
+from api.services import receptionist_gaps as gaps_service
 from api.services.database import get_session
 
 router = APIRouter(prefix="/cases/{case_id}", tags=["receptionist"])
@@ -109,7 +110,7 @@ def list_receptionist_gaps(
     gap_status: Annotated[str | None, Query(alias="status")] = None,
 ) -> list[DocumentExtractionGapRead]:
     try:
-        return receptionist_service.list_case_gaps(
+        return gaps_service.list_case_gaps(
             session=session,
             case_id=case_id,
             owner_ref=owner_ref,
@@ -134,7 +135,7 @@ def resolve_receptionist_gap(
     owner_ref: OwnerDep,
 ) -> GapResolutionRead:
     try:
-        return receptionist_service.resolve_gap(
+        return gaps_service.resolve_gap(
             session=session,
             case_id=case_id,
             gap_id=gap_id,
@@ -163,7 +164,7 @@ def get_analysis_readiness(
     owner_ref: OwnerDep,
 ) -> AnalysisReadinessRead:
     try:
-        return receptionist_service.get_analysis_readiness(
+        return gaps_service.get_analysis_readiness(
             session=session,
             case_id=case_id,
             owner_ref=owner_ref,

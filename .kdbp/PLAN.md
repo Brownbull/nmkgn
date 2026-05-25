@@ -4,7 +4,7 @@
 <!-- project_type: code -->
 <!-- goal: Build the consumer-credit analysis engine with stable structured output, deterministic discrepancy checks, official references, and evidence-backed finding presentation -->
 <!-- created: 2026-05-18 -->
-<!-- last_updated: 2026-05-18 -->
+<!-- last_updated: 2026-05-25 -->
 
 ## Goal
 
@@ -74,7 +74,7 @@ outputs into trusted results.
 |---|-------|-------------|-------|------|------------|------|--------|--------|------|
 | 1 | Analysis contract and persistence | Add analysis run, finding, citation/evidence, calculation, unsupported-output, and stable schema contracts. | `persistence, data-migration, data-validation` | mvp | high | ✅ | ✅ | ✅ | ✅ |
 | 2 | Receptionist schema, persistence, and provider contract | Add `DocumentReceptionistAgent` output schema, audit tables, config, dependency contract, and fail-closed provider adapter. | `persistence, data-migration, ai-agent, data-validation` | ent | high | ✅ | ✅ | ✅ | ✅ |
-| 3 | Multimodal media packing and run pipeline | Pack text, image, and bounded PDF page images, run the receptionist, and persist run/observation metadata. | `data-processing, ai-agent, file-io` | ent | high | ✅ | ⬜ | ⬜ | ⬜ |
+| 3 | Multimodal media packing and run pipeline | Pack text, image, and bounded PDF page images, run the receptionist, and persist run/observation metadata. | `data-processing, ai-agent, file-io` | ent | high | ✅ | ✅ | ⬜ | ⬜ |
 | 4 | Gap comparator, resolution, promotion, and composite readiness | Compare deterministic facts to receptionist observations, block high-risk gaps, resolve human decisions, promote accepted observations, and expose composite readiness. | `api, data-validation, data-processing` | ent | high | ✅ | ⬜ | ⬜ | ⬜ |
 | 5 | Frontend gap review handoff | Add the Upload-screen receptionist review surface, run controls, gap actions, and composite readiness gate. | `user-facing, client-state, api` | mvp | med | ✅ | ⬜ | ⬜ | ⬜ |
 | 6 | Deterministic discrepancy calculations | Compute reproducible consumer-credit discrepancy evidence from confirmed facts and comparison inputs. | `data-processing, data-validation` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
@@ -343,7 +343,7 @@ decisions_entry: D16
 
 ## Current Phase
 
-Phase 2: Receptionist schema, persistence, and provider contract — complete.
+Phase 3: Multimodal media packing and run pipeline.
 
 ## Dependencies
 
