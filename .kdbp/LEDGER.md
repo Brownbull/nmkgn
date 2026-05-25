@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-25 — [91f1dd7] feat(receptionist): add receptionist gate, baseline harness, and gap review UI
+FINDINGS: 2 (0 critical, 0 medium structure — resolved via update-structure)
+ACTIONS: 1:update-structure 2:update-structure
+DEFERRED: none
+STRUCTURE: +manual-test-cases/**, +manual_test_cases/** added to STRUCTURE.md
+
 ## 2026-05-25 — PHASE 2 REVIEW: Receptionist schema, persistence, and provider contract
 VERDICT: APPROVE
 FINDINGS: 0 total (0 critical, 0 high, 0 medium, 0 low)
