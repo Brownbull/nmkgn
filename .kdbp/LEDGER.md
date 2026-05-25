@@ -1,5 +1,12 @@
 # Session Ledger
 
+## 2026-05-25 — PUSH main → main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P11 (added row to .kdbp/DEPLOYMENTS.md)
+COMMITS: 52f0d01, 91f1dd7, 779b538 (3 commits)
+
 ## 2026-05-25 — [91f1dd7] feat(receptionist): add receptionist gate, baseline harness, and gap review UI
 FINDINGS: 2 (0 critical, 0 medium structure — resolved via update-structure)
 ACTIONS: 1:update-structure 2:update-structure
