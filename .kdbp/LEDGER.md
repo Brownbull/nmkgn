@@ -1,5 +1,25 @@
 # Session Ledger
 
+## 2026-05-25 — PHASE 5 REVIEW: Frontend gap review handoff
+VERDICT: APPROVE (with advisory #1)
+FINDINGS: 3 total (0 critical, 1 high, 1 medium, 1 low)
+  #1 HIGH runtime evidence gap — user-facing phase lacks browser journey artifacts (accepted: batch exec, browser journey deferred to Phase 9)
+  #2 MEDIUM Upload.tsx at 1219 lines (>800 threshold) — enterprise gate, accepted at MVP
+  #3 LOW handleUpload() receptionist run failure error isolation — scale gate
+COVERAGE: MEDIUM — 13 frontend tests cover component logic; runtime behavior not verified (jsdom limitation)
+CONFIDENCE: 71/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: mvp | DRIFT: none
+TICK: ✅
+
+## 2026-05-25 — PUSH main → main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P13 (added row to .kdbp/DEPLOYMENTS.md)
+COMMITS: dfeb743, b5583d9, c603f9a (3 commits)
+
 ## 2026-05-25 — PHASE 4 REVIEW: Gap comparator, resolution, promotion, and composite readiness
 VERDICT: APPROVE
 FINDINGS: 3 total (0 critical, 0 high, 2 medium, 1 low) — none blocking
