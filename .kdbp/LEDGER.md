@@ -1,5 +1,12 @@
 # Session Ledger
 
+## 2026-05-25 — PUSH main → main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P12 (added row to .kdbp/DEPLOYMENTS.md)
+COMMITS: edb1d53, ee583fc, c695287 (3 commits)
+
 ## 2026-05-25 — [ee583fc] refactor(receptionist): extract gap lifecycle into dedicated module
 FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
 ACTIONS: none
