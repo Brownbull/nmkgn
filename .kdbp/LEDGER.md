@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-25 — PUSH main → main
+COMMITS: c83e70e, 90f9ba2 (2 commits)
+PR: —
+CI: —
+DEPLOYMENTS: P14
+
 ## 2026-05-25 — [c83e70e] chore(kdbp): record Phase 5 review and P13 push bookkeeping
 FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
 ACTIONS: none
