@@ -1,5 +1,10 @@
 # Session Ledger
 
+## 2026-05-25 — [ee583fc] refactor(receptionist): extract gap lifecycle into dedicated module
+FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
+ACTIONS: none
+DEFERRED: none
+
 ## 2026-05-25 — PHASE 3 REVIEW: Multimodal media packing and run pipeline
 VERDICT: APPROVE
 FINDINGS: 1 total (0 critical, 0 high, 0 medium, 1 low) — all resolved
