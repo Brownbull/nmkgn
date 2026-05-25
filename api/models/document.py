@@ -19,6 +19,7 @@ from api.models.base import Base
 
 if TYPE_CHECKING:
     from api.models.extraction import ConsumerCreditFact, ExtractedTextSegment
+    from api.models.receptionist import DocumentReceptionistRun
 
 
 def utcnow() -> datetime:
@@ -94,6 +95,10 @@ class Document(Base):
         cascade="all, delete-orphan",
     )
     facts: Mapped[list["ConsumerCreditFact"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+    )
+    receptionist_runs: Mapped[list["DocumentReceptionistRun"]] = relationship(
         back_populates="document",
         cascade="all, delete-orphan",
     )

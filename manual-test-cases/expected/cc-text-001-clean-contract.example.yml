@@ -1,0 +1,28 @@
+case_id: cc-text-001-clean-contract
+expected:
+  upload:
+    document_count: 2
+    statuses:
+      - role: primary
+        extraction_status: extracted
+      - role: simulation
+        extraction_status: extracted
+  deterministic_facts:
+    required_present:
+      - principal_amount
+      - contract_date
+      - term_months
+      - payment_count
+      - installment_amount
+      - cae
+      - total_cost
+    allowed_warnings: []
+  receptionist:
+    expected_run_status: completed
+    blocking_gap_types: []
+    advisory_gap_types: []
+  readiness:
+    fact_ready_after_resolution: true
+    analysis_ready_after_resolution: true
+  later_analysis:
+    expected_discrepancy_keys: []

@@ -6,6 +6,12 @@ from api.models.extraction import (
     ExtractedTextSegment,
     FactConfirmation,
 )
+from api.models.receptionist import (
+    DocumentExtractionGap,
+    DocumentExtractionGapResolution,
+    DocumentReceptionistObservation,
+    DocumentReceptionistRun,
+)
 from api.models.analysis import (
     AnalysisCalculation,
     AnalysisEvidence,
@@ -23,6 +29,10 @@ __all__ = [
     "Case",
     "ConsumerCreditFact",
     "Document",
+    "DocumentExtractionGap",
+    "DocumentExtractionGapResolution",
+    "DocumentReceptionistObservation",
+    "DocumentReceptionistRun",
     "ExtractedTextSegment",
     "FactConfirmation",
     "UnsupportedAnalysisOutput",

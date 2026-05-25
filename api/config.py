@@ -15,6 +15,11 @@ DEFAULT_UPLOAD_CONTENT_TYPES = (
     "image/jpeg",
     "image/png",
 )
+DEFAULT_RECEPTIONIST_ENABLED = True
+DEFAULT_RECEPTIONIST_PROVIDER = "fake"
+DEFAULT_RECEPTIONIST_MODEL = "fake-receptionist-v1"
+DEFAULT_RECEPTIONIST_MAX_PAGES = 12
+DEFAULT_RECEPTIONIST_TIMEOUT_SECONDS = 30
 
 
 @dataclass(frozen=True)
@@ -24,6 +29,15 @@ class UploadStorageSettings:
     retention_days: int
     allowed_content_types: tuple[str, ...]
     production_uploads_enabled: bool
+
+
+@dataclass(frozen=True)
+class ReceptionistSettings:
+    enabled: bool
+    provider: str
+    model: str
+    max_pages: int
+    timeout_seconds: int
 
 
 def _positive_int_env(name: str, default: int) -> int:
@@ -43,7 +57,9 @@ def get_stub_owner_ref() -> str:
 
 
 def get_cors_origins() -> list[str]:
-    raw = os.getenv("NMKGN_CORS_ORIGINS", "http://localhost:15179,http://127.0.0.1:15179")
+    raw = os.getenv(
+        "NMKGN_CORS_ORIGINS", "http://localhost:15179,http://127.0.0.1:15179"
+    )
     return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
 
@@ -55,16 +71,51 @@ def get_upload_storage_settings() -> UploadStorageSettings:
         else DEFAULT_UPLOAD_CONTENT_TYPES
     )
     if not allowed_content_types:
-        raise ValueError("NMKGN_UPLOAD_ALLOWED_CONTENT_TYPES must include at least one content type")
+        raise ValueError(
+            "NMKGN_UPLOAD_ALLOWED_CONTENT_TYPES must include at least one content type"
+        )
 
-    root_path = os.getenv("NMKGN_UPLOAD_STORAGE_DIR", DEFAULT_UPLOAD_STORAGE_DIR).strip()
+    root_path = os.getenv(
+        "NMKGN_UPLOAD_STORAGE_DIR", DEFAULT_UPLOAD_STORAGE_DIR
+    ).strip()
     if not root_path:
         raise ValueError("NMKGN_UPLOAD_STORAGE_DIR must not be blank")
 
     return UploadStorageSettings(
         root_path=Path(root_path),
         max_bytes=_positive_int_env("NMKGN_UPLOAD_MAX_BYTES", DEFAULT_UPLOAD_MAX_BYTES),
-        retention_days=_positive_int_env("NMKGN_UPLOAD_RETENTION_DAYS", DEFAULT_UPLOAD_RETENTION_DAYS),
+        retention_days=_positive_int_env(
+            "NMKGN_UPLOAD_RETENTION_DAYS", DEFAULT_UPLOAD_RETENTION_DAYS
+        ),
         allowed_content_types=allowed_content_types,
-        production_uploads_enabled=os.getenv("NMKGN_ENABLE_PRODUCTION_UPLOADS", "false").strip().lower() == "true",
+        production_uploads_enabled=os.getenv("NMKGN_ENABLE_PRODUCTION_UPLOADS", "false")
+        .strip()
+        .lower()
+        == "true",
+    )
+
+
+def get_receptionist_settings() -> ReceptionistSettings:
+    provider = os.getenv(
+        "NMKGN_RECEPTIONIST_PROVIDER", DEFAULT_RECEPTIONIST_PROVIDER
+    ).strip()
+    if not provider:
+        raise ValueError("NMKGN_RECEPTIONIST_PROVIDER must not be blank")
+
+    model = os.getenv("NMKGN_RECEPTIONIST_MODEL", DEFAULT_RECEPTIONIST_MODEL).strip()
+    if not model:
+        raise ValueError("NMKGN_RECEPTIONIST_MODEL must not be blank")
+
+    return ReceptionistSettings(
+        enabled=os.getenv("NMKGN_RECEPTIONIST_ENABLED", "true").strip().lower()
+        == "true",
+        provider=provider,
+        model=model,
+        max_pages=_positive_int_env(
+            "NMKGN_RECEPTIONIST_MAX_PAGES", DEFAULT_RECEPTIONIST_MAX_PAGES
+        ),
+        timeout_seconds=_positive_int_env(
+            "NMKGN_RECEPTIONIST_TIMEOUT_SECONDS",
+            DEFAULT_RECEPTIONIST_TIMEOUT_SECONDS,
+        ),
     )

@@ -602,3 +602,112 @@ dim_overrides: []
 ### Status
 
 - accepted
+
+## D17 — Phase 2 tier: ent (2026-05-18)
+
+**Phase:** Receptionist schema, persistence, and provider contract
+**Types:** persistence, data-migration, ai-agent, data-validation
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Receptionist output crosses a trust boundary before analysis
+readiness, so the contract needs stable schemas, persisted audit state, and
+fail-closed provider behavior.
+
+### Sections rendered
+
+- Core (always)
+- Data
+- AI/Agent
+
+### Dimensions suppressed (Layer 2 filter)
+
+- AI/Agent.Fallback chain — v1 uses one provider adapter and explicit failed
+  run state before multi-provider routing.
+- AI/Agent.Autonomous tools — the receptionist does not investigate; it only
+  reviews the provided document media.
+- Data.Backup/restore — production document retention remains Roadmap Phase 7.
+
+### Status
+
+- accepted
+
+## D18 — Phase 3 tier: ent (2026-05-18)
+
+**Phase:** Multimodal media packing and run pipeline
+**Types:** data-processing, ai-agent, file-io
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Raw document access is allowed only inside a narrow receptionist
+gate, so media must be bounded before it reaches any provider.
+
+### Sections rendered
+
+- Core (always)
+- AI/Agent
+- Data
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Background jobs.Scheduling — runs are user-triggered and synchronous for MVP.
+- Background jobs.Concurrency — queueing can wait until run duration or volume
+  justifies it.
+- Integration.Retry/backoff — provider retry policy is deferred; failures block
+  readiness instead of being hidden.
+
+### Status
+
+- accepted
+
+## D19 — Phase 4 tier: ent (2026-05-18)
+
+**Phase:** Gap comparator, resolution, promotion, and composite readiness
+**Types:** api, data-validation, data-processing
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Human resolution can promote or correct trusted facts, so comparison
+rules, blocker classification, and mutation paths must be deterministic.
+
+### Sections rendered
+
+- Core (always)
+- Data
+- API
+
+### Dimensions suppressed (Layer 2 filter)
+
+- API.Idempotency keys — repeated resolution requests are rejected once a gap is
+  resolved; stronger idempotency can come with real auth/session tokens.
+- Audit external export — local persisted audit records are enough for v1.
+
+### Status
+
+- accepted
+
+## D20 — Phase 5 tier: mvp (2026-05-18)
+
+**Phase:** Frontend gap review handoff
+**Types:** user-facing, client-state, api
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** The UI must expose blocking gaps and resolution actions, but richer
+review ergonomics can wait until the backend contract is stable under use.
+
+### Sections rendered
+
+- Core (always)
+- UI/UX
+- Client State
+
+### Dimensions suppressed (Layer 2 filter)
+
+- UI/UX.Keyboard review workflow — useful later, not required for MVP
+  correctness.
+- Client State.Optimistic updates — wait for server-confirmed gap resolution.
+- Client State.Cross-tab sync — single-tab review is acceptable before real
+  multi-user auth.
+- UI/UX.Streaming — synchronous run status is enough for local fake/provider
+  unavailable paths.
+
+### Status
+
+- accepted

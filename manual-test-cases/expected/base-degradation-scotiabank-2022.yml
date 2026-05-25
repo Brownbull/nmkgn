@@ -1,0 +1,40 @@
+case_id: base-degradation-scotiabank-2022
+source_policy:
+  raw_uploads: ignored
+  password_values: never_tracked
+expected:
+  upload:
+    document_count: 3
+    statuses:
+      - role: primary
+        content_type: application/pdf
+        current_expected_extraction_status: extracted_or_needs_review
+      - role: payment
+        content_type: application/pdf
+        current_expected_extraction_status: extracted_or_needs_review
+      - role: offer
+        content_type: application/pdf
+        current_expected_extraction_status: extracted_or_needs_review
+  deterministic_facts:
+    required_present: []
+    expected_to_assess_after_first_run:
+      - principal_amount
+      - contract_date
+      - term_months
+      - payment_count
+      - installment_amount
+      - cae
+      - total_cost
+  receptionist:
+    expected_run_status: completed_or_blocked_by_media
+    blocking_gap_types: []
+    expected_to_assess_after_first_run:
+      - missing_in_deterministic
+      - value_conflict
+      - source_conflict
+      - deterministic_warning_resolved
+  readiness:
+    fact_ready_after_resolution: unknown_until_first_run
+    analysis_ready_after_resolution: unknown_until_first_run
+  notes:
+    - Tighten this file after the first manual run captures actual facts, gaps, and blockers.

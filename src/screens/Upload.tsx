@@ -18,6 +18,16 @@ import {
   type FactConfirmationStatus,
   type FactReadiness,
 } from '../api/facts';
+import {
+  getAnalysisReadiness,
+  listReceptionistGaps,
+  resolveReceptionistGap,
+  startReceptionistRun,
+  type AnalysisReadiness,
+  type DocumentExtractionGap,
+  type DocumentReceptionistRun,
+  type ReceptionistResolutionAction,
+} from '../api/receptionist';
 import { Icon } from '../components/Icon';
 import { AppShell, CaseContextStrip, ProgressBar } from '../components/shared';
 import { useNav, type NavState } from '../components/NavContext';
@@ -42,6 +52,7 @@ const DOCUMENT_ROLES: Array<{ value: DocumentRole; label: string; sub: string }>
 
 const EMPTY_DOCUMENTS: DocumentRecord[] = [];
 const EMPTY_FACTS: ConsumerCreditFact[] = [];
+const EMPTY_GAPS: DocumentExtractionGap[] = [];
 
 const STATUS_COPY: Record<FactConfirmationStatus, { label: string; className: string }> = {
   pending: { label: 'Pendiente', className: 'pill-amber' },
@@ -64,6 +75,18 @@ const FACT_KEY_LABELS: Record<string, string> = {
   insurance: 'Seguro asociado',
   linked_product: 'Producto vinculado',
   clause: 'Clausula relevante',
+};
+
+const GAP_TYPE_LABELS: Record<string, string> = {
+  missing_in_deterministic: 'Falta en extractor deterministico',
+  missing_in_receptionist: 'Falta en recepcion',
+  value_conflict: 'Valor distinto',
+  source_conflict: 'Fuente distinta',
+  deterministic_warning_resolved: 'Advertencia resuelta por recepcion',
+  llm_unanchored_claim: 'Dato sin ancla',
+  unsupported_field: 'Campo no soportado',
+  receptionist_unavailable: 'Recepcion fallida',
+  partial_document_coverage: 'Documento parcial',
 };
 
 const EXTRACTION_COPY: Record<ExtractionStatus, { label: string; className: string; detail: string }> = {
@@ -151,6 +174,21 @@ function factLocator(fact: ConsumerCreditFact): string {
   return parts.length > 0 ? parts.join(' · ') : 'segmento extraido';
 }
 
+function formatGapPayload(payload: Record<string, unknown> | null): string {
+  if (!payload) return 'Sin valor';
+  const valueDate = typeof payload.value_date === 'string' ? payload.value_date : null;
+  const valueText = typeof payload.value_text === 'string' ? payload.value_text : null;
+  const valueCurrency = typeof payload.value_currency === 'string' ? payload.value_currency : null;
+  const valueNumber = typeof payload.value_number === 'number' ? payload.value_number : null;
+  const warning = typeof payload.warning_message === 'string' ? payload.warning_message : null;
+  if (warning) return warning;
+  if (valueNumber !== null) {
+    const currency = valueCurrency ? ` ${valueCurrency}` : '';
+    return `${new Intl.NumberFormat('es-CL').format(valueNumber)}${currency}`;
+  }
+  return valueDate ?? valueCurrency ?? valueText ?? 'Sin valor';
+}
+
 function parseCorrectionNumber(raw: string): number {
   const normalized = raw
     .replace(/\./g, '')
@@ -220,6 +258,12 @@ export function Upload() {
   const [factsError, setFactsError] = useState<string | null>(null);
   const [factActionById, setFactActionById] = useState<Record<string, FactConfirmationAction>>({});
   const [correctionById, setCorrectionById] = useState<Record<string, string>>({});
+  const [analysisReadiness, setAnalysisReadiness] = useState<AnalysisReadiness | null>(hasPersisted ? null : null);
+  const [receptionistGaps, setReceptionistGaps] = useState<DocumentExtractionGap[] | null>(hasPersisted ? null : []);
+  const [receptionistError, setReceptionistError] = useState<string | null>(null);
+  const [receptionistRunByDocumentId, setReceptionistRunByDocumentId] = useState<Record<string, DocumentReceptionistRun>>({});
+  const [receptionistRunBusyByDocumentId, setReceptionistRunBusyByDocumentId] = useState<Record<string, boolean>>({});
+  const [gapActionById, setGapActionById] = useState<Record<string, ReceptionistResolutionAction>>({});
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const documentRecords = documents ?? EMPTY_DOCUMENTS;
@@ -231,11 +275,15 @@ export function Upload() {
   const primaryDocument = documentRecords.find(document => document.role === 'primary') ?? documentRecords[0];
   const hasDocuments = documentRecords.length > 0;
   const factRecords = facts ?? EMPTY_FACTS;
+  const gapRecords = receptionistGaps ?? EMPTY_GAPS;
   const factsLoading = hasPersisted && facts === null && !factsError;
+  const receptionistLoading = hasPersisted && receptionistGaps === null && !receptionistError;
   const readinessReady = Boolean(readiness?.ready_for_analysis);
-  const factReviewBlocked = hasPersisted && hasDocuments && !readinessReady;
-  const requiresPrototypeAck = hasPersisted && hasDocuments && readinessReady && !nav.state.mockAnalysisAcknowledged;
-  const canContinue = hasPersisted && hasDocuments && readinessReady && !requiresPrototypeAck;
+  const analysisReady = Boolean(analysisReadiness?.ready_for_analysis);
+  const receptionistReady = Boolean(analysisReadiness?.receptionist_ready);
+  const factReviewBlocked = hasPersisted && hasDocuments && !analysisReady;
+  const requiresPrototypeAck = hasPersisted && hasDocuments && analysisReady && !nav.state.mockAnalysisAcknowledged;
+  const canContinue = hasPersisted && hasDocuments && analysisReady && !requiresPrototypeAck;
   const progressPct = uploadStage === 'uploading' ? 45 : uploadStage === 'refreshing' ? 78 : uploadStage === 'complete' ? 100 : 0;
   const selectedDocumentIdForSegments = selectedDocument?.id;
   const segments = selectedDocumentIdForSegments ? segmentsByDocumentId[selectedDocumentIdForSegments] ?? [] : [];
@@ -251,14 +299,19 @@ export function Upload() {
   const refreshFactReview = useCallback(async () => {
     if (!caseId) return;
     setFactsError(null);
-    const [nextFacts, nextReadiness] = await Promise.all([
+    setReceptionistError(null);
+    const [nextFacts, nextReadiness, nextAnalysisReadiness, nextGaps] = await Promise.all([
       listFacts(caseId),
       getFactReadiness(caseId),
+      getAnalysisReadiness(caseId),
+      listReceptionistGaps(caseId),
     ]);
     setFacts(nextFacts);
     setReadiness(nextReadiness);
+    setAnalysisReadiness(nextAnalysisReadiness);
+    setReceptionistGaps(nextGaps);
     updateNav({
-      factReviewReady: nextReadiness.ready_for_analysis,
+      factReviewReady: nextAnalysisReadiness.ready_for_analysis,
       unresolvedHighImpactFactCount: nextReadiness.unresolved_high_impact_count,
     });
   }, [caseId, updateNav]);
@@ -297,19 +350,24 @@ export function Upload() {
     Promise.all([
       listFacts(caseId),
       getFactReadiness(caseId),
+      getAnalysisReadiness(caseId),
+      listReceptionistGaps(caseId),
     ])
-      .then(([nextFacts, nextReadiness]) => {
+      .then(([nextFacts, nextReadiness, nextAnalysisReadiness, nextGaps]) => {
         if (ignore) return;
         setFacts(nextFacts);
         setReadiness(nextReadiness);
+        setAnalysisReadiness(nextAnalysisReadiness);
+        setReceptionistGaps(nextGaps);
         updateNav({
-          factReviewReady: nextReadiness.ready_for_analysis,
+          factReviewReady: nextAnalysisReadiness.ready_for_analysis,
           unresolvedHighImpactFactCount: nextReadiness.unresolved_high_impact_count,
         });
       })
       .catch(err => {
         if (!ignore) {
           setFactsError(errorText(err, 'No pudimos cargar los hechos del caso.'));
+          setReceptionistError(errorText(err, 'No pudimos cargar la recepcion del caso.'));
           updateNav({ factReviewReady: false });
         }
       });
@@ -396,6 +454,19 @@ export function Upload() {
       }
       setSelectedDocumentId(uploaded.id);
       try {
+        setReceptionistRunBusyByDocumentId(previous => ({ ...previous, [uploaded.id]: true }));
+        const run = await startReceptionistRun(caseId, uploaded.id);
+        setReceptionistRunByDocumentId(previous => ({ ...previous, [uploaded.id]: run }));
+      } catch (err) {
+        setReceptionistError(errorText(err, 'Documento guardado, pero no pudimos ejecutar la recepcion.'));
+      } finally {
+        setReceptionistRunBusyByDocumentId(previous => {
+          const next = { ...previous };
+          delete next[uploaded.id];
+          return next;
+        });
+      }
+      try {
         await refreshFactReview();
       } catch {
         setFactsError('Documento guardado, pero no pudimos actualizar los hechos extraidos. Recarga la pagina para revisar la confirmacion.');
@@ -407,6 +478,43 @@ export function Upload() {
       setUploadError(errorText(err, 'No pudimos guardar el documento.'));
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleStartReceptionist(documentId: string) {
+    if (!caseId || receptionistRunBusyByDocumentId[documentId]) return;
+    try {
+      setReceptionistError(null);
+      setReceptionistRunBusyByDocumentId(previous => ({ ...previous, [documentId]: true }));
+      const run = await startReceptionistRun(caseId, documentId);
+      setReceptionistRunByDocumentId(previous => ({ ...previous, [documentId]: run }));
+      await refreshFactReview();
+    } catch (err) {
+      setReceptionistError(errorText(err, 'No pudimos ejecutar la recepcion del documento.'));
+    } finally {
+      setReceptionistRunBusyByDocumentId(previous => {
+        const next = { ...previous };
+        delete next[documentId];
+        return next;
+      });
+    }
+  }
+
+  async function handleGapResolution(gap: DocumentExtractionGap, action: ReceptionistResolutionAction) {
+    if (!caseId || gapActionById[gap.id]) return;
+    try {
+      setReceptionistError(null);
+      setGapActionById(previous => ({ ...previous, [gap.id]: action }));
+      await resolveReceptionistGap(caseId, gap.id, action);
+      await refreshFactReview();
+    } catch (err) {
+      setReceptionistError(errorText(err, 'No pudimos resolver la brecha de recepcion.'));
+    } finally {
+      setGapActionById(previous => {
+        const next = { ...previous };
+        delete next[gap.id];
+        return next;
+      });
     }
   }
 
@@ -631,6 +739,15 @@ export function Upload() {
               {documentRecords.map(document => {
                 const status = EXTRACTION_COPY[document.extraction_status];
                 const active = selectedDocument?.id === document.id;
+                const receptionistStatus = (
+                  receptionistRunByDocumentId[document.id]?.status
+                  ?? analysisReadiness?.document_run_statuses[document.id]
+                );
+                const receptionistClass = receptionistStatus === 'completed'
+                  ? 'pill-green'
+                  : receptionistStatus === 'failed'
+                    ? 'pill-red'
+                    : 'pill-amber';
                 return (
                   <button
                     key={document.id}
@@ -653,6 +770,11 @@ export function Upload() {
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                           <strong style={{ fontSize: 13.5 }}>{document.original_filename}</strong>
                           <span className={`pill ${status.className}`} style={{ fontSize: 10.5 }}>{status.label}</span>
+                          {receptionistStatus && (
+                            <span className={`pill ${receptionistClass}`} style={{ fontSize: 10.5 }}>
+                              Recepcion {receptionistStatus}
+                            </span>
+                          )}
                         </div>
                         <div style={{ marginTop: 4, color: 'var(--ink-faint)', fontSize: 11.5, lineHeight: 1.4 }}>
                           {roleLabel(document.role)} · {formatBytes(document.byte_size)} · {document.content_type}
@@ -693,6 +815,157 @@ export function Upload() {
             )}
             {!segmentsLoading && !segmentsError && !preview && (
               <div style={emptyStateStyle}>{EXTRACTION_COPY[selectedDocument.extraction_status].detail}</div>
+            )}
+          </section>
+        )}
+
+        {hasPersisted && hasDocuments && (
+          <section className="card" style={{ padding: 20, marginTop: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+              <div>
+                <div className="label">Recepcion multimodal</div>
+                <h2 className="display" style={{ fontSize: 20, margin: '6px 0 4px', letterSpacing: 0 }}>
+                  Brechas contra el documento original
+                </h2>
+                <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.45 }}>
+                  El receptionist revisa el documento aparte y deja observaciones auditables; solo una decision humana puede promover o cerrar brechas.
+                </div>
+              </div>
+              <span className={`pill ${receptionistReady ? 'pill-green' : 'pill-amber'}`}>
+                {receptionistReady ? 'Recepcion lista' : 'Recepcion pendiente'}
+              </span>
+            </div>
+
+            {analysisReadiness && (
+              <div className="fact-review-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10, marginTop: 16 }}>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Documentos</div>
+                  <strong>{documentRecords.length}</strong>
+                </div>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Sin recepcion</div>
+                  <strong>{analysisReadiness.missing_receptionist_document_ids.length}</strong>
+                </div>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Brechas abiertas</div>
+                  <strong>{gapRecords.filter(gap => gap.status === 'open').length}</strong>
+                </div>
+                <div style={summaryBoxStyle}>
+                  <div className="label">Bloqueantes</div>
+                  <strong>{analysisReadiness.unresolved_blocking_gap_count}</strong>
+                </div>
+              </div>
+            )}
+
+            {receptionistError && <div style={errorBoxStyle}>{receptionistError}</div>}
+            {receptionistLoading && <div style={emptyStateStyle}>Cargando recepcion...</div>}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+              {documentRecords.map(document => {
+                const status = (
+                  receptionistRunByDocumentId[document.id]?.status
+                  ?? analysisReadiness?.document_run_statuses[document.id]
+                  ?? 'missing'
+                );
+                const busy = Boolean(receptionistRunBusyByDocumentId[document.id]);
+                const statusClass = status === 'completed'
+                  ? 'pill-green'
+                  : status === 'failed'
+                    ? 'pill-red'
+                    : 'pill-amber';
+                return (
+                  <div key={document.id} style={{ ...factRowStyle, display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: 13.5 }}>{document.original_filename}</strong>
+                        <span className={`pill ${statusClass}`} style={{ fontSize: 10.5 }}>{status}</span>
+                      </div>
+                      <div style={{ marginTop: 4, color: 'var(--ink-faint)', fontSize: 11.5 }}>
+                        {roleLabel(document.role)} · {document.content_type}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-small"
+                      disabled={busy}
+                      onClick={() => handleStartReceptionist(document.id)}
+                      style={{ flex: '0 0 auto' }}
+                    >
+                      {busy ? 'Revisando...' : status === 'completed' ? 'Revisar otra vez' : 'Ejecutar recepcion'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {!receptionistLoading && !receptionistError && gapRecords.length === 0 && (
+              <div style={emptyStateStyle}>No hay brechas registradas para este caso.</div>
+            )}
+
+            {gapRecords.length > 0 && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
+                {gapRecords.map(gap => {
+                  const busy = Boolean(gapActionById[gap.id]);
+                  const canAcceptReceptionist = gap.status === 'open'
+                    && Boolean(gap.observation_id)
+                    && gap.gap_type !== 'unsupported_field'
+                    && gap.gap_type !== 'missing_in_receptionist'
+                    && gap.gap_type !== 'receptionist_unavailable'
+                    && gap.gap_type !== 'partial_document_coverage';
+                  const canConfirmDeterministic = gap.status === 'open' && Boolean(gap.fact_id);
+                  return (
+                    <div key={gap.id} style={factRowStyle}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <strong style={{ fontSize: 13.5 }}>{GAP_TYPE_LABELS[gap.gap_type] ?? gap.gap_type}</strong>
+                            <span className={`pill ${gap.blocking ? 'pill-amber' : ''}`} style={{ fontSize: 10.5 }}>
+                              {gap.blocking ? 'bloqueante' : 'advisory'}
+                            </span>
+                            <span className="pill" style={{ fontSize: 10.5 }}>{gap.status}</span>
+                          </div>
+                          <div style={{ marginTop: 5, color: 'var(--ink-soft)', fontSize: 12.5, lineHeight: 1.45 }}>
+                            {gap.detail}
+                          </div>
+                          <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                            <div style={summaryBoxStyle}>
+                              <div className="label">Deterministico</div>
+                              <strong style={{ fontSize: 12.5 }}>{formatGapPayload(gap.deterministic_value)}</strong>
+                            </div>
+                            <div style={summaryBoxStyle}>
+                              <div className="label">Recepcion</div>
+                              <strong style={{ fontSize: 12.5 }}>{formatGapPayload(gap.receptionist_value)}</strong>
+                            </div>
+                          </div>
+                          {gap.source_summary && <blockquote style={snippetStyle}>{gap.source_summary}</blockquote>}
+                          {gap.status === 'open' && (
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                              {canAcceptReceptionist && (
+                                <button type="button" className="btn btn-small btn-accent" disabled={busy} onClick={() => handleGapResolution(gap, 'accept_receptionist')}>
+                                  Aceptar recepcion
+                                </button>
+                              )}
+                              {canConfirmDeterministic && (
+                                <button type="button" className="btn btn-small" disabled={busy} onClick={() => handleGapResolution(gap, 'confirm_deterministic')}>
+                                  Mantener deterministico
+                                </button>
+                              )}
+                              {gap.gap_type === 'unsupported_field' && (
+                                <button type="button" className="btn btn-small" disabled={busy} onClick={() => handleGapResolution(gap, 'defer_unsupported')}>
+                                  Diferir
+                                </button>
+                              )}
+                              <button type="button" className="btn btn-small btn-ghost" disabled={busy} onClick={() => handleGapResolution(gap, 'reject_receptionist')}>
+                                Marcar revisado
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </section>
         )}
@@ -818,15 +1091,15 @@ export function Upload() {
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
               <Icon name="shield-check" size={18} color={factReviewBlocked || requiresPrototypeAck ? 'var(--amber)' : 'var(--accent)'} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 800 }}>La confirmacion abre el prototipo</div>
+                <div style={{ fontSize: 13.5, fontWeight: 800 }}>La recepcion y confirmacion abren el prototipo</div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 3, lineHeight: 1.45 }}>
-                  Los hechos de alto impacto deben estar confirmados, corregidos o rechazados antes de entrar a pantallas simuladas de analisis.
+                  Los hechos de alto impacto y las brechas bloqueantes deben quedar resueltos antes de entrar a pantallas simuladas de analisis.
                 </div>
                 <label style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 10, fontSize: 12.5, fontWeight: 700, color: 'var(--ink)' }}>
                   <input
                     type="checkbox"
                     checked={Boolean(nav.state.mockAnalysisAcknowledged)}
-                    disabled={!hasDocuments || !readinessReady}
+                    disabled={!hasDocuments || !analysisReady}
                     onChange={event => nav.set({ mockAnalysisAcknowledged: event.target.checked })}
                   />
                   Entiendo que las pantallas posteriores siguen siendo prototipo hasta construir el motor de analisis.

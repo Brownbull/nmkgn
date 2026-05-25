@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.config import get_cors_origins
-from api.routes import cases, documents, facts, health
+from api.routes import cases, documents, facts, health, receptionist
 
 
 def create_app() -> FastAPI:
@@ -20,6 +20,7 @@ def create_app() -> FastAPI:
     app.include_router(cases.router, prefix="/api")
     app.include_router(documents.router, prefix="/api")
     app.include_router(facts.router, prefix="/api")
+    app.include_router(receptionist.router, prefix="/api")
     return app
 
 

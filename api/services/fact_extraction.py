@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -48,8 +49,24 @@ _DATE_VALUE = (
     r"|\d{1,2}\s+de\s+"
     r"(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|"
     r"setiembre|octubre|noviembre|diciembre)"
-    r"\s+de\s+\d{4}"
+    r"\s+(?:de|del\s+ano)\s+\d{4}"
     r")"
+)
+REGEX_CANDIDATE_PRIORITY = 100
+STRUCTURAL_CANDIDATE_PRIORITY = 20
+PAYMENT_SCHEDULE_PRIORITY = 12
+
+_MONEY_SEARCH = re.compile(_MONEY_VALUE)
+_PERCENT_SEARCH = re.compile(_PERCENT_VALUE)
+_DATE_SEARCH = re.compile(_DATE_VALUE)
+_INTEGER_LINE = re.compile(r"^\s*(?P<number>\d{1,3})\s*$")
+_PAYMENT_SCHEDULE_ROW = re.compile(
+    r"^\s*(?P<number>\d{1,3})\s+"
+    r"(?P<date>\d{1,2}/\d{1,2}/\d{4})\s+"
+    r"(?P<interest>\d{1,3}(?:\.\d{3})*)\s+"
+    r"(?P<capital>\d{1,3}(?:\.\d{3})*)\s+"
+    r"(?P<installment>\d{1,3}(?:\.\d{3})*)\s+"
+    r"(?P<balance>\d{1,3}(?:\.\d{3})*)\s*$"
 )
 
 
@@ -94,6 +111,40 @@ class Candidate:
     match_start: int
     match_end: int
     value: FactValue
+    priority: int = REGEX_CANDIDATE_PRIORITY
+
+
+@dataclass(frozen=True)
+class TextLine:
+    text: str
+    searchable: str
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class TableValue:
+    value: FactValue
+    start: int
+    end: int
+
+
+@dataclass(frozen=True)
+class TableLabelSpec:
+    fact_key: str | None
+    patterns: tuple[re.Pattern[str], ...]
+    value_kind: str | None = None
+    priority: int = STRUCTURAL_CANDIDATE_PRIORITY
+    consumes_value: bool = True
+    excluded_patterns: tuple[re.Pattern[str], ...] = ()
+
+
+@dataclass(frozen=True)
+class TableLabelMatch:
+    spec: TableLabelSpec
+    line: TextLine
+    start: int
+    end: int
 
 
 def extract_consumer_credit_facts(
@@ -107,6 +158,18 @@ def extract_consumer_credit_facts(
 
     segments = _load_segments(session, document.id)
     if not segments:
+        return []
+
+    facts = build_consumer_credit_facts(document, segments)
+    session.add_all(facts)
+    session.flush()
+    return facts
+
+
+def build_consumer_credit_facts(
+    document: Document, segments: Sequence[ExtractedTextSegment]
+) -> list[ConsumerCreditFact]:
+    if document.document_type != "consumer_credit" or not segments:
         return []
 
     facts: list[ConsumerCreditFact] = []
@@ -126,8 +189,6 @@ def extract_consumer_credit_facts(
     if currency_fact is not None:
         facts.append(currency_fact)
 
-    session.add_all(facts)
-    session.flush()
     return facts
 
 
@@ -159,6 +220,18 @@ def _collect_candidates(
     candidates: list[Candidate] = []
     seen: set[tuple[str, int, int, tuple[str | float | date | None, ...]]] = set()
 
+    for candidate in _collect_structural_candidates(rule, segments):
+        key = (
+            candidate.segment.id,
+            candidate.match_start,
+            candidate.match_end,
+            candidate.value.signature,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        candidates.append(candidate)
+
     for segment in segments:
         searchable = _searchable(segment.text)
         for pattern in rule.patterns:
@@ -177,9 +250,211 @@ def _collect_candidates(
                         match_start=match.start(),
                         match_end=match.end(),
                         value=value,
+                        priority=REGEX_CANDIDATE_PRIORITY,
                     )
                 )
     return candidates
+
+
+def _collect_structural_candidates(
+    rule: FieldRule, segments: Sequence[ExtractedTextSegment]
+) -> list[Candidate]:
+    candidates: list[Candidate] = []
+    candidates.extend(_payment_schedule_candidates(rule, segments))
+    for segment in segments:
+        candidates.extend(_label_value_candidates(rule, segment))
+        candidates.extend(_contract_opening_date_candidates(rule, segment))
+    return candidates
+
+
+def _label_value_candidates(
+    rule: FieldRule, segment: ExtractedTextSegment
+) -> list[Candidate]:
+    lines = _text_lines(segment.text)
+    candidates: list[Candidate] = []
+
+    for line in lines:
+        label_match = _match_table_label(line)
+        if label_match is None or label_match.spec.fact_key != rule.fact_key:
+            continue
+        value = _parse_table_value(
+            label_match.spec.value_kind or rule.value_kind,
+            line.text[label_match.end :],
+            base_offset=line.start + label_match.end,
+        )
+        if value is None:
+            continue
+        candidates.append(
+            Candidate(
+                rule=rule,
+                segment=segment,
+                match_start=line.start + label_match.start,
+                match_end=value.end,
+                value=value.value,
+                priority=label_match.spec.priority,
+            )
+        )
+
+    candidates.extend(_paired_label_value_candidates(rule, segment, lines))
+    return candidates
+
+
+def _paired_label_value_candidates(
+    rule: FieldRule,
+    segment: ExtractedTextSegment,
+    lines: Sequence[TextLine],
+) -> list[Candidate]:
+    candidates: list[Candidate] = []
+    index = 0
+    while index < len(lines):
+        first = _match_table_label(lines[index])
+        if first is None:
+            index += 1
+            continue
+
+        labels: list[TableLabelMatch] = []
+        while index < len(lines):
+            label = _match_table_label(lines[index])
+            if label is None:
+                break
+            labels.append(label)
+            index += 1
+
+        if len(labels) < 2:
+            continue
+
+        values = _candidate_value_lines(lines, index, len(labels))
+        if len(values) < len([label for label in labels if label.spec.consumes_value]):
+            continue
+
+        value_index = 0
+        for label in labels:
+            if not label.spec.consumes_value:
+                continue
+            if value_index >= len(values):
+                break
+            value_line = values[value_index]
+            value_index += 1
+            if label.spec.fact_key != rule.fact_key:
+                continue
+            value = _parse_table_value(
+                label.spec.value_kind or rule.value_kind,
+                value_line.text,
+                base_offset=value_line.start,
+            )
+            if value is None:
+                continue
+            candidates.append(
+                Candidate(
+                    rule=rule,
+                    segment=segment,
+                    match_start=label.line.start + label.start,
+                    match_end=value.end,
+                    value=value.value,
+                    priority=label.spec.priority,
+                )
+            )
+    return candidates
+
+
+def _candidate_value_lines(
+    lines: Sequence[TextLine], start_index: int, max_values: int
+) -> list[TextLine]:
+    values: list[TextLine] = []
+    for line in lines[start_index:]:
+        if _match_table_label(line) is not None:
+            if values:
+                break
+            continue
+        if _is_explanatory_line(line):
+            continue
+        if _looks_like_table_value(line):
+            values.append(line)
+        if len(values) >= max_values:
+            break
+    return values
+
+
+def _contract_opening_date_candidates(
+    rule: FieldRule, segment: ExtractedTextSegment
+) -> list[Candidate]:
+    if rule.fact_key != "contract_date":
+        return []
+    searchable = _searchable(segment.text)
+    if "contrato de credito" not in searchable:
+        return []
+    pattern = re.compile(
+        rf"\ben\s+[a-z\s]+,\s*a\s+{_DATE_VALUE}",
+    )
+    candidates: list[Candidate] = []
+    for match in pattern.finditer(searchable):
+        value = _parse_date(match.group("date"))
+        if value is None:
+            continue
+        candidates.append(
+            Candidate(
+                rule=rule,
+                segment=segment,
+                match_start=match.start(),
+                match_end=match.end(),
+                value=FactValue(value_date=value),
+                priority=10,
+            )
+        )
+    return candidates
+
+
+def _payment_schedule_candidates(
+    rule: FieldRule, segments: Sequence[ExtractedTextSegment]
+) -> list[Candidate]:
+    if rule.fact_key not in {"payment_count", "installment_amount"}:
+        return []
+    rows: list[tuple[ExtractedTextSegment, TextLine, re.Match[str]]] = []
+    for segment in segments:
+        searchable = _searchable(segment.text)
+        if not all(
+            token in searchable for token in ("nro.cuota", "capital", "cuota", "saldo")
+        ):
+            continue
+        for line in _text_lines(segment.text):
+            match = _PAYMENT_SCHEDULE_ROW.match(line.text)
+            if match is not None:
+                rows.append((segment, line, match))
+    if not rows:
+        return []
+
+    if rule.fact_key == "payment_count":
+        segment, line, match = max(rows, key=lambda row: int(row[2].group("number")))
+        return [
+            Candidate(
+                rule=rule,
+                segment=segment,
+                match_start=line.start + match.start("number"),
+                match_end=line.start + match.end("number"),
+                value=FactValue(value_number=float(int(match.group("number")))),
+                priority=PAYMENT_SCHEDULE_PRIORITY,
+            )
+        ]
+
+    installment_counts = Counter(match.group("installment") for _, _, match in rows)
+    installment_text, _count = installment_counts.most_common(1)[0]
+    for segment, line, match in rows:
+        if match.group("installment") != installment_text:
+            continue
+        number = _parse_money_number(installment_text)
+        if number is None:
+            return []
+        return [
+            Candidate(
+                rule=rule,
+                segment=segment,
+                match_start=line.start + match.start("installment"),
+                match_end=line.start + match.end("installment"),
+                value=FactValue(value_number=number),
+                priority=PAYMENT_SCHEDULE_PRIORITY,
+            )
+        ]
+    return []
 
 
 def _select_candidates(
@@ -204,9 +479,14 @@ def _select_candidates(
     if rule.allow_multiple:
         return [_fact_from_candidate(candidate, document) for candidate in candidates]
 
-    distinct_values = {candidate.value.signature for candidate in candidates}
+    best_priority = min(candidate.priority for candidate in candidates)
+    best_candidates = [
+        candidate for candidate in candidates if candidate.priority == best_priority
+    ]
+
+    distinct_values = {candidate.value.signature for candidate in best_candidates}
     if len(distinct_values) > 1:
-        first = candidates[0]
+        first = best_candidates[0]
         return [
             _warning_fact(
                 rule=rule,
@@ -220,7 +500,7 @@ def _select_candidates(
                 match_end=first.match_end,
             )
         ]
-    return [_fact_from_candidate(candidates[0], document)]
+    return [_fact_from_candidate(best_candidates[0], document)]
 
 
 def _fact_from_candidate(
@@ -384,6 +664,127 @@ def _searchable(text: str) -> str:
     return text.translate(_TRANSLATION).lower()
 
 
+def _text_lines(text: str) -> list[TextLine]:
+    lines: list[TextLine] = []
+    offset = 0
+    for raw_line in text.splitlines(keepends=True):
+        line_without_break = raw_line.rstrip("\r\n")
+        stripped = line_without_break.strip()
+        if stripped:
+            leading = len(line_without_break) - len(line_without_break.lstrip())
+            start = offset + leading
+            end = start + len(stripped)
+            lines.append(
+                TextLine(
+                    text=stripped,
+                    searchable=_searchable(stripped),
+                    start=start,
+                    end=end,
+                )
+            )
+        offset += len(raw_line)
+    return lines
+
+
+def _match_table_label(line: TextLine) -> TableLabelMatch | None:
+    for spec in TABLE_LABEL_SPECS:
+        if any(pattern.search(line.searchable) for pattern in spec.excluded_patterns):
+            continue
+        for pattern in spec.patterns:
+            match = pattern.search(line.searchable)
+            if match is None:
+                continue
+            return TableLabelMatch(
+                spec=spec,
+                line=line,
+                start=match.start(),
+                end=match.end(),
+            )
+    return None
+
+
+def _parse_table_value(
+    value_kind: str, text: str, *, base_offset: int
+) -> TableValue | None:
+    if value_kind == "money":
+        match = _MONEY_SEARCH.search(text)
+        if match is None:
+            return None
+        value = _parse_money(match, text)
+        if value is None:
+            return None
+        return TableValue(
+            value=value,
+            start=base_offset + match.start("amount"),
+            end=base_offset + match.end("amount"),
+        )
+
+    if value_kind == "percentage":
+        match = _PERCENT_SEARCH.search(text)
+        if match is None:
+            return None
+        value = _parse_percentage(match, text)
+        if value is None:
+            return None
+        return TableValue(
+            value=value,
+            start=base_offset + match.start("percent"),
+            end=base_offset + match.end("percent"),
+        )
+
+    if value_kind == "integer":
+        match = _INTEGER_LINE.match(text)
+        if match is None:
+            return None
+        return TableValue(
+            value=FactValue(value_number=float(int(match.group("number")))),
+            start=base_offset + match.start("number"),
+            end=base_offset + match.end("number"),
+        )
+
+    if value_kind == "date":
+        match = _DATE_SEARCH.search(text)
+        if match is None:
+            return None
+        value = _parse_date(match.group("date"))
+        if value is None:
+            return None
+        return TableValue(
+            value=FactValue(value_date=value),
+            start=base_offset + match.start("date"),
+            end=base_offset + match.end("date"),
+        )
+    return None
+
+
+def _looks_like_table_value(line: TextLine) -> bool:
+    if _MONEY_SEARCH.search(line.text) is not None:
+        return True
+    if _PERCENT_SEARCH.search(line.text) is not None:
+        return True
+    if _DATE_SEARCH.search(line.text) is not None:
+        return True
+    if _INTEGER_LINE.match(line.text) is not None:
+        return True
+    return bool(line.text) and len(line.text) <= 120
+
+
+def _is_explanatory_line(line: TextLine) -> bool:
+    if line.text.startswith(("(*)", "(**)")):
+        return True
+    if len(line.text) > 140:
+        return True
+    explanatory_markers = (
+        "indicador",
+        "calcular",
+        "corresponde",
+        "contempla",
+        "periodo anual",
+        "valor presente",
+    )
+    return any(marker in line.searchable for marker in explanatory_markers)
+
+
 def _parse_money(match: re.Match[str], original_text: str) -> FactValue | None:
     del original_text
     number = _parse_money_number(match.group("amount"))
@@ -472,7 +873,8 @@ def _parse_date(value: str) -> date | None:
         return _safe_date(year, month, day)
 
     match = re.fullmatch(
-        r"(?P<day>\d{1,2})\s+de\s+(?P<month>[a-z]+)\s+de\s+(?P<year>\d{4})",
+        r"(?P<day>\d{1,2})\s+de\s+(?P<month>[a-z]+)\s+"
+        r"(?:de|del\s+ano)\s+(?P<year>\d{4})",
         normalized,
     )
     if match is None:
@@ -509,6 +911,123 @@ MONTHS = {
     "noviembre": 11,
     "diciembre": 12,
 }
+
+TABLE_LABEL_SPECS: tuple[TableLabelSpec, ...] = (
+    TableLabelSpec(None, _compile(r"\bfecha\s+primer\s+pago\b")),
+    TableLabelSpec(None, _compile(r"\bvalor\s+ultima\s+cuota\b")),
+    TableLabelSpec(None, _compile(r"\bvalor\s+cuota\s+referencia\b")),
+    TableLabelSpec(
+        None,
+        _compile(r"\bplazo\s+de\s+aviso\b", r"\bplazo[^\n]*prepago\b"),
+    ),
+    TableLabelSpec(
+        "principal_amount",
+        _compile(
+            r"\bmonto\s+liquido\s+del\s+credito\b",
+            r"\bmonto\s+total\s+que\s+efectivamente\s+recibe\b",
+        ),
+        value_kind="money",
+        priority=8,
+    ),
+    TableLabelSpec(
+        "principal_amount",
+        _compile(
+            r"\bmonto\s+(?:(?:bruto\s+)?del\s+)?credito\b",
+            r"\bcapital\s+(?:prestado|financiado)\b",
+        ),
+        value_kind="money",
+        priority=30,
+    ),
+    TableLabelSpec(
+        "contract_date",
+        _compile(r"\bfecha\b"),
+        value_kind="date",
+        priority=30,
+        excluded_patterns=_compile(r"\bfecha\s+primer\s+pago\b"),
+    ),
+    TableLabelSpec(
+        "term_months",
+        _compile(
+            r"\bplazo\s+(?:para\s+el\s+pago\s+del\s+credito|del\s+credito)\b",
+            r"\bplazo\b",
+        ),
+        value_kind="integer",
+        priority=10,
+        excluded_patterns=_compile(r"\baviso\b", r"\bprepago\b"),
+    ),
+    TableLabelSpec(
+        "payment_count",
+        _compile(r"\bnumero\s+de\s+cuotas\b", r"\bnro\.?\s*cuotas\b"),
+        value_kind="integer",
+        priority=10,
+    ),
+    TableLabelSpec(
+        "installment_amount",
+        _compile(
+            r"\bvalor\s+(?:de\s+)?(?:la\s+)?cuota(?:\s+mensual)?\b",
+            r"\bcuota\s+mensual\b",
+        ),
+        value_kind="money",
+        priority=10,
+        excluded_patterns=_compile(r"\bultima\b", r"\breferencia\b"),
+    ),
+    TableLabelSpec(
+        "interest_rate",
+        _compile(
+            r"\btasa\s+(?:de\s+)?interes(?:\s+anualizada|\s+anual)?\b",
+            r"\btasa\s+anual\b",
+        ),
+        value_kind="percentage",
+        priority=15,
+    ),
+    TableLabelSpec(
+        "cae",
+        _compile(r"\bcae\b", r"\bcarga\s+anual\s+equivalente\b"),
+        value_kind="percentage",
+        priority=10,
+    ),
+    TableLabelSpec(
+        "total_cost",
+        _compile(
+            r"\bcosto\s+(?:final\s+o\s+)?total\s+(?:del\s+)?credito\b",
+            r"\bcosto\s+total\s+(?:del\s+)?credito\b",
+            r"\btotal\s+a\s+pagar\b",
+        ),
+        value_kind="money",
+        priority=10,
+    ),
+    TableLabelSpec(None, _compile(r"\bnombre(?:\s+y\s+apellidos)?\b")),
+    TableLabelSpec(None, _compile(r"\bdomicilio\b")),
+    TableLabelSpec(None, _compile(r"\brut\b")),
+    TableLabelSpec(None, _compile(r"\btipo\s+credito\b")),
+    TableLabelSpec(None, _compile(r"\bsucursal\b")),
+    TableLabelSpec(None, _compile(r"\bfrecuencia\s+de\s+pago\b")),
+    TableLabelSpec(None, _compile(r"\bperiodicidad\b")),
+    TableLabelSpec(None, _compile(r"\bdia\s+de\s+vencimiento\b")),
+    TableLabelSpec(
+        None,
+        _compile(r"\b(?:1er|primer|2do|segundo)\s+mes\b", r"\bmes\s*[12]\b"),
+        consumes_value=False,
+    ),
+    TableLabelSpec(
+        None,
+        _compile(r"\bmeses?\s+(?:de\s+)?(?:gracia|no\s+pago)\b"),
+        consumes_value=False,
+    ),
+    TableLabelSpec(None, _compile(r"\bsuma\s+de\s+intereses\b")),
+    TableLabelSpec(None, _compile(r"\binteres\s+del\s+credito\b")),
+    TableLabelSpec(
+        None,
+        _compile(r"\bgastos?\s+(?:o\s+cargos|asociados)\b"),
+        consumes_value=False,
+    ),
+    TableLabelSpec(None, _compile(r"\bimpuestos?\b")),
+    TableLabelSpec(None, _compile(r"\bgastos?\s+notariales\b")),
+    TableLabelSpec(None, _compile(r"\bautorizacion\s+notarial\b")),
+    TableLabelSpec(None, _compile(r"\bprima\s+seguros?\s+voluntarios\b")),
+    TableLabelSpec(None, _compile(r"\btotal\s+gastos\s+asociados\b")),
+    TableLabelSpec(None, _compile(r"\bgarantias?\s+asociadas\b")),
+)
 
 FACT_RULES: tuple[FieldRule, ...] = (
     FieldRule(

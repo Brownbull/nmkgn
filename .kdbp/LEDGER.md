@@ -1,5 +1,64 @@
 # Session Ledger
 
+## 2026-05-25 — PHASE 2 REVIEW: Receptionist schema, persistence, and provider contract
+VERDICT: APPROVE
+FINDINGS: 0 total (0 critical, 0 high, 0 medium, 0 low)
+COVERAGE: HIGH — all acceptance criteria exercised through 6 API tests and 4 media tests; migration verified on fresh SQLite
+CONFIDENCE: 100/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: ent | DRIFT: none
+TICK: ✅
+
+## 2026-05-18 19:41 — Scotiabank baseline harness execution
+
+Executed the local-only Scotiabank baseline exercise.
+
+- Created ignored local replay baseline:
+  `manual-test-cases/baselines.local/base-degradation-scotiabank-2022/baseline.json`.
+- Sanitized run:
+  `manual-test-cases/runs/base-degradation-scotiabank-2022/20260518T233905Z`.
+- Private detailed run:
+  `manual-test-cases/runs/base-degradation-scotiabank-2022/20260518T233914Z`.
+- Result: 3/3 documents uploaded and extracted, 33 pending facts, 8
+  receptionist gaps, 21 baseline gaps, and analysis readiness remained blocked
+  by unresolved high-impact facts plus unresolved receptionist gaps.
+- Wrote sanitized and private evaluation reports under each run's `baseline/`
+  folder.
+
+Verification:
+
+- `uv run pytest -q tests/api/test_manual_baseline.py` — passed, 7 tests.
+- `uv run python manual-test-cases/run_catalog.py --help` — passed.
+- Sanitized artifact grep for password/snippet/value/raw path markers — passed.
+- `git check-ignore -v` confirmed the private detailed report and replay
+  baseline are ignored.
+- `git status --short manual-test-cases` — still shows the untracked manual
+  test-case tree, as expected in this working state.
+- `git diff --check` — passed.
+
+## 2026-05-18 19:06 — Manual Consumer Credit Baseline Agent Harness
+
+Implemented the manual-only baseline harness for fixture evaluation.
+
+- Added importable baseline schemas, media packing, local replay, opt-in
+  Anthropic provider plumbing, deterministic comparison gaps, and ignored run
+  artifacts under `baseline/`.
+- Extended `manual-test-cases/run_catalog.py` with `--baseline-agent`,
+  `--baseline-provider`, `--baseline-model`, `--baseline-max-pages`, and
+  `--allow-external-llm`.
+- Documented `manual-test-cases/baselines.local/<case-id>/baseline.json` and
+  added local ignore coverage for baseline replay packets.
+
+Verification:
+
+- `uv run pytest -q tests/api/test_manual_baseline.py` — passed, 7 tests.
+- `uv run python manual-test-cases/run_catalog.py --help` — passed.
+- `uv run pytest -q` — passed, 81 tests.
+- `uv run ruff check` — passed.
+- `uv run ruff format --check manual_test_cases/baseline.py manual-test-cases/run_catalog.py tests/api/test_manual_baseline.py` — passed.
+- `git diff --check` — passed.
+
 ## 2026-05-18 13:41 — PHASE 1 COMMIT GATE
 
 Prepared `/gabe-next` routed through the Phase 1 commit gate.
@@ -871,3 +930,89 @@ Verification:
 - `git diff --check` — passed.
 - Note: `uv run ruff format --check .` still reports pre-existing untouched
   files that would be reformatted; changed files are format-clean.
+
+## 2026-05-18 15:08 — PLAN UPDATED: Insert receptionist extraction gap gate
+
+Inserted the reviewed multimodal receptionist gate before deterministic
+discrepancy calculations.
+
+- Added Phases 2-5 for receptionist schema/provider contract, media packing/run
+  pipeline, deterministic gap comparison/resolution/promotion/readiness, and
+  frontend gap review handoff.
+- Shifted deterministic calculations, official references, structured analysis
+  orchestration, and analysis API/UI to Phases 6-9.
+- Added decision entries D17-D20 for the inserted phases.
+
+## 2026-05-18 15:12 — PHASES 2-5 EXECUTION STARTED
+
+Started implementation of the reviewed `DocumentReceptionistAgent` gate.
+
+- Scope: receptionist audit persistence, Pydantic schemas, provider adapter,
+  media packing, run service, deterministic comparator, gap resolution,
+  promotion, composite readiness endpoint, Upload UI handoff, and focused tests.
+- Out of scope: production provider routing, async workers, external
+  observability, deterministic discrepancy calculations, official references,
+  and `ConsumerCreditAgent` analysis.
+
+## 2026-05-18 15:35 — PHASES 2-5 EXECUTION COMPLETE
+
+Implemented the multimodal receptionist extraction gap gate.
+
+- Added `DocumentReceptionistRun`, `DocumentReceptionistObservation`,
+  `DocumentExtractionGap`, and `DocumentExtractionGapResolution` models plus
+  Alembic migration `20260518_0005`.
+- Added explicit `DocumentReceptionistAgent`, receptionist schemas, config,
+  dependencies (`pydantic-ai`, `pymupdf`), bounded media packing,
+  fake/provider-unavailable adapters, deterministic gap comparison, human
+  resolution, promotion/correction behavior, and composite
+  `analysis-readiness`.
+- Added receptionist API endpoints for starting/reading runs, listing/resolving
+  gaps, and reading composite readiness.
+- Added `src/api/receptionist.ts` and Upload-screen receptionist run/gap review
+  UI; continuation now uses composite readiness.
+- Updated agent and architecture docs for the raw-document receptionist boundary.
+- PLAN: Phases 2-5 `Exec` marked `✅`; Review remains pending.
+
+Verification so far:
+
+- `uv run python -m compileall api` — passed.
+- `uv run pytest tests/api/test_receptionist_api.py tests/api/test_receptionist_media.py` — passed, 9 tests.
+- `uv run ruff check api tests/api` — passed.
+- `uv run ruff format --check api/agents api/config.py api/routes/receptionist.py api/services/receptionist.py api/services/receptionist_media.py api/services/receptionist_provider.py tests/api/test_receptionist_media.py` — passed.
+- `DATABASE_URL=sqlite+pysqlite:////tmp/nmkgn-receptionist-verify.db uv run alembic -c api/migrations/alembic.ini upgrade head` — passed.
+- `uv run pytest` — passed, 67 tests.
+- `npm test -- --run tests/frontend/Upload.test.tsx` — passed, 15 tests.
+- `npm test` — passed, 25 tests.
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+
+## 2026-05-18 18:27 — RECEPTIONIST FAKE PROVIDER STABILIZED
+
+Aligned the deterministic fake receptionist with the structural fact extraction
+core so local gap reports no longer compare the improved extractor against an
+outdated regex-only fake provider.
+
+- Exposed a reusable non-persistent `build_consumer_credit_facts(...)` core from
+  `api/services/fact_extraction.py`.
+- Updated `FakeReceptionistProvider` to turn those transient structured facts
+  into receptionist observations while still skipping deterministic warning
+  placeholders.
+- Kept unsupported-field signals in the fake provider as local audit-only
+  observations.
+- Added a regression API test proving a separated label/value block produces
+  receptionist observations without `missing_in_receptionist` comparison noise.
+
+Verification:
+
+- `uv run pytest tests/api/test_receptionist_api.py -q` — passed, 6 tests.
+- `uv run pytest tests/api/test_fact_extraction.py -q` — passed, 11 tests.
+- `uv run pytest -q` — passed, 74 tests.
+- `uv run ruff check api/services/fact_extraction.py api/services/receptionist_provider.py tests/api/test_receptionist_api.py` — passed.
+- `uv run ruff format --check api/services/fact_extraction.py api/services/receptionist_provider.py tests/api/test_receptionist_api.py` — passed.
+- `git diff --check` — passed.
+- `uv run python manual-test-cases/run_catalog.py --case-id base-degradation-scotiabank-2022` — passed with run
+  `manual-test-cases/runs/base-degradation-scotiabank-2022/20260518T222707Z`;
+  gap count is now 8 with no `missing_in_receptionist` gaps, leaving one
+  blocking `source_conflict` for `clause` plus seven advisory
+  `unsupported_field` gaps.

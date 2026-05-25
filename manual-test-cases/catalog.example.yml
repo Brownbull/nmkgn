@@ -1,0 +1,38 @@
+# Copy this to catalog.local.yml and edit it for local manual runs.
+# Keep real client names, IDs, account numbers, and raw document content out of
+# tracked files.
+
+cases:
+  - id: cc-text-001-clean-contract
+    title: Clean consumer-credit contract with all required fields
+    purpose: Verify the happy path from upload through composite readiness.
+    case_stage: before_signing
+    institution_name: Banco Demo
+    requested_amount_clp: 3000000
+    expected_term_months: 60
+    documents:
+      - role: primary
+        path: uploads/cc-text-001-clean-contract/contrato.pdf
+        expected_content_type: application/pdf
+      - role: simulation
+        path: uploads/cc-text-001-clean-contract/simulacion.txt
+        expected_content_type: text/plain
+    expected_file: expected/cc-text-001-clean-contract.example.yml
+    notes:
+      - Replace these paths with the local documents you add.
+
+  - id: cc-receptionist-002-value-conflict
+    title: Receptionist value conflict on a high-impact field
+    purpose: Verify blocking gap creation and human resolution.
+    case_stage: after_signing
+    institution_name: Banco Demo
+    requested_amount_clp: 3000000
+    expected_term_months: 60
+    documents:
+      - role: primary
+        path: uploads/cc-receptionist-002-value-conflict/contrato.pdf
+        expected_content_type: application/pdf
+    expected_file: expected/cc-receptionist-002-value-conflict.example.yml
+    notes:
+      - Use this shape for any real example where deterministic and receptionist
+        values disagree.

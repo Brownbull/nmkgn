@@ -54,3 +54,10 @@ npm test
 npm run lint
 npm run build
 ```
+
+## Manual Test Cases
+
+Use `manual-test-cases/` for real or realistic documents you want to run through
+the upload, extraction, receptionist, readiness, and later analysis pipeline.
+Raw uploads and run outputs are ignored by git; sanitized expectations can live
+under `manual-test-cases/expected/`.

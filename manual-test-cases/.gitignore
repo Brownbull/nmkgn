@@ -1,0 +1,6 @@
+catalog.local.yml
+*.private.yml
+*.private.yaml
+uploads/
+runs/
+baselines.local/

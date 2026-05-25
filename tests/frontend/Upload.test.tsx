@@ -5,6 +5,7 @@ import { Upload } from '../../src/screens/Upload';
 import { NavCtx, type NavState, type NavValue } from '../../src/components/NavContext';
 import type { DocumentRecord, ExtractedTextSegment } from '../../src/api/documents';
 import type { ConsumerCreditFact, FactReadiness } from '../../src/api/facts';
+import type { AnalysisReadiness, DocumentExtractionGap } from '../../src/api/receptionist';
 
 const DOCUMENT: DocumentRecord = {
   id: 'doc-123',
@@ -99,6 +100,46 @@ const BLOCKED_READINESS: FactReadiness = {
   },
 };
 
+const READY_ANALYSIS_READINESS: AnalysisReadiness = {
+  case_id: 'case-123',
+  ready_for_analysis: true,
+  blockers: [],
+  fact_readiness: READY_READINESS,
+  receptionist_ready: true,
+  missing_receptionist_document_ids: [],
+  unresolved_blocking_gap_count: 0,
+  unresolved_blocking_gap_ids: [],
+  document_run_statuses: {
+    'doc-123': 'completed',
+  },
+};
+
+const GAP: DocumentExtractionGap = {
+  id: 'gap-123',
+  case_id: 'case-123',
+  document_id: 'doc-123',
+  run_id: 'run-123',
+  observation_id: 'obs-123',
+  fact_id: 'fact-123',
+  fact_key: 'cae',
+  gap_type: 'value_conflict',
+  severity: 'high',
+  blocking: true,
+  status: 'open',
+  detail: 'Receptionist value conflicts with deterministic CAE.',
+  deterministic_value: {
+    value_kind: 'percentage',
+    value_number: 12,
+  },
+  receptionist_value: {
+    value_kind: 'percentage',
+    value_number: 13,
+  },
+  source_summary: 'CAE 13% anual',
+  created_at: '2026-05-15T00:00:00Z',
+  resolved_at: null,
+};
+
 function jsonResponse(body: unknown, ok = true): Response {
   return {
     ok,
@@ -112,17 +153,66 @@ function stubUploadFetch({
   uploadedDocument = DOCUMENT,
   facts = [FACT],
   readiness = READY_READINESS,
+  analysisReadiness,
+  gaps = [],
 }: {
   documents?: DocumentRecord[];
   segments?: ExtractedTextSegment[];
   uploadedDocument?: DocumentRecord;
   facts?: ConsumerCreditFact[];
   readiness?: FactReadiness;
+  analysisReadiness?: AnalysisReadiness;
+  gaps?: DocumentExtractionGap[];
 } = {}) {
+  const effectiveAnalysisReadiness = analysisReadiness ?? {
+    ...READY_ANALYSIS_READINESS,
+    ready_for_analysis: readiness.ready_for_analysis,
+    blockers: readiness.blockers,
+    fact_readiness: readiness,
+  };
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? 'GET';
 
+    if (method === 'GET' && url.endsWith('/api/cases/case-123/analysis-readiness')) {
+      return jsonResponse(effectiveAnalysisReadiness);
+    }
+    if (method === 'GET' && url.endsWith('/api/cases/case-123/receptionist/gaps')) {
+      return jsonResponse(gaps);
+    }
+    if (method === 'POST' && url.endsWith('/api/cases/case-123/documents/doc-123/receptionist-runs')) {
+      return jsonResponse({
+        id: 'run-123',
+        case_id: 'case-123',
+        document_id: 'doc-123',
+        status: 'completed',
+        provider: 'fake',
+        model_name: 'fake-receptionist-v1',
+        prompt_version: 'document-receptionist-v1',
+        schema_version: 'document_receptionist.v1',
+        media_kind: 'text',
+        media_page_count: 0,
+        processed_page_count: 0,
+        partial_coverage: false,
+        error_code: null,
+        error_message: null,
+        created_at: '2026-05-15T00:00:00Z',
+        updated_at: '2026-05-15T00:00:00Z',
+      });
+    }
+    if (method === 'POST' && url.endsWith('/api/cases/case-123/receptionist/gaps/gap-123/resolution')) {
+      return jsonResponse({
+        id: 'resolution-123',
+        gap_id: 'gap-123',
+        case_id: 'case-123',
+        owner_ref: 'demo-user',
+        action: 'confirm_deterministic',
+        note: null,
+        created_fact_id: null,
+        corrected_fact_id: 'fact-123',
+        created_at: '2026-05-15T00:00:00Z',
+      });
+    }
     if (method === 'GET' && url.endsWith('/api/cases/case-123/facts/readiness')) {
       return jsonResponse(readiness);
     }
@@ -273,6 +363,40 @@ describe('Upload persistence flow', () => {
     });
   });
 
+  it('renders receptionist gaps and records a resolution decision', async () => {
+    const user = userEvent.setup();
+    const fetchMock = stubUploadFetch({
+      documents: [DOCUMENT],
+      segments: [SEGMENT],
+      gaps: [GAP],
+      analysisReadiness: {
+        ...READY_ANALYSIS_READINESS,
+        ready_for_analysis: false,
+        blockers: ['unresolved_receptionist_gaps'],
+        receptionist_ready: false,
+        unresolved_blocking_gap_count: 1,
+        unresolved_blocking_gap_ids: ['gap-123'],
+      },
+    });
+    renderUpload({ caseId: 'case-123', mockAnalysisAcknowledged: false });
+
+    expect(await screen.findByText('Brechas contra el documento original')).toBeTruthy();
+    expect(screen.getByText('Valor distinto')).toBeTruthy();
+    expect(screen.getByText('13')).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /mantener deterministico/i }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://localhost:18080/api/cases/case-123/receptionist/gaps/gap-123/resolution',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ action: 'confirm_deterministic' }),
+        }),
+      );
+    });
+  });
+
   it('rejects non-numeric corrections before sending them to the API', async () => {
     const user = userEvent.setup();
     const pendingFact = { ...FACT, confirmation_status: 'pending' as const };
@@ -307,7 +431,7 @@ describe('Upload persistence flow', () => {
 
     expect((await screen.findAllByText('Necesita OCR')).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/OCR queda pendiente/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/deben estar confirmados, corregidos o rechazados/i)).toBeTruthy();
+    expect(screen.getByText(/brechas bloqueantes deben quedar resueltos/i)).toBeTruthy();
   });
 
   it('shows an upload error when the POST fails', async () => {
@@ -318,6 +442,10 @@ describe('Upload persistence flow', () => {
       if (method === 'POST' && url.endsWith('/documents')) {
         return jsonResponse({ detail: 'Archivo demasiado grande.' }, false);
       }
+      if (method === 'GET' && url.endsWith('/facts/readiness')) return jsonResponse(READY_READINESS);
+      if (method === 'GET' && url.endsWith('/facts')) return jsonResponse([FACT]);
+      if (method === 'GET' && url.endsWith('/analysis-readiness')) return jsonResponse(READY_ANALYSIS_READINESS);
+      if (method === 'GET' && url.endsWith('/receptionist/gaps')) return jsonResponse([]);
       if (method === 'GET' && url.endsWith('/documents')) return jsonResponse([]);
       throw new Error(`Unhandled fetch: ${method} ${url}`);
     });
@@ -340,9 +468,14 @@ describe('Upload persistence flow', () => {
       if (method === 'POST' && url.endsWith('/documents')) {
         return jsonResponse(DOCUMENT);
       }
+      if (method === 'POST' && url.endsWith('/receptionist-runs')) {
+        return jsonResponse({ ...READY_ANALYSIS_READINESS, id: 'run-123', status: 'completed' });
+      }
       if (method === 'GET' && url.endsWith('/text-segments')) return jsonResponse([SEGMENT]);
       if (method === 'GET' && url.endsWith('/facts/readiness')) return jsonResponse(READY_READINESS);
       if (method === 'GET' && url.endsWith('/facts')) return jsonResponse([FACT]);
+      if (method === 'GET' && url.endsWith('/analysis-readiness')) return jsonResponse(READY_ANALYSIS_READINESS);
+      if (method === 'GET' && url.endsWith('/receptionist/gaps')) return jsonResponse([]);
       if (method === 'GET' && url.endsWith('/documents')) {
         listCallCount++;
         if (listCallCount === 1) return jsonResponse([]);
@@ -375,7 +508,12 @@ describe('Upload persistence flow', () => {
       if (method === 'POST' && url.endsWith('/documents')) {
         return jsonResponse(DOCUMENT);
       }
+      if (method === 'POST' && url.endsWith('/receptionist-runs')) {
+        return jsonResponse({ ...READY_ANALYSIS_READINESS, id: 'run-123', status: 'completed' });
+      }
       if (method === 'GET' && url.endsWith('/text-segments')) return jsonResponse([SEGMENT]);
+      if (method === 'GET' && url.endsWith('/analysis-readiness')) return jsonResponse(READY_ANALYSIS_READINESS);
+      if (method === 'GET' && url.endsWith('/receptionist/gaps')) return jsonResponse([]);
       if (method === 'GET' && url.endsWith('/facts/readiness')) {
         readinessCallCount++;
         if (readinessCallCount === 1) return jsonResponse(READY_READINESS);

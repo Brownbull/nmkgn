@@ -19,8 +19,9 @@ rules.
 
 The current backend persists the case shell, uploaded document metadata,
 extracted text segments, deterministic normalized consumer-credit fact
-candidates, user confirmation records, and the versioned analysis/finding
-persistence contract. It still does not execute analysis, call an agent, or
+candidates, user confirmation records, the receptionist extraction gap gate,
+and the versioned analysis/finding persistence contract. It still does not run
+consumer-credit discrepancy calculations, call the later analysis agent, or
 expose analysis endpoints.
 
 ```mermaid
@@ -28,8 +29,14 @@ erDiagram
   CASE ||--o{ DOCUMENT : owns
   DOCUMENT ||--o{ EXTRACTED_TEXT_SEGMENT : yields
   DOCUMENT ||--o{ CONSUMER_CREDIT_FACT : sources
+  DOCUMENT ||--o{ DOCUMENT_RECEPTIONIST_RUN : reviews
   EXTRACTED_TEXT_SEGMENT ||--o{ CONSUMER_CREDIT_FACT : anchors
   CONSUMER_CREDIT_FACT ||--o{ FACT_CONFIRMATION : receives
+  DOCUMENT_RECEPTIONIST_RUN ||--o{ DOCUMENT_RECEPTIONIST_OBSERVATION : records
+  DOCUMENT_RECEPTIONIST_RUN ||--o{ DOCUMENT_EXTRACTION_GAP : compares
+  DOCUMENT_RECEPTIONIST_OBSERVATION ||--o{ DOCUMENT_EXTRACTION_GAP : explains
+  DOCUMENT_EXTRACTION_GAP ||--o{ DOCUMENT_EXTRACTION_GAP_RESOLUTION : resolves
+  CONSUMER_CREDIT_FACT ||--o{ DOCUMENT_EXTRACTION_GAP : conflicts
   CASE ||--o{ ANALYSIS_RUN : analyzes
   ANALYSIS_RUN ||--o{ ANALYSIS_CALCULATION : computes
   ANALYSIS_RUN ||--o{ ANALYSIS_FINDING : records
@@ -124,6 +131,88 @@ erDiagram
     string corrected_value_currency
     date corrected_value_date
     text note
+    datetime created_at
+  }
+
+  DOCUMENT_RECEPTIONIST_RUN {
+    uuid id PK
+    uuid case_id FK
+    uuid document_id FK
+    string owner_ref
+    string provider
+    string model_name
+    string prompt_version
+    string schema_version
+    string status
+    string media_kind
+    integer media_page_count
+    integer processed_page_count
+    boolean partial_coverage
+    integer prompt_tokens
+    integer completion_tokens
+    integer latency_ms
+    float cost_usd
+    string error_code
+    text error_message
+    datetime started_at
+    datetime completed_at
+    datetime created_at
+    datetime updated_at
+  }
+
+  DOCUMENT_RECEPTIONIST_OBSERVATION {
+    uuid id PK
+    uuid run_id FK
+    uuid case_id FK
+    uuid document_id FK
+    string fact_key
+    string field_label
+    string value_kind
+    text value_text
+    float value_number
+    string value_currency
+    date value_date
+    string unit
+    integer source_page_number
+    integer source_start_offset
+    integer source_end_offset
+    text source_snippet
+    json bounding_box
+    string anchor_status
+    float confidence
+    json raw_payload
+    datetime created_at
+  }
+
+  DOCUMENT_EXTRACTION_GAP {
+    uuid id PK
+    uuid case_id FK
+    uuid document_id FK
+    uuid run_id FK
+    uuid observation_id FK
+    uuid fact_id FK
+    string fact_key
+    string gap_type
+    string severity
+    boolean blocking
+    string status
+    text detail
+    json deterministic_value
+    json receptionist_value
+    text source_summary
+    datetime created_at
+    datetime resolved_at
+  }
+
+  DOCUMENT_EXTRACTION_GAP_RESOLUTION {
+    uuid id PK
+    uuid gap_id FK
+    uuid case_id FK
+    string owner_ref
+    string action
+    text note
+    uuid created_fact_id FK
+    uuid corrected_fact_id FK
     datetime created_at
   }
 
@@ -323,6 +412,87 @@ Fact confirmation constraints:
 - Confirmation records preserve the user's decision separately from the
   original extraction evidence.
 
+Receptionist run fields:
+
+- `id`
+- `case_id`
+- `document_id`
+- `owner_ref`
+- `provider`
+- `model_name`
+- `prompt_version`
+- `schema_version`: starts at `document_receptionist.v1`
+- `status`: `pending`, `running`, `completed`, or `failed`
+- `media_kind`: `text`, `image`, or `pdf_images`
+- optional page counts, partial-coverage flag, token, latency, cost, and error
+  metadata
+- optional `started_at` and `completed_at`
+- `created_at`
+- `updated_at`
+
+Receptionist observation fields:
+
+- `id`
+- `run_id`
+- `case_id`
+- `document_id`
+- optional `fact_key` for supported fact schema fields
+- `field_label`
+- `value_kind`: fact value kinds plus `unsupported`
+- optional normalized value columns
+- optional source locator fields and bounding box
+- `anchor_status`: `anchored`, `unanchored`, or `partial`
+- optional `confidence`
+- JSON `raw_payload`
+- `created_at`
+
+Extraction gap fields:
+
+- `id`
+- `case_id`
+- `document_id`
+- `run_id`
+- optional `observation_id`
+- optional `fact_id`
+- optional `fact_key`
+- `gap_type`: missing deterministic value, missing receptionist value, value
+  conflict, source conflict, deterministic warning resolved by receptionist,
+  unanchored receptionist claim, unsupported field, failed receptionist run, or
+  partial document coverage
+- `severity`: `low`, `medium`, or `high`
+- `blocking`
+- `status`: `open` or `resolved`
+- `detail`
+- optional deterministic/receptionist value snapshots and source summary
+- `created_at`
+- optional `resolved_at`
+
+Gap resolution fields:
+
+- `id`
+- `gap_id`
+- `case_id`
+- `owner_ref`
+- `action`: `confirm_deterministic`, `accept_receptionist`,
+  `reject_receptionist`, or `defer_unsupported`
+- optional `note`
+- optional created/corrected fact ids
+- `created_at`
+
+Receptionist gate constraints:
+
+- The receptionist receives document media and extracted text, not
+  deterministic fact values.
+- Receptionist observations are not facts and are not findings.
+- A high-impact missing deterministic value, high-impact conflict, source
+  conflict, deterministic warning resolved by receptionist, unanchored
+  high-impact claim, failed run, or partial-document run blocks composite
+  analysis readiness until resolved.
+- Accepting a missing known fact creates a new confirmed
+  `ConsumerCreditFact` with `extraction_provider="receptionist-agent-v1"`.
+- Accepting a conflict corrects the existing deterministic fact through a
+  confirmation record. Unsupported fields stay audit/backlog evidence only.
+
 Analysis run fields:
 
 - `id`
@@ -450,6 +620,21 @@ The fact review API exposes the confirmation gate without starting analysis:
 - Case readiness remains blocked while any high-impact candidate is still
   pending or while a required high-impact fact type has no candidate.
 
+The receptionist API exposes a pre-analysis gap gate:
+
+- Starting a receptionist run is document-scoped and owner-scoped.
+- Plain text uses extracted text segments, images pass as image media, and PDFs
+  render a bounded number of page images through the media packer.
+- The provider adapter returns schema-validated observations or a failed run.
+  The default local `fake` provider is deterministic for tests; unconfigured
+  providers fail closed.
+- Gaps are computed deterministically by comparing receptionist observations
+  with deterministic facts. Blocking gaps are explicit and visible.
+- Gap resolution is the only path that can promote an observation to a fact or
+  correct an existing fact. Unsupported fields can only be deferred/audited.
+- `GET /analysis-readiness` composes fact readiness with receptionist readiness.
+  The existing `GET /facts/readiness` remains fact-layer readiness only.
+
 The central contract is document-type-specific structured output:
 
 - `ConsumerCreditAgent` will return the stable `ConsumerCreditAnalysis` schema.
@@ -477,6 +662,15 @@ The central contract is document-type-specific structured output:
   counts
 - `POST /api/cases/{case_id}/facts/{fact_id}/confirmations` — record a
   confirm, correct, or reject decision for one owner-scoped fact
+- `POST /api/cases/{case_id}/documents/{document_id}/receptionist-runs` — start
+  a receptionist run for one owner-scoped document
+- `GET /api/cases/{case_id}/documents/{document_id}/receptionist-runs/{run_id}` —
+  read a receptionist run with observations and gaps
+- `GET /api/cases/{case_id}/receptionist/gaps` — list case receptionist gaps
+- `POST /api/cases/{case_id}/receptionist/gaps/{gap_id}/resolution` — resolve a
+  gap and, when allowed, promote/correct facts
+- `GET /api/cases/{case_id}/analysis-readiness` — composite fact plus
+  receptionist readiness gate
 
 ## Services
 
@@ -510,6 +704,15 @@ Current service boundaries:
 - Analysis persistence contract for versioned consumer-credit analysis runs,
   deterministic calculation evidence, evidence-backed findings, citation
   metadata, inference metadata, and audit-only unsupported outputs.
+- Receptionist media service for bounded raw-document packing: extracted text
+  for text uploads, image media for image uploads, and capped rendered page
+  images for PDFs.
+- Receptionist provider service for the internal `DocumentReceptionistAgent`
+  adapter. The local fake provider is deterministic; unsupported external
+  provider names fail closed into run/gap state.
+- Receptionist service for run orchestration, observation persistence,
+  deterministic gap comparison, human resolution, promotion/correction writes,
+  and composite analysis readiness.
 
 Expected future service boundaries:
 
@@ -527,19 +730,28 @@ Current screens live under `src/screens/`. The case setup and upload steps now
 cross the real backend boundary: case setup creates persisted consumer-credit
 cases, and upload calls the document API to store files, list document metadata,
 show extracted text segments, list fact candidates, record confirm/correct/reject
-decisions, and read the case-level readiness gate. Later analysis, plan,
-finding, and email screens remain prototype surfaces until agents and
-evidence-backed findings exist.
+decisions, run receptionist review, list/resolve receptionist gaps, and read the
+composite readiness gate. Later analysis, plan, finding, and email screens
+remain prototype surfaces until agents and evidence-backed findings exist.
 
 Frontend API helpers live under `src/api/`. `src/api/client.ts` owns the Vite
 API base URL, while endpoint-specific clients such as `cases.ts`,
-`documents.ts`, and `facts.ts` own request payloads and response types.
+`documents.ts`, `facts.ts`, and `receptionist.ts` own request payloads and
+response types.
 
 ## Integrations
 
 PostgreSQL is required for application persistence. OCR, LLM provider, document
 storage, and benchmark/reference-source strategy are defined behind interfaces
 during implementation planning.
+
+Receptionist settings:
+
+- `NMKGN_RECEPTIONIST_ENABLED`
+- `NMKGN_RECEPTIONIST_PROVIDER`
+- `NMKGN_RECEPTIONIST_MODEL`
+- `NMKGN_RECEPTIONIST_MAX_PAGES`
+- `NMKGN_RECEPTIONIST_TIMEOUT_SECONDS`
 
 Local upload storage defaults to `var/uploads` and is ignored by git. The
 `.env.example` file documents the runtime settings. `NMKGN_ENABLE_PRODUCTION_UPLOADS`

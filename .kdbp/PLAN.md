@@ -33,6 +33,13 @@ outputs into trusted results.
 - Stable `ConsumerCreditAnalysis` schemas with explicit schema versions.
 - Analysis run, finding, citation/evidence, calculation, and unsupported-output
   persistence contracts.
+- A separate `DocumentReceptionistAgent` gate before discrepancy calculations,
+  with structured observations, bounded document media, deterministic gap
+  comparison, and human resolution.
+- Persisted receptionist runs, observations, extraction gaps, and resolution
+  audit records.
+- Composite `analysis-readiness` that combines fact-layer readiness with
+  unresolved receptionist blockers.
 - Deterministic calculations for core consumer-credit discrepancies, including
   the 60-versus-68-payment scenario.
 - A bounded official/reference catalog for CMF, SERNAC, Ley Chile, and
@@ -53,6 +60,11 @@ outputs into trusted results.
 - Evidence export, communication drafts, production retention policy, and real
   auth/authorization.
 - Broad legal-document support or dynamic per-user agent output shapes.
+- Letting receptionist observations mutate trusted facts without deterministic
+  comparison and human resolution.
+- Giving the later `ConsumerCreditAgent` raw uploaded documents.
+- Production multimodal provider routing, fallback chains, or external
+  observability beyond locally persisted run metadata.
 - Live external scraping at runtime unless explicitly bounded behind the
   reference catalog contract.
 
@@ -61,10 +73,14 @@ outputs into trusted results.
 | # | Phase | Description | Types | Tier | Complexity | Exec | Review | Commit | Push |
 |---|-------|-------------|-------|------|------------|------|--------|--------|------|
 | 1 | Analysis contract and persistence | Add analysis run, finding, citation/evidence, calculation, unsupported-output, and stable schema contracts. | `persistence, data-migration, data-validation` | mvp | high | ✅ | ✅ | ✅ | ⬜ |
-| 2 | Deterministic discrepancy calculations | Compute reproducible consumer-credit discrepancy evidence from confirmed facts and comparison inputs. | `data-processing, data-validation` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
-| 3 | Official reference catalog | Add bounded CMF, SERNAC, Ley Chile, and benchmark reference records with retrieval/verification metadata. | `persistence, external-api, data-validation` | mvp | med | ⬜ | ⬜ | ⬜ | ⬜ |
-| 4 | Structured agent orchestration | Implement `ConsumerCreditAgent` and analysis-run orchestration with enforced output shape, readiness gating, and run metrics. | `ai-agent, llm, async-worker, data-processing` | ent | high | ⬜ | ⬜ | ⬜ | ⬜ |
-| 5 | Analysis API and source inspection UI | Expose analysis/finding endpoints and replace prototype findings with source-inspectable evidence states. | `api, user-facing, client-state` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 2 | Receptionist schema, persistence, and provider contract | Add `DocumentReceptionistAgent` output schema, audit tables, config, dependency contract, and fail-closed provider adapter. | `persistence, data-migration, ai-agent, data-validation` | ent | high | ✅ | ✅ | ⬜ | ⬜ |
+| 3 | Multimodal media packing and run pipeline | Pack text, image, and bounded PDF page images, run the receptionist, and persist run/observation metadata. | `data-processing, ai-agent, file-io` | ent | high | ✅ | ⬜ | ⬜ | ⬜ |
+| 4 | Gap comparator, resolution, promotion, and composite readiness | Compare deterministic facts to receptionist observations, block high-risk gaps, resolve human decisions, promote accepted observations, and expose composite readiness. | `api, data-validation, data-processing` | ent | high | ✅ | ⬜ | ⬜ | ⬜ |
+| 5 | Frontend gap review handoff | Add the Upload-screen receptionist review surface, run controls, gap actions, and composite readiness gate. | `user-facing, client-state, api` | mvp | med | ✅ | ⬜ | ⬜ | ⬜ |
+| 6 | Deterministic discrepancy calculations | Compute reproducible consumer-credit discrepancy evidence from confirmed facts and comparison inputs. | `data-processing, data-validation` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 7 | Official reference catalog | Add bounded CMF, SERNAC, Ley Chile, and benchmark reference records with retrieval/verification metadata. | `persistence, external-api, data-validation` | mvp | med | ⬜ | ⬜ | ⬜ | ⬜ |
+| 8 | Structured agent orchestration | Implement `ConsumerCreditAgent` and analysis-run orchestration with enforced output shape, readiness gating, and run metrics. | `ai-agent, llm, async-worker, data-processing` | ent | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 9 | Analysis API and source inspection UI | Expose analysis/finding endpoints and replace prototype findings with source-inspectable evidence states. | `api, user-facing, client-state` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
 
 <!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->
 <!-- Review/Commit/Push auto-ticked by /gabe-review, /gabe-commit, /gabe-push -->
@@ -101,10 +117,119 @@ decisions_entry: D12
   finding evidence contract, and REQ-04 claim-classification continuity.
 - **Trade-offs accepted:** See `DECISIONS.md` D12.
 
-### Phase 2 — Deterministic discrepancy calculations
+### Phase 2 — Receptionist schema, persistence, and provider contract
 
 ```yaml
 phase: 2
+types: [persistence, data-migration, ai-agent, data-validation]
+phase_tier: ent
+prototype: false
+dim_overrides: []
+sections_considered: [Core, Data, AI/Agent]
+suppressed_dims_count: 3
+decisions_entry: D17
+```
+
+- **Tier chosen:** `ent` because the receptionist is an LLM-shaped trust
+  boundary whose output can block analysis and promote facts only after review.
+- **Prototype:** no.
+- **Likely files:** `api/models/receptionist.py`,
+  `api/migrations/versions/*`, `api/schemas/receptionist.py`,
+  `api/services/receptionist_provider.py`, `api/config.py`,
+  `pyproject.toml`, `docs/AGENTS_USE.md`, `docs/architecture.md`.
+- **Acceptance:** persisted receptionist runs, observations, gaps, and
+  resolutions exist; provider/model/page/timeout/enabled settings are
+  documented; the default fake provider is deterministic for local tests; any
+  unsupported external provider fails closed into a blocking run/gap state.
+- **Roadmap acceptance covered:** pre-analysis raw-document verification gate
+  before deterministic discrepancy calculations.
+- **Trade-offs accepted:** See `DECISIONS.md` D17.
+
+### Phase 3 — Multimodal media packing and run pipeline
+
+```yaml
+phase: 3
+types: [data-processing, ai-agent, file-io]
+phase_tier: ent
+prototype: false
+dim_overrides: []
+sections_considered: [Core, AI/Agent, Data]
+suppressed_dims_count: 3
+decisions_entry: D18
+```
+
+- **Tier chosen:** `ent` because raw document access is intentionally narrow
+  and must be bounded by media packing and run metadata.
+- **Prototype:** no.
+- **Likely files:** `api/services/receptionist_media.py`,
+  `api/services/receptionist.py`, `api/routes/receptionist.py`,
+  `tests/api/test_receptionist_media.py`, `tests/api/test_receptionist_api.py`.
+- **Acceptance:** plain text runs on extracted text; image uploads pass as
+  image media; PDFs render bounded page images; too-many-pages, missing files,
+  malformed documents, provider timeouts, invalid output, and unavailable
+  providers are represented as deterministic run/gap states.
+- **Roadmap acceptance covered:** multimodal receptionist input pipeline and
+  provider-unavailable/partial-document readiness behavior.
+- **Trade-offs accepted:** See `DECISIONS.md` D18.
+
+### Phase 4 — Gap comparator, resolution, promotion, and composite readiness
+
+```yaml
+phase: 4
+types: [api, data-validation, data-processing]
+phase_tier: ent
+prototype: false
+dim_overrides: []
+sections_considered: [Core, Data, API]
+suppressed_dims_count: 2
+decisions_entry: D19
+```
+
+- **Tier chosen:** `ent` because this phase decides which LLM-side differences
+  can block analysis and which human decisions may mutate trusted facts.
+- **Prototype:** no.
+- **Likely files:** `api/services/receptionist.py`,
+  `api/routes/receptionist.py`, `api/schemas/receptionist.py`,
+  `tests/api/test_receptionist_api.py`.
+- **Acceptance:** deterministic comparison emits missing-field, value-conflict,
+  source-conflict, warning-resolved, unanchored-claim, unsupported-field,
+  failed-run, and partial-document gaps; high-risk gaps block
+  `analysis-readiness`; accepted missing known facts create
+  `ConsumerCreditFact` rows with `extraction_provider="receptionist-agent-v1"`;
+  accepted conflicts correct existing facts through confirmation records;
+  unsupported/rejected observations do not mutate facts.
+- **Roadmap acceptance covered:** receptionist gap analysis, human resolution,
+  deterministic promotion, and composite analysis readiness.
+- **Trade-offs accepted:** See `DECISIONS.md` D19.
+
+### Phase 5 — Frontend gap review handoff
+
+```yaml
+phase: 5
+types: [user-facing, client-state, api]
+phase_tier: mvp
+prototype: false
+dim_overrides: []
+sections_considered: [Core, UI/UX, Client State]
+suppressed_dims_count: 4
+decisions_entry: D20
+```
+
+- **Tier chosen:** `mvp`.
+- **Prototype:** no.
+- **Likely files:** `src/api/receptionist.ts`, `src/screens/Upload.tsx`,
+  `tests/frontend/Upload.test.tsx`.
+- **Acceptance:** the upload flow can run/re-run receptionist review per
+  document, show run/gap status, resolve gaps with explicit actions, and block
+  prototype progression on composite readiness rather than fact-layer readiness
+  alone.
+- **Roadmap acceptance covered:** human gap review handoff before analysis.
+- **Trade-offs accepted:** See `DECISIONS.md` D20.
+
+### Phase 6 — Deterministic discrepancy calculations
+
+```yaml
+phase: 6
 types: [data-processing, data-validation]
 phase_tier: mvp
 prototype: false
@@ -129,10 +254,10 @@ decisions_entry: D13
   discrepancy checks.
 - **Trade-offs accepted:** See `DECISIONS.md` D13.
 
-### Phase 3 — Official reference catalog
+### Phase 7 — Official reference catalog
 
 ```yaml
-phase: 3
+phase: 7
 types: [persistence, external-api, data-validation]
 phase_tier: mvp
 prototype: false
@@ -155,10 +280,10 @@ decisions_entry: D14
 - **Roadmap acceptance covered:** REQ-08 official source and benchmark catalog.
 - **Trade-offs accepted:** See `DECISIONS.md` D14.
 
-### Phase 4 — Structured agent orchestration
+### Phase 8 — Structured agent orchestration
 
 ```yaml
-phase: 4
+phase: 8
 types: [ai-agent, llm, async-worker, data-processing]
 phase_tier: ent
 prototype: false
@@ -185,10 +310,10 @@ decisions_entry: D15
   metadata, and REQ-13 run-observability continuity for analysis runs.
 - **Trade-offs accepted:** See `DECISIONS.md` D15.
 
-### Phase 5 — Analysis API and source inspection UI
+### Phase 9 — Analysis API and source inspection UI
 
 ```yaml
-phase: 5
+phase: 9
 types: [api, user-facing, client-state]
 phase_tier: mvp
 prototype: false
@@ -218,20 +343,29 @@ decisions_entry: D16
 
 ## Current Phase
 
-Phase 1: Analysis contract and persistence
+Phase 2: Receptionist schema, persistence, and provider contract — Exec complete,
+Review pending.
 
 ## Dependencies
 
 - Phase 1 establishes the persisted analysis and evidence contract for every
   later phase.
-- Phase 2 depends on Phase 1 because calculation evidence needs stable storage
-  and schema targets.
-- Phase 3 depends on Phase 1 because reference evidence needs the same claim
+- Phase 2 depends on the existing document/fact tables and introduces the
+  separate receptionist audit contract.
+- Phase 3 depends on Phase 2 because the run pipeline writes to the receptionist
+  audit tables and uses the provider contract.
+- Phase 4 depends on Phases 2-3 because deterministic comparison and promotion
+  need persisted observations and runs.
+- Phase 5 depends on Phase 4 because the UI should resolve persisted gaps and
+  read composite readiness.
+- Phase 6 depends on Phases 2-5 because discrepancy calculations should only
+  use facts after receptionist blockers are resolved.
+- Phase 7 depends on Phase 1 because reference evidence needs the same claim
   and citation model.
-- Phase 4 depends on Phases 1-3 because the agent should consume confirmed
+- Phase 8 depends on Phases 1, 6, and 7 because the agent should consume confirmed
   facts, deterministic calculations, and bounded references rather than raw
   uploaded text.
-- Phase 5 depends on Phases 1-4 because the UI should read persisted analysis
+- Phase 9 depends on Phases 1, 6, 7, and 8 because the UI should read persisted analysis
   runs and evidence trails instead of prototype-only state.
 
 ## Risks
@@ -240,6 +374,9 @@ Phase 1: Analysis contract and persistence
 |------|----------|------------|
 | Agent output shape drifts by prompt or UI preference. | high | Define stable Pydantic schemas first and use framework-level structured output enforcement. |
 | Findings appear before facts are confirmed. | high | Keep the readiness gate in the analysis service and add negative tests that unresolved facts block analysis. |
+| Receptionist observations get treated as trusted facts without review. | high | Persist them as observations/gaps only; promotion requires deterministic gap type checks and a human resolution record. |
+| Multimodal runs silently review only part of a PDF. | high | Cap rendered pages, persist page counts, emit partial-document blocking gaps, and expose them in readiness. |
+| Provider outage creates a false sense of readiness. | high | Fail closed with `receptionist_unavailable` blocking gaps and failed run status. |
 | Deterministic findings overclaim weak inputs. | high | Store calculation evidence and uncertainty/missing-input blockers separately from trusted findings. |
 | Official references look like personalized offers. | high | Store source category and display labels that distinguish benchmarks/rules from provider offers. |
 | Long analysis work leaves the user waiting without state. | medium | Persist analysis run status and show progress/status in the UI before adding richer streaming. |
@@ -252,13 +389,16 @@ Phase 1: Analysis contract and persistence
 - The current prototype analysis screens are reference surfaces. They should not
   become evidence-backed until the analysis API and source inspection UI are in
   place.
+- `DocumentReceptionistAgent` is the only current raw-document agent boundary.
+  The later `ConsumerCreditAgent` still consumes confirmed facts, calculations,
+  and references.
 - External references can start as a bounded seeded catalog; live retrieval,
   refresh jobs, and production verification policy can be expanded later.
 - Production retention/deletion and export/draft behavior remain Roadmap Phase 7.
 
 ## Runtime Evidence Checkpoints
 
-- **Phase 5:** run backend and frontend locally, create a consumer-credit case,
+- **Phase 9:** run backend and frontend locally, create a consumer-credit case,
   upload a text fixture, confirm required facts, start analysis, open a finding,
   and capture source-inspection screenshots plus the API transcript under a
   phase evidence directory.

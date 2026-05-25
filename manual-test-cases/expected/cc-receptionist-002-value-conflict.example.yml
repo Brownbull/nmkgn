@@ -1,0 +1,30 @@
+case_id: cc-receptionist-002-value-conflict
+expected:
+  upload:
+    document_count: 1
+    statuses:
+      - role: primary
+        extraction_status: extracted
+  deterministic_facts:
+    required_present:
+      - cae
+    allowed_warnings: []
+  receptionist:
+    expected_run_status: completed
+    blocking_gap_types:
+      - value_conflict
+    advisory_gap_types: []
+  resolution:
+    valid_actions:
+      - accept_receptionist
+      - confirm_deterministic
+      - reject_receptionist
+    fact_mutation:
+      accept_receptionist: correct_existing_fact
+      confirm_deterministic: confirm_existing_fact
+      reject_receptionist: no_fact_mutation
+  readiness:
+    fact_ready_after_resolution: true
+    analysis_ready_after_resolution: true
+  later_analysis:
+    expected_discrepancy_keys: []

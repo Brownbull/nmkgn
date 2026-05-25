@@ -146,6 +146,211 @@ def test_missing_required_facts_remain_visible_as_warnings(
     assert all(fact.source_snippet for fact in warnings.values())
 
 
+def test_label_value_block_recovers_offer_summary_fields(session: Session) -> None:
+    document, _segment = _document_with_segment(
+        session,
+        """
+        HOJA RESUMEN / COTIZACION CREDITO DE CONSUMO
+        Fecha: 02/12/2022
+        Producto Principal
+        Monto Liquido del Credito. Anexo
+        Plazo del Credito. Anexo
+        Valor de la Cuota. Anexo
+        Costo Total del Credito (**). Anexo
+        CAE(*) Carga Anual Equivalente
+        $ 20.000.000
+        68
+        $ 504.456
+        $ 34.316.064
+        20,28 %
+        Informacion Adicional
+        Numero de Cuotas
+        Tasa Anual
+        Meses de No Pago
+        68
+        17,88 %
+        No solicitado
+        """,
+    )
+
+    facts = extract_consumer_credit_facts(session, document)
+    session.commit()
+
+    by_key = _facts_by_key(facts)
+    assert by_key["contract_date"][0].value_date == date(2022, 12, 2)
+    assert by_key["principal_amount"][0].value_number == 20_000_000
+    assert by_key["principal_amount"][0].value_currency == "CLP"
+    assert by_key["term_months"][0].value_number == 68
+    assert by_key["installment_amount"][0].value_number == 504_456
+    assert by_key["total_cost"][0].value_number == 34_316_064
+    assert by_key["cae"][0].value_number == 20.28
+    assert by_key["payment_count"][0].value_number == 68
+    assert by_key["interest_rate"][0].value_number == 17.88
+    assert all(
+        fact.warning_code is None
+        for key in (
+            "principal_amount",
+            "contract_date",
+            "term_months",
+            "payment_count",
+            "installment_amount",
+            "cae",
+            "total_cost",
+        )
+        for fact in by_key[key]
+    )
+
+
+def test_contract_continuation_block_recovers_terms_and_opening_date(
+    session: Session,
+) -> None:
+    document, _segment = _document_with_segment(
+        session,
+        """
+        En SANTIAGO, a 2 de DICIEMBRE del año 2022
+        CONTINUACION CONTRATO DE CREDITO DE CONSUMO
+        Monto del Credito
+        Plazo para el Pago del Credito
+        Tasa de Interes Anualizada
+        Numero de Cuotas
+        Valor Cuota Mensual
+        Costo Final o Total del Credito
+        Carga Anual Equivalente
+        $ 21.195.572
+        68
+        17,88 %
+        68
+        $ 504.456
+        $ 34.316.064
+        20,28 %
+        """,
+    )
+
+    facts = extract_consumer_credit_facts(session, document)
+    session.commit()
+
+    by_key = _facts_by_key(facts)
+    assert by_key["contract_date"][0].value_date == date(2022, 12, 2)
+    assert by_key["principal_amount"][0].value_number == 21_195_572
+    assert by_key["term_months"][0].value_number == 68
+    assert by_key["interest_rate"][0].value_number == 17.88
+    assert by_key["payment_count"][0].value_number == 68
+    assert by_key["installment_amount"][0].value_number == 504_456
+    assert by_key["total_cost"][0].value_number == 34_316_064
+    assert by_key["cae"][0].value_number == 20.28
+
+
+def test_label_priority_prefers_liquid_amount_over_gross_amount(
+    session: Session,
+) -> None:
+    document, _segment = _document_with_segment(
+        session,
+        """
+        HOJA RESUMEN CREDITO DE CONSUMO
+        Monto Liquido del Credito
+        Monto Bruto del Credito
+        $ 20.000.000
+        $ 21.195.572
+        Fecha: 02/12/2022
+        Plazo del Credito: 68 meses
+        Numero de cuotas: 68
+        Valor de la cuota: $ 504.456
+        CAE: 20,28 %
+        Costo total del credito: $ 34.316.064
+        """,
+    )
+
+    facts = extract_consumer_credit_facts(session, document)
+    session.commit()
+
+    principal = _facts_by_key(facts)["principal_amount"][0]
+    assert principal.value_number == 20_000_000
+    assert principal.warning_code is None
+
+
+def test_last_installment_does_not_replace_regular_installment(
+    session: Session,
+) -> None:
+    document, _segment = _document_with_segment(
+        session,
+        """
+        HOJA RESUMEN CREDITO DE CONSUMO
+        Valor de la Cuota
+        Valor Ultima Cuota
+        $ 504.456
+        $ 517.513
+        Monto del credito: $20.000.000
+        Fecha de contrato: 02/12/2022
+        Plazo: 68 meses
+        Numero de cuotas: 68
+        CAE: 20,28 %
+        Costo total del credito: $34.316.064
+        """,
+    )
+
+    facts = extract_consumer_credit_facts(session, document)
+    session.commit()
+
+    installment = _facts_by_key(facts)["installment_amount"][0]
+    assert installment.value_number == 504_456
+    assert installment.warning_code is None
+
+
+def test_payment_schedule_derives_count_and_recurring_installment(
+    session: Session,
+) -> None:
+    document, _segment = _document_with_segment(
+        session,
+        """
+        ANEXO N1: Cuadro de Pago del Credito
+        Nro.Cuota Fecha Intereses Capital Cuota Saldo
+        1 16/01/2023 473.721 30.735 504.456 21.164.836
+        2 16/02/2023 325.868 178.588 504.456 20.986.248
+        3 16/03/2023 291.849 212.607 504.456 20.773.640
+        4 17/04/2023 330.162 174.294 517.513 0
+        Monto del credito: 21195572
+        Fecha de contrato: 02/12/2022
+        Plazo: 4 meses
+        CAE: 20,28 %
+        Costo total del credito: 34316064
+        """,
+    )
+
+    facts = extract_consumer_credit_facts(session, document)
+    session.commit()
+
+    by_key = _facts_by_key(facts)
+    assert by_key["payment_count"][0].value_number == 4
+    assert by_key["installment_amount"][0].value_number == 504_456
+    assert by_key["installment_amount"][0].value_currency is None
+    assert "currency" not in by_key
+
+
+def test_malformed_payment_schedule_does_not_create_schedule_values(
+    session: Session,
+) -> None:
+    document, _segment = _document_with_segment(
+        session,
+        """
+        ANEXO N1: Cuadro de Pago del Credito
+        Nro.Cuota Fecha Intereses Capital Cuota Saldo
+        1 16/01/2023 473.721 30.735
+        Monto del credito: $21.195.572
+        Fecha de contrato: 02/12/2022
+        Plazo: 4 meses
+        CAE: 20,28 %
+        Costo total del credito: $34.316.064
+        """,
+    )
+
+    facts = extract_consumer_credit_facts(session, document)
+    session.commit()
+
+    by_key = _facts_by_key(facts)
+    assert by_key["payment_count"][0].warning_code == "not_detected"
+    assert by_key["installment_amount"][0].warning_code == "not_detected"
+
+
 def test_fact_extraction_rerun_replaces_pending_candidates(
     session: Session,
 ) -> None:
