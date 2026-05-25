@@ -1,5 +1,18 @@
 # Session Ledger
 
+## 2026-05-25 — PHASE 4 REVIEW: Gap comparator, resolution, promotion, and composite readiness
+VERDICT: APPROVE
+FINDINGS: 3 total (0 critical, 0 high, 2 medium, 1 low) — none blocking
+  #1 MEDIUM receptionist_gaps.py:115 — resolve_gap() mutates gap in place (ent gate, accepted as SQLAlchemy ORM pattern)
+  #2 MEDIUM receptionist_gaps.py:496 — _apply_observation_to_fact() mutates fact in place (ent gate, accepted as SQLAlchemy ORM pattern)
+  #3 LOW receptionist_gaps.py:739 — _is_required_or_high_impact() redundant subset check (scale gate)
+COVERAGE: HIGH — 6 API tests cover run+gaps, extractor comparison, provider failure, accept-missing promotion, accept-conflict correction, defer-unsupported
+CONFIDENCE: 90/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: ent | DRIFT: none
+TICK: ✅
+
 ## 2026-05-25 — PUSH main → main
 PR: —
 CI: — (no CI configured)
