@@ -33,6 +33,14 @@ class ReferenceCreate(BaseModel):
             raise ValueError("required field cannot be blank")
         return stripped
 
+    @field_validator("source_url")
+    @classmethod
+    def validate_url_scheme(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped.startswith(("https://", "http://")):
+            raise ValueError("source_url must use http or https scheme")
+        return stripped
+
     @field_validator("description")
     @classmethod
     def strip_optional(cls, value: str | None) -> str | None:

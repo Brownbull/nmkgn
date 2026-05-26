@@ -78,7 +78,7 @@ outputs into trusted results.
 | 4 | Gap comparator, resolution, promotion, and composite readiness | Compare deterministic facts to receptionist observations, block high-risk gaps, resolve human decisions, promote accepted observations, and expose composite readiness. | `api, data-validation, data-processing` | ent | high | ✅ | ✅ | ✅ | ✅ |
 | 5 | Frontend gap review handoff | Add the Upload-screen receptionist review surface, run controls, gap actions, and composite readiness gate. | `user-facing, client-state, api` | mvp | med | ✅ | ✅ | ✅ | ✅ |
 | 6 | Deterministic discrepancy calculations | Compute reproducible consumer-credit discrepancy evidence from confirmed facts and comparison inputs. | `data-processing, data-validation` | mvp | high | ✅ | ✅ | ✅ | ✅ |
-| 7 | Official reference catalog | Add bounded CMF, SERNAC, Ley Chile, and benchmark reference records with retrieval/verification metadata. | `persistence, external-api, data-validation` | mvp | med | ✅ | ⬜ | ✅ | ⬜ |
+| 7 | Official reference catalog | Add bounded CMF, SERNAC, Ley Chile, and benchmark reference records with retrieval/verification metadata. | `persistence, external-api, data-validation` | mvp | med | ✅ | ✅ | ✅ | ⬜ |
 | 8 | Structured agent orchestration | Implement `ConsumerCreditAgent` and analysis-run orchestration with enforced output shape, readiness gating, and run metrics. | `ai-agent, llm, async-worker, data-processing` | ent | high | ⬜ | ⬜ | ⬜ | ⬜ |
 | 9 | Analysis API and source inspection UI | Expose analysis/finding endpoints and replace prototype findings with source-inspectable evidence states. | `api, user-facing, client-state` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
 

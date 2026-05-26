@@ -204,3 +204,23 @@ class TestReferenceSchemas:
                 marketplace_safe_label="Safe",
                 source_url="https://example.com",
             )
+
+    def test_create_rejects_non_http_url(self) -> None:
+        with pytest.raises(ValueError, match="http or https"):
+            ReferenceCreate(
+                reference_key="bad-url",
+                source_category="cmf",
+                display_label="Label",
+                marketplace_safe_label="Safe",
+                source_url="javascript:alert(1)",
+            )
+
+    def test_create_accepts_http_url(self) -> None:
+        data = ReferenceCreate(
+            reference_key="http-ref",
+            source_category="cmf",
+            display_label="Label",
+            marketplace_safe_label="Safe",
+            source_url="http://example.com",
+        )
+        assert data.source_url == "http://example.com"
