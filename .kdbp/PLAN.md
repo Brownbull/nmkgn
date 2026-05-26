@@ -4,7 +4,7 @@
 <!-- project_type: code -->
 <!-- goal: Build the consumer-credit analysis engine with stable structured output, deterministic discrepancy checks, official references, and evidence-backed finding presentation -->
 <!-- created: 2026-05-18 -->
-<!-- last_updated: 2026-05-26T2 -->
+<!-- last_updated: 2026-05-26T3 -->
 
 ## Goal
 
@@ -79,8 +79,8 @@ outputs into trusted results.
 | 5 | Frontend gap review handoff | Add the Upload-screen receptionist review surface, run controls, gap actions, and composite readiness gate. | `user-facing, client-state, api` | mvp | med | ✅ | ✅ | ✅ | ✅ |
 | 6 | Deterministic discrepancy calculations | Compute reproducible consumer-credit discrepancy evidence from confirmed facts and comparison inputs. | `data-processing, data-validation` | mvp | high | ✅ | ✅ | ✅ | ✅ |
 | 7 | Official reference catalog | Add bounded CMF, SERNAC, Ley Chile, and benchmark reference records with retrieval/verification metadata. | `persistence, external-api, data-validation` | mvp | med | ✅ | ✅ | ✅ | ✅ |
-| 8 | Structured agent orchestration | Implement `ConsumerCreditAgent` and analysis-run orchestration with enforced output shape, readiness gating, and run metrics. | `ai-agent, llm, async-worker, data-processing` | ent | high | ✅ | ✅ | ✅ | ⬜ |
-| 9 | Analysis API and source inspection UI | Expose analysis/finding endpoints and replace prototype findings with source-inspectable evidence states. | `api, user-facing, client-state` | mvp | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 8 | Structured agent orchestration | Implement `ConsumerCreditAgent` and analysis-run orchestration with enforced output shape, readiness gating, and run metrics. | `ai-agent, llm, async-worker, data-processing` | ent | high | ✅ | ✅ | ✅ | ✅ |
+| 9 | Analysis API and source inspection UI | Expose analysis/finding endpoints and replace prototype findings with source-inspectable evidence states. | `api, user-facing, client-state` | mvp | high | 🔄 | ⬜ | ⬜ | ⬜ |
 
 <!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->
 <!-- Review/Commit/Push auto-ticked by /gabe-review, /gabe-commit, /gabe-push -->
@@ -343,7 +343,7 @@ decisions_entry: D16
 
 ## Current Phase
 
-Phase 8: Structured agent orchestration.
+Phase 9: Analysis API and source inspection UI.
 
 ## Dependencies
 

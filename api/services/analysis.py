@@ -413,6 +413,21 @@ def run_agent_analysis(
     return run
 
 
+def list_analysis_runs(
+    session: Session,
+    *,
+    case_id: str,
+    owner_ref: str,
+) -> list[AnalysisRun]:
+    _ensure_case(session, case_id, owner_ref)
+    stmt = (
+        select(AnalysisRun)
+        .where(AnalysisRun.case_id == case_id)
+        .order_by(AnalysisRun.created_at.desc())
+    )
+    return list(session.scalars(stmt))
+
+
 def get_analysis_run(
     session: Session,
     *,

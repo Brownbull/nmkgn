@@ -12,6 +12,7 @@ import {
 } from './screens/Detection';
 import { PlanScreen, PlanRunning } from './screens/Plan';
 import { Coach } from './screens/Coach';
+import { AnalysisResults } from './screens/AnalysisResults';
 import { Email } from './screens/Email';
 
 const STORAGE_KEY = 'letra-proto-state-v1';
@@ -49,10 +50,11 @@ const SCREEN_BY_STEP: Record<string, () => React.ReactElement> = {
   plan: () => <PlanScreen />,
   running: () => <PlanRunning />,
   coach: () => <Coach />,
+  findings: () => <AnalysisResults />,
   email: () => <Email />,
 };
 
-const STEP_ORDER = ['login', 'case', 'upload', 'process', 'detect', 'detect-low', 'detect-unsupported', 'detect-failed', 'plan', 'running', 'coach', 'email'];
+const STEP_ORDER = ['login', 'case', 'upload', 'process', 'detect', 'detect-low', 'detect-unsupported', 'detect-failed', 'plan', 'running', 'coach', 'findings', 'email'];
 const MOCK_ANALYSIS_STEPS = new Set(['process', 'detect', 'detect-low', 'detect-unsupported', 'detect-failed', 'plan', 'running', 'coach', 'email']);
 
 function FloatingDebug({ state, stepIdx, go, reset }: {

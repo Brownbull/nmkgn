@@ -671,6 +671,12 @@ The central contract is document-type-specific structured output:
   gap and, when allowed, promote/correct facts
 - `GET /api/cases/{case_id}/analysis-readiness` — composite fact plus
   receptionist readiness gate
+- `GET /api/cases/{case_id}/analysis/runs` — list analysis runs for case,
+  newest first
+- `POST /api/cases/{case_id}/analysis/runs` — start a new analysis run
+  (deterministic or agent-backed, routed by config)
+- `GET /api/cases/{case_id}/analysis/runs/{run_id}` — get analysis run with
+  nested findings, evidence chains, calculations, and unsupported outputs
 
 ## Services
 

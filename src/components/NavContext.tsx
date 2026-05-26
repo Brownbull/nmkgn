@@ -15,6 +15,7 @@ export interface NavState {
   mockAnalysisAcknowledged?: boolean;
   factReviewReady?: boolean;
   unresolvedHighImpactFactCount?: number;
+  analysisRunId?: string;
 }
 
 export interface NavValue {

@@ -1,5 +1,37 @@
 # Session Ledger
 
+## 2026-05-26 — PHASE 9 EXEC: Analysis API and source inspection UI
+TASKS: T1-T6 (6/6 complete)
+FILES:
+  - api/routes/analysis.py (+93 new)
+  - api/main.py (+2 -1 router registration)
+  - api/services/analysis.py (+18 list_analysis_runs helper)
+  - src/api/analysis.ts (+127 new)
+  - src/screens/AnalysisResults.tsx (+362 new)
+  - src/components/NavContext.tsx (+1 analysisRunId field)
+  - src/Proto.tsx (+3 findings step wiring)
+  - tests/api/test_analysis_api.py (+285 new, 11 tests)
+RUNTIME JOURNEY:
+  Command: python3 .kdbp/evidence/phase-9/journey.py
+  Target: Chromium headless (Playwright 1.59.0)
+  Browser: Chrome Headless Shell 148.0.7778.96
+  Artifacts:
+    - .kdbp/evidence/phase-9/01-login.png
+    - .kdbp/evidence/phase-9/02-case-setup.png
+    - .kdbp/evidence/phase-9/03-upload.png
+    - .kdbp/evidence/phase-9/04-findings-screen.png
+    - .kdbp/evidence/phase-9/05-coach-prototype.png
+    - .kdbp/evidence/phase-9/06-email.png
+    - .kdbp/evidence/phase-9/07-findings-revisit.png
+  Result: All screens render. Findings screen shows expected "No hay caso seleccionado" state (no caseId in nav context). Navigation wiring confirmed (step 12/13).
+
+## 2026-05-26 — PUSH P17: Phase 8 — Structured agent orchestration
+ENV: production
+SOURCE: main → origin/main
+COMMITS: 3 (f18b834, b36d8c3, 993ba3b)
+PR: — (direct push)
+CI: — (none configured)
+
 ## 2026-05-26 — PHASE 8 REVIEW: Structured agent orchestration
 VERDICT: APPROVE
 FINDINGS: 4 total (0 critical, 1 high, 1 medium, 2 low)
