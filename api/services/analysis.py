@@ -403,6 +403,10 @@ def run_agent_analysis(
         run.status = "failed"
         run.error_message = f"[{exc.code}] {exc.detail}"
         run.completed_at = _utcnow()
+    except Exception as exc:
+        run.status = "failed"
+        run.error_message = f"[unexpected] {type(exc).__name__}: {exc}"
+        run.completed_at = _utcnow()
 
     session.commit()
     session.refresh(run)

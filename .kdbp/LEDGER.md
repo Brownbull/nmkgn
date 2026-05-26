@@ -1,5 +1,15 @@
 # Session Ledger
 
+## 2026-05-26 — PHASE 8 REVIEW: Structured agent orchestration
+VERDICT: APPROVE
+FINDINGS: 4 total (0 critical, 1 high, 1 medium, 2 low)
+COVERAGE: MEDIUM — core happy/error paths tested; term_matches_count branch untested (now fixed)
+CONFIDENCE: 81/100 → 93/100 (post-triage)
+DEFERRED: P3 (double-negative logic, Scale), P4 (duplicated setup, Scale)
+ALIGNMENT: SKIP
+TIER: ent | DRIFT: none
+TICK: ✅
+
 ## 2026-05-26 — [f18b834] feat(analysis): add ConsumerCreditAgent with structured output and provider abstraction
 FINDINGS: 3 (0 critical, 0 high, 0 medium, 0 low — all doc drift resolved)
 ACTIONS: 1:update-docs 2:update-docs 3:update-docs

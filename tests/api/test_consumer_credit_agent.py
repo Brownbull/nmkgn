@@ -237,6 +237,29 @@ class TestFakeProvider:
         assert len(result.analysis.findings) == 0
         assert "no se detectaron discrepancias" in result.analysis.next_actions[0].lower()
 
+    def test_term_mismatch_yields_medium_finding(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-3",
+            case_id="case-3",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="term_signal",
+                    label="Señal de plazo",
+                    inputs={"term_months": 60, "payment_count": 68},
+                    result={"term_matches_count": False},
+                    input_fact_ids=["f1"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=[],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=FAKE_SETTINGS)
+        assert len(result.analysis.findings) == 1
+        assert result.analysis.findings[0].finding_key == "term_signal"
+        assert result.analysis.findings[0].severity == "medium"
+
 
 class TestTimeoutProvider:
     def test_raises_provider_error(self) -> None:
@@ -334,6 +357,32 @@ class TestRunAgentAnalysis:
         assert run.status == "failed"
         assert "timed out" in run.error_message
         assert len(run.findings) == 0
+
+    def test_unexpected_error_records_failed(self, session: Session, monkeypatch) -> None:
+        case, facts = _seed_case_with_facts(session, GOLDEN_FACTS)
+        _seed_references(session)
+        session.commit()
+
+        from api.agents import consumer_credit as agent_mod
+
+        class BrokenAgent:
+            def __init__(self, _settings):
+                pass
+
+            def analyze(self, **_kwargs):
+                raise RuntimeError("unexpected kaboom")
+
+        monkeypatch.setattr(agent_mod, "ConsumerCreditAgent", BrokenAgent)
+
+        run = run_agent_analysis(
+            session,
+            case_id=case.id,
+            owner_ref="demo-user",
+            agent_settings=FAKE_SETTINGS,
+        )
+        assert run.status == "failed"
+        assert "unexpected" in run.error_message
+        assert "RuntimeError" in run.error_message
 
     def test_run_records_schema_version(self, session: Session) -> None:
         case, facts = _seed_case_with_facts(session, GOLDEN_FACTS)
