@@ -1,5 +1,10 @@
 # Session Ledger
 
+## 2026-05-26 — [440beae] feat(references): add official reference catalog with seed data
+FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
+ACTIONS: none
+DEFERRED: none
+
 ## 2026-05-26 — PUSH main → main
 COMMITS: eb315a1, a39f205, 185d7ae, a3c97ee (4 commits)
 PR: —
