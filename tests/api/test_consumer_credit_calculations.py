@@ -178,6 +178,42 @@ class TestLinkedProductSignals:
         assert r.result["detected_count"] == 1
 
 
+class TestBuildFindingSummary:
+    def test_fallback_on_missing_template_key(self) -> None:
+        from api.services.analysis import _build_finding_summary, CalculationResult
+
+        spec = {
+            "title": "Fallback title",
+            "summary_template": "Missing key: {nonexistent_key}",
+        }
+        calc = CalculationResult(
+            calculation_key="test",
+            label="test",
+            inputs={},
+            result={},
+            input_fact_ids=[],
+            missing_input_keys=[],
+        )
+        assert _build_finding_summary(spec, calc) == "Fallback title"
+
+    def test_successful_template_render(self) -> None:
+        from api.services.analysis import _build_finding_summary, CalculationResult
+
+        spec = {
+            "title": "Title",
+            "summary_template": "Delta is {delta}",
+        }
+        calc = CalculationResult(
+            calculation_key="test",
+            label="test",
+            inputs={},
+            result={"delta": 8},
+            input_fact_ids=[],
+            missing_input_keys=[],
+        )
+        assert _build_finding_summary(spec, calc) == "Delta is 8"
+
+
 class TestRunAllCalculations:
     def test_returns_all_eight(self) -> None:
         results = run_all_calculations({})
