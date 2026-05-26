@@ -72,9 +72,6 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-from api.services.receptionist_gaps import create_comparison_gaps  # noqa: E402
-
-
 def start_document_receptionist_run(
     session: Session,
     *,
@@ -143,6 +140,8 @@ def start_document_receptionist_run(
         run.completion_tokens = result.completion_tokens
         run.cost_usd = result.cost_usd
         run.partial_coverage = run.partial_coverage or result.review.partial_coverage
+        from api.services.receptionist_gaps import create_comparison_gaps
+
         create_comparison_gaps(
             session,
             run=run,
