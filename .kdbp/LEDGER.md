@@ -1,5 +1,12 @@
 # Session Ledger
 
+## 2026-05-26 — [f18b834] feat(analysis): add ConsumerCreditAgent with structured output and provider abstraction
+FINDINGS: 3 (0 critical, 0 high, 0 medium, 0 low — all doc drift resolved)
+ACTIONS: 1:update-docs 2:update-docs 3:update-docs
+DEFERRED: 0
+PHASE: 8 — Structured agent orchestration
+FILES: api/agents/consumer_credit.py, api/services/consumer_credit_provider.py, api/services/analysis.py, api/config.py, tests/api/test_consumer_credit_agent.py, docs/AGENTS_USE.md, docs/architecture.md, README.md
+
 ## 2026-05-26 — PUSH main → main
 COMMITS: 440beae, d6ee229, ed4c434 (3 commits)
 PR: —
