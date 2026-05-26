@@ -19,6 +19,7 @@ from api.models.analysis import (
     AnalysisRun,
     UnsupportedAnalysisOutput,
 )
+from api.models.reference import OfficialReference
 
 __all__ = [
     "AnalysisCalculation",
@@ -35,5 +36,6 @@ __all__ = [
     "DocumentReceptionistRun",
     "ExtractedTextSegment",
     "FactConfirmation",
+    "OfficialReference",
     "UnsupportedAnalysisOutput",
 ]
