@@ -1,5 +1,12 @@
 # Session Ledger
 
+## 2026-05-26 — [422cde6] feat(analysis): add analysis API routes, TypeScript client, evidence-backed findings UI, and service tests
+FINDINGS: 1 (0 critical, 0 high, 1 medium, 0 low)
+ACTIONS: 1:update-docs
+DEFERRED: 0
+PHASE: 9 — Analysis API and source inspection UI
+FILES: api/routes/analysis.py, api/main.py, api/services/analysis.py, src/api/analysis.ts, src/screens/AnalysisResults.tsx, src/components/NavContext.tsx, src/Proto.tsx, tests/api/test_analysis_api.py, docs/architecture.md
+
 ## 2026-05-26 — PHASE 9 EXEC: Analysis API and source inspection UI
 TASKS: T1-T6 (6/6 complete)
 FILES:
