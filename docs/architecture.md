@@ -714,13 +714,22 @@ Current service boundaries:
   deterministic gap comparison, human resolution, promotion/correction writes,
   and composite analysis readiness.
 
+- Consumer credit agent settings for env-driven provider selection, model name,
+  and timeout configuration via `ConsumerCreditAgentSettings`.
+- Consumer credit provider service for the `ConsumerCreditAgent` adapter.
+  Provider protocol with factory dispatch: `fake` for deterministic local
+  testing, `fake-timeout` for failure-path testing, and fail-closed
+  `UnavailableConsumerCreditProvider` for unknown provider names.
+- Consumer credit agent analysis orchestration via `run_agent_analysis()`:
+  readiness gating, confirmed fact loading, deterministic calculations,
+  provider invocation, finding/evidence/unsupported-output persistence,
+  run metric recording (latency, tokens, cost), and error capture.
+
 Expected future service boundaries:
 
 - OCR provider integration
 - document type detection
 - OCR/LLM-backed fact extraction
-- document-specific agent analysis
-- deterministic calculations
 - benchmark and rule-source lookup
 - report and email draft generation
 

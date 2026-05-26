@@ -27,7 +27,9 @@ cp .env.example .env
 `VITE_API_BASE_URL` sets the backend URL the frontend uses (defaults to
 `http://localhost:18080`). Upload storage settings (`NMKGN_UPLOAD_*`) control
 local document persistence. Production uploads are disabled by default — see
-`.env.example` comments.
+`.env.example` comments. Consumer credit agent settings (`NMKGN_CONSUMER_CREDIT_AGENT_*`)
+control provider selection, model name, and timeout; defaults use the
+deterministic fake provider for local development.
 
 ## Run Locally
 

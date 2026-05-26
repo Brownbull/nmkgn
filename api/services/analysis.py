@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from api.config import ConsumerCreditAgentSettings
 from api.models.analysis import (
     CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION,
     CONSUMER_CREDIT_CALCULATION_FORMULA_VERSION,
@@ -12,6 +13,7 @@ from api.models.analysis import (
     AnalysisEvidence,
     AnalysisFinding,
     AnalysisRun,
+    UnsupportedAnalysisOutput,
 )
 from api.models.case import Case
 from api.models.extraction import ConsumerCreditFact
@@ -37,6 +39,10 @@ class NotReadyError(AnalysisServiceError):
 
 
 class RunNotFoundError(AnalysisServiceError):
+    pass
+
+
+class AgentDisabledError(AnalysisServiceError):
     pass
 
 
@@ -243,6 +249,161 @@ def run_deterministic_analysis(
 
     run.status = "completed"
     run.completed_at = _utcnow()
+    session.commit()
+    session.refresh(run)
+    return run
+
+
+def run_agent_analysis(
+    session: Session,
+    *,
+    case_id: str,
+    owner_ref: str,
+    agent_settings: ConsumerCreditAgentSettings,
+) -> AnalysisRun:
+    if not agent_settings.enabled:
+        raise AgentDisabledError("consumer credit agent is disabled")
+
+    _ensure_case(session, case_id, owner_ref)
+
+    from api.services.receptionist_gaps import get_analysis_readiness
+
+    readiness = get_analysis_readiness(
+        session, case_id=case_id, owner_ref=owner_ref
+    )
+    if not readiness.ready_for_analysis:
+        raise NotReadyError(
+            f"case not ready for analysis: {', '.join(readiness.blockers)}"
+        )
+
+    confirmed_facts = _load_confirmed_facts(session, case_id)
+    fact_map = _facts_to_input_map(confirmed_facts)
+
+    readiness_snapshot = {
+        "fact_count": len(confirmed_facts),
+        "fact_keys": sorted({f.fact_key for f in confirmed_facts}),
+        "blockers": readiness.blockers,
+    }
+
+    run = AnalysisRun(
+        case_id=case_id,
+        owner_ref=owner_ref,
+        schema_version=CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION,
+        status="running",
+        readiness_snapshot=readiness_snapshot,
+        input_fact_ids=[f.id for f in confirmed_facts],
+        agent_provider=agent_settings.provider,
+        model_name=agent_settings.model,
+        started_at=_utcnow(),
+    )
+    session.add(run)
+    session.flush()
+
+    calc_results = run_all_calculations(fact_map)
+    calc_models: dict[str, AnalysisCalculation] = {}
+    for cr in calc_results:
+        calc_model = AnalysisCalculation(
+            analysis_run_id=run.id,
+            case_id=case_id,
+            calculation_key=cr.calculation_key,
+            label=cr.label,
+            formula_version=CONSUMER_CREDIT_CALCULATION_FORMULA_VERSION,
+            input_fact_ids=cr.input_fact_ids,
+            inputs=cr.inputs,
+            result=cr.result,
+            missing_input_keys=cr.missing_input_keys,
+        )
+        session.add(calc_model)
+        session.flush()
+        calc_models[cr.calculation_key] = calc_model
+
+    from api.agents.consumer_credit import ConsumerCreditAgent
+    from api.services.consumer_credit_provider import (
+        ConsumerCreditAgentInput,
+        ConsumerCreditProviderError,
+    )
+    from api.services.references import list_references
+
+    active_refs = list_references(session)
+    agent_input = ConsumerCreditAgentInput(
+        analysis_run_id=run.id,
+        case_id=case_id,
+        confirmed_fact_ids=[f.id for f in confirmed_facts],
+        calculation_results=calc_results,
+        reference_keys=[r.reference_key for r in active_refs],
+    )
+
+    try:
+        agent = ConsumerCreditAgent(agent_settings)
+        result = agent.analyze(agent_input=agent_input)
+
+        run.prompt_version = result.analysis.inference_metadata.prompt_version
+        run.prompt_tokens = result.prompt_tokens
+        run.completion_tokens = result.completion_tokens
+        run.latency_ms = result.latency_ms
+        run.cost_usd = result.cost_usd
+
+        for finding_data in result.analysis.findings:
+            finding = AnalysisFinding(
+                analysis_run_id=run.id,
+                case_id=case_id,
+                owner_ref=owner_ref,
+                finding_key=finding_data.finding_key,
+                title=finding_data.title,
+                summary=finding_data.summary,
+                severity=finding_data.severity,
+                claim_type=finding_data.claim_type,
+                uncertainty_state=finding_data.uncertainty_state,
+                confidence=finding_data.confidence,
+                display_order=finding_data.display_order,
+            )
+            session.add(finding)
+            session.flush()
+
+            for ev_data in finding_data.evidence:
+                calc_id = None
+                if ev_data.calculation_key and ev_data.calculation_key in calc_models:
+                    calc_id = calc_models[ev_data.calculation_key].id
+
+                evidence = AnalysisEvidence(
+                    analysis_run_id=run.id,
+                    case_id=case_id,
+                    finding_id=finding.id,
+                    evidence_type=ev_data.evidence_type,
+                    fact_id=ev_data.fact_id,
+                    calculation_id=calc_id or ev_data.calculation_id,
+                    calculation_key=ev_data.calculation_key,
+                    citation_url=ev_data.citation.url if ev_data.citation else None,
+                    citation_label=ev_data.citation.label if ev_data.citation else None,
+                    reference_key=ev_data.citation.reference_key if ev_data.citation else None,
+                    citation_retrieved_at=ev_data.citation.retrieved_at if ev_data.citation else None,
+                    citation_verified_at=ev_data.citation.verified_at if ev_data.citation else None,
+                    excerpt=ev_data.excerpt,
+                    inference_summary=ev_data.inference_summary,
+                    model_name=ev_data.model_name,
+                    schema_version=CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION,
+                )
+                session.add(evidence)
+
+        for unsupported in result.analysis.unsupported_outputs:
+            session.add(
+                UnsupportedAnalysisOutput(
+                    analysis_run_id=run.id,
+                    case_id=case_id,
+                    output_key=unsupported.output_key,
+                    raw_output=unsupported.raw_output,
+                    reason=unsupported.reason,
+                )
+            )
+
+        run.status = "completed"
+        run.completed_at = _utcnow()
+
+    except ConsumerCreditProviderError as exc:
+        run.status = "failed"
+        run.error_message = f"[{exc.code}] {exc.detail}"
+        run.completed_at = _utcnow()
+
     session.commit()
     session.refresh(run)
     return run

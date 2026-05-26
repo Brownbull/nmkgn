@@ -15,6 +15,11 @@ DEFAULT_UPLOAD_CONTENT_TYPES = (
     "image/jpeg",
     "image/png",
 )
+DEFAULT_CONSUMER_CREDIT_AGENT_ENABLED = True
+DEFAULT_CONSUMER_CREDIT_AGENT_PROVIDER = "fake"
+DEFAULT_CONSUMER_CREDIT_AGENT_MODEL = "fake-consumer-credit-v1"
+DEFAULT_CONSUMER_CREDIT_AGENT_TIMEOUT_SECONDS = 60
+
 DEFAULT_RECEPTIONIST_ENABLED = True
 DEFAULT_RECEPTIONIST_PROVIDER = "fake"
 DEFAULT_RECEPTIONIST_MODEL = "fake-receptionist-v1"
@@ -29,6 +34,14 @@ class UploadStorageSettings:
     retention_days: int
     allowed_content_types: tuple[str, ...]
     production_uploads_enabled: bool
+
+
+@dataclass(frozen=True)
+class ConsumerCreditAgentSettings:
+    enabled: bool
+    provider: str
+    model: str
+    timeout_seconds: int
 
 
 @dataclass(frozen=True)
@@ -117,5 +130,34 @@ def get_receptionist_settings() -> ReceptionistSettings:
         timeout_seconds=_positive_int_env(
             "NMKGN_RECEPTIONIST_TIMEOUT_SECONDS",
             DEFAULT_RECEPTIONIST_TIMEOUT_SECONDS,
+        ),
+    )
+
+
+def get_consumer_credit_agent_settings() -> ConsumerCreditAgentSettings:
+    provider = os.getenv(
+        "NMKGN_CONSUMER_CREDIT_AGENT_PROVIDER",
+        DEFAULT_CONSUMER_CREDIT_AGENT_PROVIDER,
+    ).strip()
+    if not provider:
+        raise ValueError("NMKGN_CONSUMER_CREDIT_AGENT_PROVIDER must not be blank")
+
+    model = os.getenv(
+        "NMKGN_CONSUMER_CREDIT_AGENT_MODEL",
+        DEFAULT_CONSUMER_CREDIT_AGENT_MODEL,
+    ).strip()
+    if not model:
+        raise ValueError("NMKGN_CONSUMER_CREDIT_AGENT_MODEL must not be blank")
+
+    return ConsumerCreditAgentSettings(
+        enabled=os.getenv(
+            "NMKGN_CONSUMER_CREDIT_AGENT_ENABLED", "true"
+        ).strip().lower()
+        == "true",
+        provider=provider,
+        model=model,
+        timeout_seconds=_positive_int_env(
+            "NMKGN_CONSUMER_CREDIT_AGENT_TIMEOUT_SECONDS",
+            DEFAULT_CONSUMER_CREDIT_AGENT_TIMEOUT_SECONDS,
         ),
     )

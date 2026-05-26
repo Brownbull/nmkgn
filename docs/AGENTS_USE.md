@@ -75,6 +75,30 @@ official references, and the analysis schema version. Raw document access is
 reserved for `DocumentReceptionistAgent` and is still non-authoritative until
 human gap resolution.
 
+### ConsumerCreditAgent Implementation
+
+`ConsumerCreditAgent` delegates to a `ConsumerCreditProvider` protocol via
+`get_consumer_credit_provider(settings)`. The provider receives a
+`ConsumerCreditAgentInput` (analysis run ID, case ID, confirmed fact IDs,
+calculation results, and active reference keys) and returns a
+`ConsumerCreditProviderResult` containing a full `ConsumerCreditAnalysis` with
+findings, evidence, inference metadata, and run metrics.
+
+Provider implementations:
+
+- `FakeConsumerCreditProvider` — deterministic fake that builds findings from
+  calculation discrepancies. Used for local development and testing.
+- `TimeoutConsumerCreditProvider` — always raises a timeout error. Used for
+  failure-path testing.
+- `UnavailableConsumerCreditProvider` — raised for unknown provider names.
+  Fail-closed by design.
+
+`run_agent_analysis()` in `api/services/analysis.py` orchestrates the full
+agent flow: readiness gating, fact loading, deterministic calculations,
+provider invocation, finding/evidence/unsupported-output persistence, and
+run metric recording. Provider failures are caught and recorded as
+`status="failed"` with the error detail.
+
 ## Output Contract
 
 Every finding must include evidence. If evidence is incomplete, the finding must
