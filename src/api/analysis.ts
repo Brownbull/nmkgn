@@ -117,10 +117,3 @@ export async function startAnalysis(caseId: string): Promise<AnalysisRun> {
   return response.json();
 }
 
-export async function getAnalysisRun(caseId: string, runId: string): Promise<AnalysisRun> {
-  const response = await fetch(endpoint(`/api/cases/${caseId}/analysis/runs/${runId}`));
-  if (!response.ok) {
-    throw await responseError(response, 'No pudimos cargar el analisis.');
-  }
-  return response.json();
-}

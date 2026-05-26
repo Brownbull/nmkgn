@@ -1,5 +1,15 @@
 # Session Ledger
 
+## 2026-05-26 — PHASE 9 REVIEW: Analysis API and source inspection UI
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 0 high, 0 medium, 2 low)
+COVERAGE: MEDIUM — service-layer tests cover core paths; route HTTP tests not exercised directly
+CONFIDENCE: 96/100 → 100/100 (post-triage)
+DEFERRED: none
+ALIGNMENT: SKIP
+TIER: mvp | DRIFT: none
+TICK: ✅
+
 ## 2026-05-26 — [422cde6] feat(analysis): add analysis API routes, TypeScript client, evidence-backed findings UI, and service tests
 FINDINGS: 1 (0 critical, 0 high, 1 medium, 0 low)
 ACTIONS: 1:update-docs

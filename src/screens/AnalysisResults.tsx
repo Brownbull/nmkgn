@@ -167,7 +167,8 @@ function RunStatusBadge({ status }: { status: string }) {
 
 export function AnalysisResults() {
   const nav = useNav();
-  const caseId = nav.state.caseId;
+  const { caseId } = nav.state;
+  const navSet = nav.set;
   const [run, setRun] = useState<AnalysisRun | null>(null);
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -180,12 +181,12 @@ export function AnalysisResults() {
       .then(runs => {
         if (runs.length > 0) {
           setRun(runs[0]);
-          nav.set({ analysisRunId: runs[0].id });
+          navSet({ analysisRunId: runs[0].id });
         }
       })
       .catch(err => setError(err instanceof Error ? err.message : 'Error desconocido'))
       .finally(() => setLoading(false));
-  }, [caseId]);
+  }, [caseId, navSet]);
 
   async function handleStartAnalysis() {
     if (!caseId) return;
@@ -194,7 +195,7 @@ export function AnalysisResults() {
     try {
       const newRun = await startAnalysis(caseId);
       setRun(newRun);
-      nav.set({ analysisRunId: newRun.id });
+      navSet({ analysisRunId: newRun.id });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar analisis');
     } finally {
