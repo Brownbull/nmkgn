@@ -78,6 +78,10 @@ class FakeConsumerCreditProvider:
             findings = _bs_findings_from_calculations(agent_input)
             summary = _bs_build_summary(agent_input, findings)
             next_actions = _bs_build_next_actions(findings)
+        elif agent_input.analysis_plan == "after_signing_discrepancy":
+            findings = _as_findings_from_calculations(agent_input)
+            summary = _as_build_summary(agent_input, findings)
+            next_actions = _as_build_next_actions(findings)
         else:
             findings = _findings_from_calculations(agent_input)
             summary = _build_summary(agent_input, findings)
@@ -220,6 +224,179 @@ def _build_next_actions(
         )
     actions.append(
         "Comparar las condiciones del contrato con las tasas y condiciones publicadas por la CMF."
+    )
+    return actions
+
+
+AS_CALC_FINDING_MAP: dict[str, dict[str, str]] = {
+    "payment_count_delta": {
+        "finding_key": "payment_count_delta",
+        "title": "Posible inconsistencia en cantidad de cuotas",
+        "template": (
+            "Se detectó una diferencia entre la cantidad de cuotas "
+            "({contract_payment_count}) y el plazo del crédito "
+            "({expected_payment_count} meses). Diferencia: {delta}."
+        ),
+        "severity": "high",
+    },
+    "total_paid_check": {
+        "finding_key": "total_paid_check",
+        "title": "Posible inconsistencia en costo total",
+        "template": (
+            "Cuota ({installment_amount}) x cantidad ({payment_count}) = "
+            "{computed_total_paid}. El costo total declarado es "
+            "{stated_total_cost} (diferencia: {difference})."
+        ),
+        "severity": "high",
+    },
+    "term_signal": {
+        "finding_key": "term_signal",
+        "title": "Plazo y cuotas no son consistentes",
+        "template": (
+            "El plazo del crédito es {term_months} meses pero se registran "
+            "{payment_count} cuotas. Esta diferencia puede requerir aclaración."
+        ),
+        "severity": "medium",
+    },
+}
+
+AS_QUESTION_SPECS: list[dict[str, str]] = [
+    {
+        "finding_key": "as_question_sernac_complaint",
+        "title": "Reclamo ante SERNAC",
+        "summary": (
+            "Si se confirman inconsistencias en el contrato, es posible "
+            "presentar un reclamo ante SERNAC (Ley 19.496, Art. 58)."
+        ),
+    },
+    {
+        "finding_key": "as_question_detailed_statement",
+        "title": "Solicitar estado de cuenta detallado",
+        "summary": (
+            "Vale la pena solicitar al proveedor un estado de cuenta "
+            "detallado que incluya capital, intereses, comisiones y "
+            "seguros por cada cuota (Ley 18.010, Art. 11)."
+        ),
+    },
+]
+
+
+def _as_findings_from_calculations(
+    agent_input: ConsumerCreditAgentInput,
+) -> list[AnalysisFindingCreate]:
+    findings: list[AnalysisFindingCreate] = []
+    order = 0
+
+    for calc in agent_input.calculation_results:
+        spec = AS_CALC_FINDING_MAP.get(calc.calculation_key)
+        if spec is None:
+            continue
+        if not calc.result or calc.missing_input_keys:
+            continue
+        has_disc = calc.result.get("has_discrepancy")
+        term_mismatch = calc.result.get("term_matches_count")
+        if not has_disc and (term_mismatch is None or term_mismatch):
+            continue
+
+        merged = {**calc.inputs, **calc.result}
+        try:
+            summary = spec["template"].format(**merged)
+        except KeyError:
+            summary = spec["title"]
+
+        evidence: list[AnalysisEvidenceCreate] = [
+            AnalysisEvidenceCreate(
+                evidence_type="calculation",
+                calculation_key=calc.calculation_key,
+            )
+        ]
+        for fact_id in calc.input_fact_ids:
+            evidence.append(
+                AnalysisEvidenceCreate(evidence_type="fact", fact_id=fact_id)
+            )
+
+        findings.append(
+            AnalysisFindingCreate(
+                finding_key=spec["finding_key"],
+                title=spec["title"],
+                summary=summary,
+                severity=spec["severity"],
+                claim_type="calculation",
+                uncertainty_state="supported",
+                confidence=1.0,
+                display_order=order,
+                evidence=evidence,
+            )
+        )
+        order += 1
+
+    for q_spec in AS_QUESTION_SPECS:
+        if not agent_input.reference_keys:
+            continue
+        findings.append(
+            AnalysisFindingCreate(
+                finding_key=q_spec["finding_key"],
+                title=q_spec["title"],
+                summary=q_spec["summary"],
+                severity="low",
+                claim_type="reference",
+                uncertainty_state="supported",
+                confidence=1.0,
+                display_order=order,
+                evidence=[
+                    AnalysisEvidenceCreate(
+                        evidence_type="reference",
+                        citation=AnalysisCitation(
+                            label="Referencia normativa",
+                            url="https://www.sernac.cl",
+                            reference_key=agent_input.reference_keys[0],
+                        ),
+                    )
+                ],
+            )
+        )
+        order += 1
+
+    return findings
+
+
+def _as_build_summary(
+    agent_input: ConsumerCreditAgentInput,
+    findings: list[AnalysisFindingCreate],
+) -> str:
+    n_facts = len(agent_input.confirmed_fact_ids)
+    n_findings = len(findings)
+    disc_count = sum(1 for f in findings if f.claim_type == "calculation")
+    return (
+        f"Revisión post-firma basada en {n_facts} hechos confirmados. "
+        f"Se detectaron {disc_count} posible(s) inconsistencia(s) "
+        f"y {n_findings - disc_count} punto(s) de consulta."
+    )
+
+
+def _as_build_next_actions(
+    findings: list[AnalysisFindingCreate],
+) -> list[str]:
+    if not findings:
+        return [
+            "Los datos del contrato firmado fueron revisados y no se "
+            "detectaron inconsistencias respecto a los cálculos disponibles."
+        ]
+    actions: list[str] = []
+    disc_count = sum(1 for f in findings if f.claim_type == "calculation")
+    if disc_count:
+        actions.append(
+            f"Solicitar aclaración a la institución financiera sobre "
+            f"{disc_count} posible(s) inconsistencia(s) detectada(s)."
+        )
+    questions = [f for f in findings if f.claim_type == "reference"]
+    if questions:
+        actions.append(
+            f"Considerar {len(questions)} vía(s) de consulta o escalamiento."
+        )
+    actions.append(
+        "Comparar las condiciones firmadas con la cotización o simulación "
+        "original, si está disponible."
     )
     return actions
 

@@ -197,9 +197,16 @@ class TestFakeProvider:
         assert result.analysis.status == "completed"
         assert result.analysis.analysis_run_id == "run-1"
         assert result.analysis.case_id == "case-1"
-        assert len(result.analysis.findings) == 1
-        assert result.analysis.findings[0].finding_key == "payment_count_delta"
-        assert result.analysis.findings[0].severity == "high"
+        calc_findings = [
+            f for f in result.analysis.findings if f.claim_type == "calculation"
+        ]
+        assert len(calc_findings) == 1
+        assert calc_findings[0].finding_key == "payment_count_delta"
+        assert calc_findings[0].severity == "high"
+        question_findings = [
+            f for f in result.analysis.findings if f.claim_type == "reference"
+        ]
+        assert len(question_findings) == 2
         assert result.latency_ms >= 0
         assert result.analysis.inference_metadata.provider == "fake"
 
@@ -224,7 +231,7 @@ class TestFakeProvider:
         provider = FakeConsumerCreditProvider()
         result = provider.analyze(agent_input=agent_input, settings=FAKE_SETTINGS)
         assert len(result.analysis.findings) == 0
-        assert "no se detectaron discrepancias" in result.analysis.next_actions[0].lower()
+        assert "no se detectaron inconsistencias" in result.analysis.next_actions[0].lower()
 
     def test_term_mismatch_yields_medium_finding(self) -> None:
         agent_input = ConsumerCreditAgentInput(
@@ -249,6 +256,172 @@ class TestFakeProvider:
         assert len(result.analysis.findings) == 1
         assert result.analysis.findings[0].finding_key == "term_signal"
         assert result.analysis.findings[0].severity == "medium"
+
+
+AS_SETTINGS = ConsumerCreditAgentSettings(
+    enabled=True,
+    provider="fake",
+    model="fake-consumer-credit-v1",
+    timeout_seconds=60,
+)
+
+
+class TestAfterSigningFakeProvider:
+    def test_produces_as_findings_from_calculations(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-as-1",
+            case_id="case-as-1",
+            analysis_plan="after_signing_discrepancy",
+            confirmed_fact_ids=["f1", "f2"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="payment_count_delta",
+                    label="Diferencia de cuotas",
+                    inputs={"contract_payment_count": 68, "expected_payment_count": 60},
+                    result={"has_discrepancy": True, "delta": 8},
+                    input_fact_ids=["f1", "f2"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=AS_SETTINGS)
+        assert result.analysis.status == "completed"
+        calc_findings = [
+            f for f in result.analysis.findings if f.claim_type == "calculation"
+        ]
+        assert len(calc_findings) == 1
+        assert calc_findings[0].finding_key == "payment_count_delta"
+        assert "inconsistencia" in calc_findings[0].title.lower()
+
+    def test_as_findings_use_postfirma_language(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-as-2",
+            case_id="case-as-2",
+            analysis_plan="after_signing_discrepancy",
+            confirmed_fact_ids=["f1", "f2"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="payment_count_delta",
+                    label="Diferencia de cuotas",
+                    inputs={"contract_payment_count": 68, "expected_payment_count": 60},
+                    result={"has_discrepancy": True, "delta": 8},
+                    input_fact_ids=["f1", "f2"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=AS_SETTINGS)
+        assert "post-firma" in result.analysis.summary.lower()
+
+    def test_as_generates_escalation_questions(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-as-3",
+            case_id="case-as-3",
+            analysis_plan="after_signing_discrepancy",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=AS_SETTINGS)
+        question_findings = [
+            f for f in result.analysis.findings if f.claim_type == "reference"
+        ]
+        assert len(question_findings) == 2
+        q_keys = {f.finding_key for f in question_findings}
+        assert "as_question_sernac_complaint" in q_keys
+        assert "as_question_detailed_statement" in q_keys
+
+    def test_as_no_questions_without_references(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-as-4",
+            case_id="case-as-4",
+            analysis_plan="after_signing_discrepancy",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[],
+            reference_keys=[],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=AS_SETTINGS)
+        question_findings = [
+            f for f in result.analysis.findings if f.claim_type == "reference"
+        ]
+        assert len(question_findings) == 0
+
+    def test_as_skips_calc_with_missing_inputs(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-as-5",
+            case_id="case-as-5",
+            analysis_plan="after_signing_discrepancy",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="payment_count_delta",
+                    label="Diferencia de cuotas",
+                    inputs={"contract_payment_count": 68},
+                    result={},
+                    input_fact_ids=["f1"],
+                    missing_input_keys=["expected_payment_count"],
+                ),
+            ],
+            reference_keys=[],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=AS_SETTINGS)
+        calc_findings = [
+            f for f in result.analysis.findings if f.claim_type == "calculation"
+        ]
+        assert len(calc_findings) == 0
+
+    def test_as_next_actions_mention_postfirma(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-as-6",
+            case_id="case-as-6",
+            analysis_plan="after_signing_discrepancy",
+            confirmed_fact_ids=["f1", "f2"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="payment_count_delta",
+                    label="Diferencia de cuotas",
+                    inputs={"contract_payment_count": 68, "expected_payment_count": 60},
+                    result={"has_discrepancy": True, "delta": 8},
+                    input_fact_ids=["f1", "f2"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=AS_SETTINGS)
+        all_actions = " ".join(result.analysis.next_actions).lower()
+        assert "aclaración" in all_actions
+
+    def test_as_summary_shows_inconsistency_count(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-as-7",
+            case_id="case-as-7",
+            analysis_plan="after_signing_discrepancy",
+            confirmed_fact_ids=["f1", "f2"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="payment_count_delta",
+                    label="Diferencia de cuotas",
+                    inputs={"contract_payment_count": 68, "expected_payment_count": 60},
+                    result={"has_discrepancy": True, "delta": 8},
+                    input_fact_ids=["f1", "f2"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=AS_SETTINGS)
+        assert "1 posible(s) inconsistencia(s)" in result.analysis.summary
+        assert "2 punto(s) de consulta" in result.analysis.summary
 
 
 class TestTimeoutProvider:
