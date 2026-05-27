@@ -1,5 +1,17 @@
 # Session Ledger
 
+## 2026-05-27 — REVIEW: Phase 3 — After-signing UI presentation and docs
+CONFIDENCE: 93 → 100/100
+FINDINGS: 2 (0 critical, 0 high, 1 medium, 1 low)
+ACTIONS: 1:fix (extract cards to FindingCards.tsx, 834→405 lines), 2:fix (unify 6 cards → 3 shared components)
+VERDICT: APPROVE
+ALIGNMENT: ALIGNED
+REVIEW COLUMN: ⬜ → ✅
+
+## 2026-05-27 — [4094a27] feat(ui): add path-aware after-signing finding presentation with grouped layout
+FINDINGS: 1 (0 critical, 0 high, 1 medium, 0 low)
+ACTIONS: 1:update-docs (V0_ALIGNMENT.md step 7 updated with path-aware grouped layout description)
+
 ## 2026-05-27 — EXEC COMPLETE: Phase 3 — After-signing UI presentation and docs
 TASKS: T1-T4 code + T5 runtime evidence
 FILES:
