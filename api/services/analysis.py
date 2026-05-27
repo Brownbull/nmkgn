@@ -22,18 +22,27 @@ from api.services.audit import (
     NotReadyError,
     RunAuditTimeline,
     RunNotFoundError,
+    _ensure_case,
     prepare_analysis,
 )
-from api.services.audit import _ensure_case  # noqa: F401 — used by list/get helpers
 from api.services.calculations import (
     CalculationResult,
     FactInput,
     run_all_calculations,
 )
+from api.services.finding_specs import (
+    BEFORE_SIGNING_FINDING_SPECS,
+    FINDING_SPECS,
+    build_finding_summary,
+    should_fire_finding,
+    specs_for_plan,
+)
 
 __all__ = [
     "AgentDisabledError",
+    "BEFORE_SIGNING_FINDING_SPECS",
     "CaseNotFoundError",
+    "FINDING_SPECS",
     "InvalidAnalysisPlanError",
     "NotReadyError",
     "RunNotFoundError",
@@ -44,136 +53,8 @@ __all__ = [
 ]
 
 
-FINDING_SPECS: dict[str, dict] = {
-    "payment_count_delta": {
-        "title": "Cantidad de cuotas no coincide con el plazo",
-        "summary_template": (
-            "El contrato indica {contract_payment_count} cuotas pero el plazo "
-            "es de {expected_payment_count} meses (diferencia: {delta})."
-        ),
-        "severity": "high",
-        "discrepancy_key": "has_discrepancy",
-    },
-    "total_paid_check": {
-        "title": "Total pagado no coincide con cuota x cantidad",
-        "summary_template": (
-            "Cuota ({installment_amount}) x cantidad ({payment_count}) = "
-            "{computed_total_paid}, pero el costo total declarado es "
-            "{stated_total_cost} (diferencia: {difference})."
-        ),
-        "severity": "high",
-        "discrepancy_key": "has_discrepancy",
-    },
-    "term_signal": {
-        "title": "Plazo y cantidad de cuotas no son consistentes",
-        "summary_template": (
-            "El plazo es {term_months} meses pero hay {payment_count} cuotas."
-        ),
-        "severity": "medium",
-        "discrepancy_key": "term_matches_count",
-        "discrepancy_inverted": True,
-    },
-}
-
-
-BEFORE_SIGNING_FINDING_SPECS: dict[str, dict] = {
-    "bs_rate_comparison": {
-        "calculation_key": "rate_cae_signal",
-        "title": "Tasa de interés y CAE del crédito",
-        "summary_template": (
-            "La tasa de interés es {interest_rate}% y el CAE es {cae}% "
-            "(diferencia: {spread} puntos). Vale la pena confirmar cómo "
-            "se compara con las tasas máximas vigentes."
-        ),
-        "severity": "medium",
-        "trigger": "any_result",
-    },
-    "bs_total_cost": {
-        "calculation_key": "total_paid_check",
-        "title": "Costo total del crédito",
-        "summary_template": (
-            "Cuota ({installment_amount}) x cantidad ({payment_count}) = "
-            "{computed_total_paid}. El costo total declarado es "
-            "{stated_total_cost}."
-        ),
-        "severity": "medium",
-        "trigger": "any_result",
-    },
-    "bs_installment_ratio": {
-        "calculation_key": "installment_signal",
-        "title": "Relación cuota mensual vs capital",
-        "summary_template": (
-            "La cuota mínima sin interés sería {min_installment_no_interest}, "
-            "pero la cuota declarada es {stated_installment} "
-            "(ratio: {ratio_to_minimum}x)."
-        ),
-        "severity": "low",
-        "trigger": "any_result",
-    },
-    "bs_fee_summary": {
-        "calculation_key": "fee_sum",
-        "title": "Comisiones y cargos del crédito",
-        "summary_template": (
-            "Se detectaron {fee_count} cobros por un total de {total_fees}. "
-            "Vale la pena confirmar si todos son obligatorios."
-        ),
-        "severity": "medium",
-        "trigger": "any_result",
-    },
-    "bs_insurance_review": {
-        "calculation_key": "insurance_signals",
-        "title": "Seguros asociados al crédito",
-        "summary_template": (
-            "Se detectaron {detected_count} seguros asociados. "
-            "Vale la pena confirmar cuáles son opcionales."
-        ),
-        "severity": "low",
-        "trigger": "any_result",
-    },
-    "bs_linked_products": {
-        "calculation_key": "linked_product_signals",
-        "title": "Productos vinculados al crédito",
-        "summary_template": (
-            "Se detectaron {detected_count} productos vinculados. "
-            "Vale la pena confirmar si son requisito para obtener el crédito."
-        ),
-        "severity": "low",
-        "trigger": "any_result",
-    },
-}
-
-
-def _should_fire_finding(spec: dict, calc: CalculationResult) -> bool:
-    trigger = spec.get("trigger")
-    if trigger == "any_result":
-        return bool(calc.result) and not calc.missing_input_keys
-    key = spec.get("discrepancy_key")
-    if key is None:
-        return False
-    value = calc.result.get(key)
-    if value is None:
-        return False
-    if spec.get("discrepancy_inverted"):
-        return not value
-    return bool(value)
-
-
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def _build_finding_summary(spec: dict, calc: CalculationResult) -> str:
-    merged = {**calc.inputs, **calc.result}
-    try:
-        return spec["summary_template"].format(**merged)
-    except KeyError:
-        return spec["title"]
-
-
-def _specs_for_plan(analysis_plan: str) -> dict[str, dict]:
-    if analysis_plan == "before_signing_review":
-        return BEFORE_SIGNING_FINDING_SPECS
-    return FINDING_SPECS
 
 
 def _persist_calculations(
@@ -229,7 +110,7 @@ def _generate_plan_findings(
                 f"finding {finding_key}: calculation {calc_key} not available"
             )
             continue
-        if not _should_fire_finding(spec, cr):
+        if not should_fire_finding(spec, cr):
             timeline.suppress_finding(finding_key)
             continue
 
@@ -239,7 +120,7 @@ def _generate_plan_findings(
             owner_ref=owner_ref,
             finding_key=finding_key,
             title=spec["title"],
-            summary=_build_finding_summary(spec, cr),
+            summary=build_finding_summary(spec, cr),
             severity=spec["severity"],
             claim_type="calculation",
             uncertainty_state="supported",
@@ -383,7 +264,7 @@ def run_deterministic_analysis(
         session, calc_results, run, case_id, timeline
     )
 
-    specs = _specs_for_plan(setup.analysis_plan)
+    specs = specs_for_plan(setup.analysis_plan)
     _generate_plan_findings(
         specs, calc_results, calc_models, run, case_id, owner_ref, session,
         timeline,

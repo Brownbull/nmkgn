@@ -180,7 +180,8 @@ class TestLinkedProductSignals:
 
 class TestBuildFindingSummary:
     def test_fallback_on_missing_template_key(self) -> None:
-        from api.services.analysis import _build_finding_summary, CalculationResult
+        from api.services.finding_specs import build_finding_summary
+        from api.services.calculations import CalculationResult
 
         spec = {
             "title": "Fallback title",
@@ -194,10 +195,11 @@ class TestBuildFindingSummary:
             input_fact_ids=[],
             missing_input_keys=[],
         )
-        assert _build_finding_summary(spec, calc) == "Fallback title"
+        assert build_finding_summary(spec, calc) == "Fallback title"
 
     def test_successful_template_render(self) -> None:
-        from api.services.analysis import _build_finding_summary, CalculationResult
+        from api.services.finding_specs import build_finding_summary
+        from api.services.calculations import CalculationResult
 
         spec = {
             "title": "Title",
@@ -211,7 +213,7 @@ class TestBuildFindingSummary:
             input_fact_ids=[],
             missing_input_keys=[],
         )
-        assert _build_finding_summary(spec, calc) == "Delta is 8"
+        assert build_finding_summary(spec, calc) == "Delta is 8"
 
 
 class TestRunAllCalculations:

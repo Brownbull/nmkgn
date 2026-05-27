@@ -232,6 +232,9 @@ erDiagram
     integer latency_ms
     float cost_usd
     text error_message
+    json timeline_events
+    json warnings
+    json suppressed_finding_keys
     datetime started_at
     datetime completed_at
     datetime created_at
@@ -503,6 +506,12 @@ Analysis run fields:
 - JSON snapshots for readiness inputs and fact ids used by the run
 - optional provider, model, prompt version, token, latency, cost, and error
   metadata
+- JSON `timeline_events`: ordered audit events recorded during the run
+  (e.g. `run_started`, `calculations_complete`, `findings_generated`,
+  `plan_enrichment_complete`, `run_completed`)
+- JSON `warnings`: extraction or calculation warnings emitted during the run
+- JSON `suppressed_finding_keys`: finding keys that were evaluated but did not
+  fire (no discrepancy or missing calculation)
 - optional `started_at` and `completed_at`
 - `created_at`
 - `updated_at`
@@ -709,6 +718,14 @@ Current service boundaries:
 - Analysis persistence contract for versioned consumer-credit analysis runs,
   deterministic calculation evidence, evidence-backed findings, citation
   metadata, inference metadata, and audit-only unsupported outputs.
+- Audit service (`audit.py`): shared pre-analysis setup via
+  `prepare_analysis()`, which validates the case, analysis plan, and
+  readiness gate, loads confirmed facts, and returns a frozen
+  `AnalysisSetup`. Also provides `RunAuditTimeline` for structured
+  timeline event recording, per-run warnings, and suppressed finding
+  tracking. Error classes (`CaseNotFoundError`, `NotReadyError`,
+  `InvalidAnalysisPlanError`, `AgentDisabledError`, `RunNotFoundError`)
+  are defined here and re-exported by the analysis module.
 - Plan-aware analysis routing foundation: `VALID_ANALYSIS_PLANS` gates
   accepted plan values; `FINDING_SPECS` drives after-signing discrepancy
   checks (3 specs: payment count delta, total paid, term signal) while
