@@ -390,7 +390,10 @@ class TestAnalysisServiceIntegration:
             )
 
             assert run.status == "completed"
-            assert len(run.findings) == 0
+            discrepancy_findings = [
+                f for f in run.findings if f.claim_type == "calculation"
+            ]
+            assert len(discrepancy_findings) == 0
             assert len(run.calculations) == 8
 
     def test_not_ready_raises(self, tmp_path) -> None:

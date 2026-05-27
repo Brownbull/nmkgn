@@ -200,7 +200,8 @@ class TestGetAnalysisRun:
             assert finding.title != ""
             assert finding.severity in ("low", "medium", "high", "critical")
             assert finding.claim_type in ("fact", "calculation", "reference", "inference")
-            assert len(finding.evidence) > 0
+            if finding.claim_type == "calculation":
+                assert len(finding.evidence) > 0
 
     def test_run_includes_calculations(self, session: Session) -> None:
         case, _ = _seed_case_with_facts(session, GOLDEN_FACTS)
@@ -269,7 +270,10 @@ class TestDeterministicAnalysisViaService:
 
         run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
         assert run.status == "completed"
-        assert len(run.findings) == 0
+        discrepancy_findings = [
+            f for f in run.findings if f.claim_type == "calculation"
+        ]
+        assert len(discrepancy_findings) == 0
 
 
 class TestBeforeSigningDeterministicAnalysis:

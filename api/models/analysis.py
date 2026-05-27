@@ -87,6 +87,15 @@ class AnalysisRun(Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    timeline_events: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    warnings: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
+    suppressed_finding_keys: Mapped[list[str]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

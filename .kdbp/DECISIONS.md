@@ -992,3 +992,191 @@ dim_overrides: []
 ### Status
 
 - accepted
+
+## D28 — Phase 1 tier: ent (2026-05-27)
+
+**Phase:** Run audit timeline and observability
+**Types:** [data-processing, data-validation]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Audit timelines are the backbone of REQ-13 — enterprise error handling and structured observability ensure run state, cost, latency, and warnings are reliably captured from day one.
+
+### Sections rendered
+
+- Core (always)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- None — Core-only phase, all 4 dimensions rendered.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing fuzz/load, Scale abstractions plugin layer)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When audit data is consumed by external compliance tooling or when run volume exceeds 100/day.
+
+### Status
+
+- accepted
+
+## D29 — Phase 2 tier: ent (2026-05-27)
+
+**Phase:** Document retention and access guardrails
+**Types:** [data-processing, data-validation]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** REQ-13 mandates defined retention, deletion, and access-control behavior for every production path handling user documents. Enterprise error handling and testing ensure guardrails actually enforce.
+
+### Sections rendered
+
+- Core (always)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- None — Core-only phase, all 4 dimensions rendered.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing fuzz/load, Scale abstractions plugin layer)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When multi-user access control is introduced or when legal/compliance requires retention audit export.
+
+### Status
+
+- accepted
+
+## D30 — Phase 3 tier: ent (2026-05-27)
+
+**Phase:** Finding selection and export service
+**Types:** [data-processing]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** REQ-12 requires exports to refuse unsupported outputs and include source references for every claim. Enterprise error handling ensures malformed selections fail clearly rather than producing incomplete exports.
+
+### Sections rendered
+
+- Core (always)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- None — Core-only phase, all 4 dimensions rendered.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing fuzz/load, Scale abstractions plugin layer)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When export format diversifies beyond summary text or when downstream consumers parse exports programmatically.
+
+### Status
+
+- accepted
+
+## D31 — Phase 4 tier: ent (2026-05-27)
+
+**Phase:** Communication draft generation
+**Types:** [ai-agent, data-processing]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Draft generation touches the advice boundary (B4/SR-01). Enterprise structured output and cost/latency budget ensure drafts are machine-parseable and bounded, preventing uncontrolled LLM spend or advice-crossing outputs.
+
+### Sections rendered
+
+- Core (always)
+- AI/Agent: Structured output, Cost/latency budget (2 of 4 dims rendered)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- AI/Agent.Prompt eval — single-purpose draft generator with fixed template; prompt drift risk is low.
+- AI/Agent.Fallback chain — draft failure shows error to user; no multi-provider fallback needed.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing fuzz/load, Scale abstractions plugin layer)
+- M × 1 (Scale AI/Agent cost/latency budget alerting)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When draft generation is used in production with real users or when a second draft template type is added.
+
+### Status
+
+- accepted
+
+## D32 — Phase 5 tier: ent (2026-05-27)
+
+**Phase:** Export and draft UI
+**Types:** [user-facing, client-state, web]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** User-facing export and draft screens must handle loading, error, and empty states gracefully. Enterprise UI ensures the export flow communicates clearly when selections are invalid or drafts fail to generate.
+
+### Sections rendered
+
+- Core (always)
+- UI/UX: Loading states, Error states (2 of 4 dims rendered)
+- Client State: Store coupling (1 of 7 dims rendered)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- UI/UX.A11y — mockup-grade screens at MVP maturity; revisit at Scale or accessibility audit.
+- UI/UX.Streaming — export and draft are one-shot request/response, not streamed.
+- Client State.Cache invalidation — export is a one-shot read flow; no cache to invalidate.
+- Client State.Optimistic updates — export/draft are server-authoritative; no optimistic UI needed.
+- Client State.Stale data — single-tab, single-case workflow; stale data risk is low.
+- Client State.Mutation propagation — no cross-component mutation chains in export path.
+- Client State.Cross-tab sync — single-tab review is acceptable.
+- Client State.Offline support — online-only is acceptable at this maturity.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing fuzz/load, Scale abstractions plugin layer)
+- M × 2 (Scale loading states polish, Scale error state recovery)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When mobile-web export is required or when user research reveals export-flow confusion.
+
+### Status
+
+- accepted

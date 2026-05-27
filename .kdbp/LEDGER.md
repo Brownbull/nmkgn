@@ -1,5 +1,26 @@
 # Session Ledger
 
+## 2026-05-27 — EXEC COMPLETE: Phase 1 — Run audit timeline and observability
+TASKS: T1-T4
+FILES:
+  - api/models/analysis.py (modified — 3 JSON audit columns)
+  - api/migrations/versions/20260527_0007_add_audit_columns.py (new — migration)
+  - api/services/audit.py (new — AuditEvent, RunAuditTimeline, AnalysisSetup, prepare_analysis, error classes)
+  - api/services/analysis.py (modified — refactored to use audit.py, timeline integration)
+  - tests/api/test_audit.py (new — 20 tests)
+  - tests/api/test_analysis_api.py (modified — fix pre-existing assertion for as_missing findings)
+  - tests/api/test_consumer_credit_calculations.py (modified — same fix)
+PENDING: #4 resolved (duplicated setup extracted to prepare_analysis)
+TESTS: 190 passed, 0 failed
+EXEC COLUMN: 🔄 → ✅
+
+## 2026-05-27 — PLAN CREATED: Evidence Export, Audit, and Production Guardrails (REQ-12, REQ-13)
+PHASES: 5 | COMPLEXITY: medium × 4, high × 1 | MATURITY: mvp
+TIERS: ent × 5 | PROTOTYPES: 0
+DECISIONS: D28 → D32 (5 phase tier decisions logged)
+ROADMAP: Phase 7 (REQ-12, REQ-13)
+RISKS: SR-01 advice boundary on draft gen (high), retention blocking dev (medium), PENDING #4 duplication (low — fold into Phase 1)
+
 ## 2026-05-27 — PUSH: Phase 3 — After-signing UI presentation and docs
 COMMITS: 3 (f5b033d..a4067d8)
 REMOTE: origin/main
