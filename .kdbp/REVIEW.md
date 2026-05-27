@@ -1,71 +1,31 @@
-<!-- gabe-review-live:1.1 -->
----
-sources:
-  - cli: codex
-    model: gpt-5
-    timestamp: 2026-05-18T17:04:10Z
-    findings: 1
-  - cli: claude
-    model: claude-opus-4-6
-    timestamp: 2026-05-18T13:20:00Z
-    findings: 1
-consolidated_at: 2026-05-18T13:20:00Z
-consolidation: union
-project_root: /home/khujta/projects/apps/nmkgn
-target: Phase 1 - Analysis contract and persistence
-maturity: mvp
-status: resolved
----
+# Phase 2 Review — Before-signing deterministic analysis
 
-# Gabe Review — Live Document
-
+**Date:** 2026-05-27
+**Scope:** api/services/before_signing.py, api/services/analysis.py, tests/api/test_before_signing.py, tests/api/test_analysis_api.py, tests/api/conftest.py, docs/architecture.md
 **Verdict:** APPROVE
-**Confidence:** 95/100
-**Coverage:** HIGH
-**Findings:** 1 (CRITICAL: 1, HIGH: 0, MEDIUM: 0, LOW: 0) | **Sources:** codex+claude
-**Resolution:** 1 fixed / 0 deferred / 0 dismissed (pending: 0)
+**Confidence:** 96 → 100/100 (post-triage)
 
 ## Findings
 
-| # | Status | Severity | Finding | File | Churn | Fix Cost | Defer Risk | Maturity Gate | Escalation | Sources |
-|---|--------|----------|---------|------|-------|----------|------------|---------------|------------|---------|
-| 1 | fixed | CRITICAL | Evidence anchors (`finding_id`, `fact_id`, `calculation_id`) used single-column FKs that could point at entities from a different run or case, breaking the evidence trust boundary | `api/models/analysis.py:257` | ✅ STABLE | M | MISATTRIBUTED EVIDENCE TRAIL — P(medium), I(catastrophic) | MVP | - | codex, claude |
+| # | Sev | Finding | File | Churn | Fix Cost | Defer Risk | Gate | Action |
+|---|-----|---------|------|-------|----------|------------|------|--------|
+| 1 | LOW | N+1 reference queries in `generate_missing_info_findings` — `_load_references_by_keys` called inside loop (up to 4 queries) | before_signing.py:198 | STABLE | S | DB round-trip overhead — P(low), Impact(low) | Scale | FIXED |
+| 2 | LOW | Duplicated `_engine`/`session` fixture across test_analysis_api.py and test_before_signing.py | tests/api/ | STABLE | S | Drift risk if fixture logic diverges — P(medium), Impact(low) | Scale | FIXED |
 
-## Fix Applied
+## Triage
 
-Added composite FK targets on `AnalysisFinding`, `AnalysisCalculation`, and
-`ConsumerCreditFact` (unique constraints on `(id, run, case)` or `(id, case)`)
-and replaced the three single-column evidence FKs with composite FKs that scope
-to the same run/case. Updated the Alembic migration to match (batch mode for
-the pre-existing facts table). Added three regression tests that verify the DB
-rejects cross-run finding evidence, cross-run calculation evidence, and
-cross-case fact evidence.
+All findings resolved in-session:
+- **#1:** Batched `_load_references_by_keys` call outside loop; single query + dict lookups.
+- **#2:** Extracted shared `session` fixture to `tests/api/conftest.py`; removed local `_engine`/`session`/imports from both test files.
 
-## Verification
+## Coverage
 
-- `uv run pytest` — passed, 58 tests.
-- `npm test` — passed, 24 tests.
-- `npm run lint` — passed.
-- `npm run build` — passed.
-- `uv run ruff check` — passed.
-- `uv run ruff format --check` — changed files formatted.
+HIGH — 34 tests cover: after-signing discrepancy golden path + no-discrepancy + not-ready + case-not-found + run-not-found + invalid-plan; before-signing golden path + bs_ prefix + data-presence trigger + readiness snapshot + evidence; missing-info findings for 4 optional facts; negotiation questions with reference citations; attach_reference_evidence mapping; edge cases (zero values, missing references, partial facts).
 
-## Plan Alignment (5a)
+## Alignment
 
-ALIGNED — all changed files match Phase 1 scope.
+ALIGNED — all changed files are on-scope per Phase 2 plan (before_signing.py, analysis.py, test files, architecture docs).
 
-## Stale Verified Topics (5c)
+## Tier
 
-None.
-
-## Architectural Decisions (5b)
-
-None proposed.
-
-## Tier Drift (5d)
-
-None detected.
-
-## Deferred Backlog Status
-
-No open deferred items.
+ent | DRIFT: none
