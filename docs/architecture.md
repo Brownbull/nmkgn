@@ -745,6 +745,16 @@ Current service boundaries:
   readiness gating, confirmed fact loading, deterministic calculations,
   provider invocation, finding/evidence/unsupported-output persistence,
   run metric recording (latency, tokens, cost), and error capture.
+  Path-aware: for `before_signing_review`, the agent receives `analysis_plan`
+  in its input and produces `bs_`-prefixed findings with cautious language;
+  after persistence, `attach_reference_evidence` enriches calculation-based
+  findings with reference catalog citations.
+- Before-signing fake provider: generates bounded comparison findings from
+  calculation results (rate vs CAE, total cost, installment ratio) using
+  cautious B4 language ("vale la pena confirmar"), negotiation question
+  findings citing reference keys, and pre-firma summary/next-actions.
+  Mirrors the deterministic path's finding shape so the UI can treat both
+  analysis modes uniformly.
 
 Expected future service boundaries:
 

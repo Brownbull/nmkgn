@@ -463,6 +463,7 @@ def run_agent_analysis(
     agent_input = ConsumerCreditAgentInput(
         analysis_run_id=run.id,
         case_id=case_id,
+        analysis_plan=analysis_plan,
         confirmed_fact_ids=[f.id for f in confirmed_facts],
         calculation_results=calc_results,
         reference_keys=[r.reference_key for r in active_refs],
@@ -530,6 +531,15 @@ def run_agent_analysis(
                     reason=unsupported.reason,
                 )
             )
+
+        if analysis_plan == "before_signing_review":
+            from api.services.before_signing import attach_reference_evidence
+
+            session.flush()
+            bs_findings = [
+                f for f in run.findings if f.finding_key.startswith("bs_")
+            ]
+            attach_reference_evidence(session, bs_findings, run, case_id)
 
         run.status = "completed"
         run.completed_at = _utcnow()

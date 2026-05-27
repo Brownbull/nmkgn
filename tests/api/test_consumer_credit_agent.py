@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
 from api.config import ConsumerCreditAgentSettings
 from api.models.analysis import CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION
-from api.models.base import Base
 from api.models.case import Case
 from api.models.document import Document
 from api.models.extraction import ConsumerCreditFact, ExtractedTextSegment
@@ -26,6 +24,7 @@ from api.services.analysis import (
     NotReadyError,
     run_agent_analysis,
 )
+from api.services.references import seed_references
 
 
 FAKE_SETTINGS = ConsumerCreditAgentSettings(
@@ -50,31 +49,19 @@ TIMEOUT_SETTINGS = ConsumerCreditAgentSettings(
 )
 
 
-def _engine(tmp_path, name: str = "agent.db"):
-    engine = create_engine(f"sqlite+pysqlite:///{tmp_path / name}")
-
-    @event.listens_for(engine, "connect")
-    def _enable_fk(dbapi_conn, _connection_record):
-        dbapi_conn.execute("PRAGMA foreign_keys=ON")
-
-    return engine
-
-
-@pytest.fixture()
-def session(tmp_path):
-    engine = _engine(tmp_path)
-    Base.metadata.create_all(engine)
-    with Session(engine) as s:
-        yield s
-
-
-def _seed_case_with_facts(session, facts_spec: list[dict]) -> tuple[Case, list[ConsumerCreditFact]]:
+def _seed_case_with_facts(
+    session,
+    facts_spec: list[dict],
+    *,
+    case_stage: str = "after_signing",
+    analysis_plan: str = "after_signing_discrepancy",
+) -> tuple[Case, list[ConsumerCreditFact]]:
     case = Case(
         owner_ref="demo-user",
         title="Credito prueba agente",
-        case_stage="after_signing",
+        case_stage=case_stage,
         document_type="consumer_credit",
-        analysis_plan="after_signing_discrepancy",
+        analysis_plan=analysis_plan,
         institution_name="Banco Test",
     )
     session.add(case)
@@ -191,6 +178,7 @@ class TestFakeProvider:
         agent_input = ConsumerCreditAgentInput(
             analysis_run_id="run-1",
             case_id="case-1",
+            analysis_plan="after_signing_discrepancy",
             confirmed_fact_ids=["f1", "f2"],
             calculation_results=[
                 CalculationResult(
@@ -219,6 +207,7 @@ class TestFakeProvider:
         agent_input = ConsumerCreditAgentInput(
             analysis_run_id="run-2",
             case_id="case-2",
+            analysis_plan="after_signing_discrepancy",
             confirmed_fact_ids=["f1"],
             calculation_results=[
                 CalculationResult(
@@ -241,6 +230,7 @@ class TestFakeProvider:
         agent_input = ConsumerCreditAgentInput(
             analysis_run_id="run-3",
             case_id="case-3",
+            analysis_plan="after_signing_discrepancy",
             confirmed_fact_ids=["f1"],
             calculation_results=[
                 CalculationResult(
@@ -266,6 +256,7 @@ class TestTimeoutProvider:
         agent_input = ConsumerCreditAgentInput(
             analysis_run_id="run-t",
             case_id="case-t",
+            analysis_plan="after_signing_discrepancy",
             confirmed_fact_ids=[],
             calculation_results=[],
             reference_keys=[],
@@ -280,6 +271,7 @@ class TestUnavailableProvider:
         agent_input = ConsumerCreditAgentInput(
             analysis_run_id="run-u",
             case_id="case-u",
+            analysis_plan="after_signing_discrepancy",
             confirmed_fact_ids=[],
             calculation_results=[],
             reference_keys=[],
@@ -396,3 +388,245 @@ class TestRunAgentAnalysis:
             agent_settings=FAKE_SETTINGS,
         )
         assert run.schema_version == CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION
+
+
+BS_SETTINGS = ConsumerCreditAgentSettings(
+    enabled=True,
+    provider="fake",
+    model="fake-consumer-credit-v1",
+    timeout_seconds=60,
+)
+
+
+class TestBeforeSigningFakeProvider:
+    def test_produces_bs_findings_from_calculations(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-bs-1",
+            case_id="case-bs-1",
+            analysis_plan="before_signing_review",
+            confirmed_fact_ids=["f1", "f2"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="rate_cae_signal",
+                    label="Senal tasa vs CAE",
+                    inputs={"interest_rate": 1.2, "cae": 28.5},
+                    result={"cae_exceeds_rate": True, "spread": 27.3},
+                    input_fact_ids=["f1", "f2"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
+        assert result.analysis.status == "completed"
+        bs_findings = [
+            f for f in result.analysis.findings
+            if f.finding_key.startswith("bs_")
+        ]
+        assert len(bs_findings) > 0
+        rate_finding = next(
+            (f for f in bs_findings if f.finding_key == "bs_rate_comparison"), None
+        )
+        assert rate_finding is not None
+        assert rate_finding.claim_type == "calculation"
+
+    def test_bs_findings_use_cautious_language(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-bs-2",
+            case_id="case-bs-2",
+            analysis_plan="before_signing_review",
+            confirmed_fact_ids=["f1", "f2"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="rate_cae_signal",
+                    label="Senal tasa vs CAE",
+                    inputs={"interest_rate": 1.2, "cae": 28.5},
+                    result={"cae_exceeds_rate": True, "spread": 27.3},
+                    input_fact_ids=["f1", "f2"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
+        rate_finding = next(
+            f for f in result.analysis.findings
+            if f.finding_key == "bs_rate_comparison"
+        )
+        assert "vale la pena" in rate_finding.summary.lower()
+
+    def test_bs_generates_negotiation_questions(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-bs-3",
+            case_id="case-bs-3",
+            analysis_plan="before_signing_review",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
+        question_findings = [
+            f for f in result.analysis.findings
+            if f.finding_key.startswith("bs_question_")
+        ]
+        assert len(question_findings) > 0
+        for q in question_findings:
+            assert q.claim_type == "reference"
+            assert q.severity == "low"
+            assert len(q.evidence) > 0
+
+    def test_bs_no_questions_without_references(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-bs-4",
+            case_id="case-bs-4",
+            analysis_plan="before_signing_review",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[],
+            reference_keys=[],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
+        question_findings = [
+            f for f in result.analysis.findings
+            if f.finding_key.startswith("bs_question_")
+        ]
+        assert len(question_findings) == 0
+
+    def test_bs_skips_calc_with_missing_inputs(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-bs-5",
+            case_id="case-bs-5",
+            analysis_plan="before_signing_review",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="rate_cae_signal",
+                    label="Senal tasa vs CAE",
+                    inputs={"interest_rate": 1.2},
+                    result={},
+                    input_fact_ids=["f1"],
+                    missing_input_keys=["cae"],
+                ),
+            ],
+            reference_keys=[],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
+        calc_findings = [
+            f for f in result.analysis.findings
+            if f.claim_type == "calculation"
+        ]
+        assert len(calc_findings) == 0
+
+    def test_bs_summary_uses_prefirma_language(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-bs-6",
+            case_id="case-bs-6",
+            analysis_plan="before_signing_review",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[],
+            reference_keys=[],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
+        assert "pre-firma" in result.analysis.summary.lower()
+
+    def test_bs_next_actions_mention_before_signing(self) -> None:
+        agent_input = ConsumerCreditAgentInput(
+            analysis_run_id="run-bs-7",
+            case_id="case-bs-7",
+            analysis_plan="before_signing_review",
+            confirmed_fact_ids=["f1"],
+            calculation_results=[
+                CalculationResult(
+                    calculation_key="rate_cae_signal",
+                    label="Senal tasa vs CAE",
+                    inputs={"interest_rate": 1.2, "cae": 28.5},
+                    result={"cae_exceeds_rate": True, "spread": 27.3},
+                    input_fact_ids=["f1"],
+                    missing_input_keys=[],
+                ),
+            ],
+            reference_keys=["cmf-test"],
+        )
+        provider = FakeConsumerCreditProvider()
+        result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
+        all_actions = " ".join(result.analysis.next_actions).lower()
+        assert "firmar" in all_actions
+
+
+class TestBeforeSigningAgentAnalysis:
+    def test_golden_path_produces_bs_findings(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(
+            session, GOLDEN_FACTS,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        seed_references(session)
+        session.commit()
+
+        run = run_agent_analysis(
+            session,
+            case_id=case.id,
+            owner_ref="demo-user",
+            agent_settings=BS_SETTINGS,
+        )
+        assert run.status == "completed"
+        assert len(run.findings) > 0
+        for finding in run.findings:
+            assert finding.finding_key.startswith("bs_")
+
+    def test_provider_failure_records_error(self, session: Session) -> None:
+        bs_timeout = ConsumerCreditAgentSettings(
+            enabled=True,
+            provider="fake-timeout",
+            model="fake-consumer-credit-v1",
+            timeout_seconds=5,
+        )
+        case, _ = _seed_case_with_facts(
+            session, GOLDEN_FACTS,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        session.commit()
+
+        run = run_agent_analysis(
+            session,
+            case_id=case.id,
+            owner_ref="demo-user",
+            agent_settings=bs_timeout,
+        )
+        assert run.status == "failed"
+        assert "timed out" in run.error_message
+
+    def test_reference_evidence_attached(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(
+            session, GOLDEN_FACTS,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        seed_references(session)
+        session.commit()
+
+        run = run_agent_analysis(
+            session,
+            case_id=case.id,
+            owner_ref="demo-user",
+            agent_settings=BS_SETTINGS,
+        )
+        calc_findings = [
+            f for f in run.findings if f.claim_type == "calculation"
+        ]
+        for finding in calc_findings:
+            ref_evidence = [
+                e for e in finding.evidence if e.evidence_type == "reference"
+            ]
+            assert len(ref_evidence) > 0, (
+                f"Finding {finding.finding_key} should have reference evidence"
+            )
