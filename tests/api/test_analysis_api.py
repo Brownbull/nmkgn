@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import pytest
-from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
 from api.models.analysis import CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION
-from api.models.base import Base
 from api.models.case import Case
 from api.models.document import Document
 from api.models.extraction import ConsumerCreditFact, ExtractedTextSegment
@@ -21,24 +19,6 @@ from api.services.analysis import (
     run_deterministic_analysis,
 )
 from api.services.references import seed_references
-
-
-def _engine(tmp_path, name: str = "analysis_api.db"):
-    engine = create_engine(f"sqlite+pysqlite:///{tmp_path / name}")
-
-    @event.listens_for(engine, "connect")
-    def _enable_fk(dbapi_conn, _connection_record):
-        dbapi_conn.execute("PRAGMA foreign_keys=ON")
-
-    return engine
-
-
-@pytest.fixture()
-def session(tmp_path):
-    engine = _engine(tmp_path)
-    Base.metadata.create_all(engine)
-    with Session(engine) as s:
-        yield s
 
 
 GOLDEN_FACTS = [

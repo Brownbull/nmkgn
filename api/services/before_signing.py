@@ -195,6 +195,12 @@ def generate_missing_info_findings(
     created: list[AnalysisFinding] = []
     display_order = start_display_order
 
+    all_ref_keys: set[str] = set()
+    for fk in BEFORE_SIGNING_OPTIONAL_FACTS:
+        if not fact_map.get(fk, []):
+            all_ref_keys.update(FACT_REFERENCE_MAP.get(fk, []))
+    ref_map = _load_references_by_keys(session, list(all_ref_keys))
+
     for fact_key in BEFORE_SIGNING_OPTIONAL_FACTS:
         entries = fact_map.get(fact_key, [])
         if entries:
@@ -223,9 +229,7 @@ def generate_missing_info_findings(
         display_order += 1
         created.append(finding)
 
-        ref_keys = FACT_REFERENCE_MAP.get(fact_key, [])
-        ref_map = _load_references_by_keys(session, ref_keys)
-        for rk in sorted(ref_keys):
+        for rk in sorted(FACT_REFERENCE_MAP.get(fact_key, [])):
             ref = ref_map.get(rk)
             if ref is None:
                 continue
