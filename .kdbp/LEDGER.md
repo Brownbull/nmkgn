@@ -1,5 +1,12 @@
 # Session Ledger
 
+## 2026-05-27 — PUSH: Phase 4 — Before-signing UI and finding presentation
+COMMITS: 2 (0e34a86..a9c9e7f)
+REMOTE: origin/main
+PUSH COLUMN: ⬜ → ✅
+PHASE 4 COMPLETE: all 4 columns ✅
+PLAN COMPLETE: all 4 phases ✅ — ready for /gabe-plan complete
+
 ## 2026-05-27 — [0e34a86] feat(ui): add path-aware before-signing finding presentation with grouped layout
 FINDINGS: 0 (lint clean, types clean, 58 tests pass)
 ACTIONS: none
