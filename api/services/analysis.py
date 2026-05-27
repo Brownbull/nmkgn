@@ -371,7 +371,13 @@ def run_agent_analysis(
     if not agent_settings.enabled:
         raise AgentDisabledError("consumer credit agent is disabled")
 
-    _ensure_case(session, case_id, owner_ref)
+    case = _ensure_case(session, case_id, owner_ref)
+
+    analysis_plan = case.analysis_plan
+    if analysis_plan not in VALID_ANALYSIS_PLANS:
+        raise InvalidAnalysisPlanError(
+            f"unsupported analysis_plan: {analysis_plan!r}"
+        )
 
     from api.services.receptionist_gaps import get_analysis_readiness
 
@@ -387,6 +393,7 @@ def run_agent_analysis(
     fact_map = _facts_to_input_map(confirmed_facts)
 
     readiness_snapshot = {
+        "analysis_plan": analysis_plan,
         "fact_count": len(confirmed_facts),
         "fact_keys": sorted({f.fact_key for f in confirmed_facts}),
         "blockers": readiness.blockers,

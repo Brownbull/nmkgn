@@ -1,5 +1,17 @@
 # Session Ledger
 
+## 2026-05-26 — [ba11d29] refactor(analysis): wire analysis_plan routing into run_deterministic_analysis
+FINDINGS: 0
+ACTIONS: none
+DEFERRED: 0
+PHASE: 1 — Path-aware routing and before-signing schemas
+
+## 2026-05-26 — [c4b4443] feat(analysis): add before-signing finding specs and plan-aware routing foundation
+FINDINGS: 1 (0 critical, 0 high, 1 medium, 0 low)
+ACTIONS: 1:update-docs
+DEFERRED: 0
+PHASE: 1 — Path-aware routing and before-signing schemas
+
 ## 2026-05-26 — PLAN CREATED: Before-signing review path (Roadmap Phase 5)
 GOAL: Provide a before-signing analysis path with key terms, bounded comparisons, negotiation questions, and missing information
 PHASES: 4 (all enterprise tier)

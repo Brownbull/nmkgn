@@ -67,6 +67,11 @@ def start_analysis(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=exc.detail
         ) from exc
+    except analysis_service.InvalidAnalysisPlanError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=exc.detail,
+        ) from exc
 
 
 @router.get("/runs/{run_id}", response_model=AnalysisRunRead)
