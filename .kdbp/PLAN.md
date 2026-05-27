@@ -21,7 +21,7 @@ After-Signing Discrepancy Path — Roadmap Phase 6 (REQ-10): compare signed cont
 |---|-------|-------------|------|-------|------------|------|--------|--------|------|
 | 1 | After-signing deterministic analysis service | Create after_signing.py with discrepancy evidence enrichment, missing comparison context detection, and escalation questions; wire into analysis.py | ent | data-processing, data-validation | medium | ✅ | ✅ | ✅ | ✅ |
 | 2 | After-signing agent enrichment | Enhance FakeConsumerCreditProvider's after-signing branch with richer discrepancy findings, comparison context summaries, and escalation-ready structure | ent | ai-agent, data-processing | low | ✅ | ✅ | ✅ | ✅ |
-| 3 | After-signing UI presentation and docs | Path-aware after-signing grouped layout in AnalysisResults.tsx with discrepancy-focused language; update architecture docs | ent | user-facing, client-state, web | medium | ✅ | ✅ | ✅ | ⬜ |
+| 3 | After-signing UI presentation and docs | Path-aware after-signing grouped layout in AnalysisResults.tsx with discrepancy-focused language; update architecture docs | ent | user-facing, client-state, web | medium | ✅ | ✅ | ✅ | ✅ |
 
 <!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->
 <!-- Review/Commit/Push auto-ticked by /gabe-review, /gabe-commit, /gabe-push -->
