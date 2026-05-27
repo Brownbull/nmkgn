@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-26 — PUSH: Phase 1 — Path-aware routing and before-signing schemas
+COMMITS: 7 (c4b4443..fb0023d)
+REMOTE: origin/main
+PUSH COLUMN: ⬜ → ✅
+PHASE 1 COMPLETE: all 4 columns ✅
+
 ## 2026-05-26 — REVIEW: Phase 1 — Path-aware routing and before-signing schemas
 SCOPE: api/services/analysis.py, api/routes/analysis.py, tests/api/test_analysis_api.py, docs/architecture.md
 CONFIDENCE: 91/100
