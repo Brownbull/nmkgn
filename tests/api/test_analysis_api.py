@@ -13,6 +13,7 @@ from api.models.receptionist import DocumentReceptionistRun
 from api.models.reference import OfficialReference, REFERENCE_SCHEMA_VERSION
 from api.services.analysis import (
     CaseNotFoundError,
+    InvalidAnalysisPlanError,
     NotReadyError,
     RunNotFoundError,
     list_analysis_runs,
@@ -51,13 +52,19 @@ GOLDEN_FACTS = [
 ]
 
 
-def _seed_case_with_facts(session, facts_spec: list[dict]) -> tuple[Case, list[ConsumerCreditFact]]:
+def _seed_case_with_facts(
+    session,
+    facts_spec: list[dict],
+    *,
+    case_stage: str = "after_signing",
+    analysis_plan: str = "after_signing_discrepancy",
+) -> tuple[Case, list[ConsumerCreditFact]]:
     case = Case(
         owner_ref="demo-user",
         title="Credito prueba API",
-        case_stage="after_signing",
+        case_stage=case_stage,
         document_type="consumer_credit",
-        analysis_plan="after_signing_discrepancy",
+        analysis_plan=analysis_plan,
         institution_name="Banco Test",
     )
     session.add(case)
@@ -282,3 +289,126 @@ class TestDeterministicAnalysisViaService:
         run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
         assert run.status == "completed"
         assert len(run.findings) == 0
+
+
+class TestBeforeSigningDeterministicAnalysis:
+    def test_produces_findings_with_data(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(
+            session,
+            GOLDEN_FACTS,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        session.commit()
+
+        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        assert run.status == "completed"
+        assert len(run.findings) > 0
+
+    def test_finding_keys_use_bs_prefix(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(
+            session,
+            GOLDEN_FACTS,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        session.commit()
+
+        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        for finding in run.findings:
+            assert finding.finding_key.startswith("bs_"), (
+                f"Before-signing finding_key should start with bs_: {finding.finding_key}"
+            )
+
+    def test_fires_on_data_presence_not_discrepancy(self, session: Session) -> None:
+        no_discrep_facts = [
+            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0},
+            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15"},
+            {"fact_key": "term_months", "value_kind": "integer", "value_number": 60},
+            {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60},
+            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0},
+            {"fact_key": "cae", "value_kind": "percentage", "value_number": 20.0},
+            {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 1.2},
+            {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0},
+        ]
+        case, _ = _seed_case_with_facts(
+            session,
+            no_discrep_facts,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        session.commit()
+
+        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        assert run.status == "completed"
+        assert len(run.findings) > 0, (
+            "Before-signing should fire findings on data presence, not only discrepancy"
+        )
+
+    def test_readiness_snapshot_includes_plan(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(
+            session,
+            GOLDEN_FACTS,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        session.commit()
+
+        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        assert run.readiness_snapshot["analysis_plan"] == "before_signing_review"
+
+    def test_each_finding_has_evidence(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(
+            session,
+            GOLDEN_FACTS,
+            case_stage="before_signing",
+            analysis_plan="before_signing_review",
+        )
+        _seed_references(session)
+        session.commit()
+
+        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        for finding in run.findings:
+            assert len(finding.evidence) > 0, (
+                f"Finding {finding.finding_key} should have evidence"
+            )
+
+
+class TestInvalidAnalysisPlan:
+    def test_invalid_plan_raises_error(self, session: Session) -> None:
+        case = Case(
+            owner_ref="demo-user",
+            title="Bad plan case",
+            case_stage="after_signing",
+            document_type="consumer_credit",
+            analysis_plan="nonexistent_plan",
+            institution_name="Banco Test",
+        )
+        session.add(case)
+        session.commit()
+
+        with pytest.raises(InvalidAnalysisPlanError):
+            run_deterministic_analysis(
+                session, case_id=case.id, owner_ref="demo-user"
+            )
+
+    def test_error_detail_includes_plan_value(self, session: Session) -> None:
+        case = Case(
+            owner_ref="demo-user",
+            title="Bad plan case 2",
+            case_stage="after_signing",
+            document_type="consumer_credit",
+            analysis_plan="bogus_plan",
+            institution_name="Banco Test",
+        )
+        session.add(case)
+        session.commit()
+
+        with pytest.raises(InvalidAnalysisPlanError, match="bogus_plan"):
+            run_deterministic_analysis(
+                session, case_id=case.id, owner_ref="demo-user"
+            )
