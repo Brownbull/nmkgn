@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-27 — [4416cc7] feat(analysis): add before-signing deterministic analysis with reference evidence, missing-info findings, and negotiation questions
+FINDINGS: 1 (1 critical, 0 high, 0 medium, 0 low)
+ACTIONS: 1:auto-fix (ruff F401 unused import)
+DEFERRED: 0
+PHASE: 2 — Before-signing deterministic analysis
+
 ## 2026-05-26 — PUSH: Phase 1 — Path-aware routing and before-signing schemas
 COMMITS: 7 (c4b4443..fb0023d)
 REMOTE: origin/main
