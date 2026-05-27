@@ -22,7 +22,7 @@ Phase 1: Run audit timeline and observability
 
 | # | Phase | Description | Tier | Types | Complexity | Exec | Review | Commit | Push |
 |---|-------|-------------|------|-------|------------|------|--------|--------|------|
-| 1 | Run audit timeline and observability | Wire run-level audit fields (status lifecycle, token counts, cost, latency, warnings, suppressed findings) into the analysis service with structured timeline events | ent | data-processing, data-validation | medium | ✅ | ⬜ | ⬜ | ⬜ |
+| 1 | Run audit timeline and observability | Wire run-level audit fields (status lifecycle, token counts, cost, latency, warnings, suppressed findings) into the analysis service with structured timeline events | ent | data-processing, data-validation | medium | ✅ | ⬜ | ✅ | ⬜ |
 | 2 | Document retention and access guardrails | Enforce retention_state transitions (active → delete_requested → deleted), owner-scoped access checks, and audit logging for document lifecycle events | ent | data-processing, data-validation | medium | ⬜ | ⬜ | ⬜ | ⬜ |
 | 3 | Finding selection and export service | Build export service that accepts user-selected finding IDs, validates each has evidence backing, assembles exportable summary with source references, and refuses unsupported outputs | ent | data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |
 | 4 | Communication draft generation | Add draft generation service using PydanticAI to produce editable communication drafts from selected findings with B4-compliant cautious language and deterministic post-filter | ent (Str.out→ent, Cost→ent) | ai-agent, data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |

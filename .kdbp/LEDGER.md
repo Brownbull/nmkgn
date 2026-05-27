@@ -1,5 +1,9 @@
 # Session Ledger
 
+## 2026-05-27 — [c6f7805] feat(audit): wire run-level audit timeline, warnings, and suppressed findings into analysis service
+FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
+ACTIONS: none
+
 ## 2026-05-27 — EXEC COMPLETE: Phase 1 — Run audit timeline and observability
 TASKS: T1-T4
 FILES:
