@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-26 — [48dddf0] feat(analysis): wire analysis_plan validation into run_agent_analysis
+FINDINGS: 0
+ACTIONS: none
+DEFERRED: 0
+PHASE: 1 — Path-aware routing and before-signing schemas
+
 ## 2026-05-26 — [ba11d29] refactor(analysis): wire analysis_plan routing into run_deterministic_analysis
 FINDINGS: 0
 ACTIONS: none
