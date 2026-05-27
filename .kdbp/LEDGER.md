@@ -1,5 +1,13 @@
 # Session Ledger
 
+## 2026-05-28 — [4808607] feat(agent): enrich FakeProvider after-signing path
+FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
+ACTIONS: none
+FILES: api/services/consumer_credit_provider.py (+177), tests/api/test_consumer_credit_agent.py (+181/-4)
+PHASE: 2 — After-signing agent enrichment
+EXEC COLUMN: ⬜ → ✅
+COMMIT COLUMN: ⬜ → ✅
+
 ## 2026-05-28 — PUSH: Phase 1 — After-signing deterministic analysis service
 COMMITS: 2 (e47fa87..9383bf9)
 REMOTE: origin/main
