@@ -375,6 +375,27 @@ def run_deterministic_analysis(
             start_display_order=next_order,
         )
 
+    elif analysis_plan == "after_signing_discrepancy":
+        from api.services.after_signing import (
+            attach_discrepancy_evidence,
+            generate_comparison_context_findings,
+            generate_escalation_questions,
+        )
+
+        as_findings = list(run.findings)
+        attach_discrepancy_evidence(session, as_findings, run, case_id)
+
+        next_order = len(run.findings)
+        context = generate_comparison_context_findings(
+            session, run, case_id, owner_ref,
+            start_display_order=next_order,
+        )
+        next_order += len(context)
+        generate_escalation_questions(
+            session, run, case_id, owner_ref,
+            start_display_order=next_order,
+        )
+
     run.status = "completed"
     run.completed_at = _utcnow()
     session.commit()
@@ -540,6 +561,14 @@ def run_agent_analysis(
                 f for f in run.findings if f.finding_key.startswith("bs_")
             ]
             attach_reference_evidence(session, bs_findings, run, case_id)
+
+        elif analysis_plan == "after_signing_discrepancy":
+            from api.services.after_signing import attach_discrepancy_evidence
+
+            session.flush()
+            attach_discrepancy_evidence(
+                session, list(run.findings), run, case_id
+            )
 
         run.status = "completed"
         run.completed_at = _utcnow()

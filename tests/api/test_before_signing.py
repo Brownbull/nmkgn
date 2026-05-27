@@ -448,11 +448,3 @@ class TestEdgeCases:
         assert len(bs_findings) == 0, (
             "After-signing path should not produce before-signing findings"
         )
-
-        ref_evidence = [
-            e for f in run.findings for e in f.evidence
-            if e.evidence_type == "reference"
-        ]
-        assert len(ref_evidence) == 0, (
-            "After-signing path should not attach reference evidence"
-        )

@@ -857,3 +857,138 @@ maintain trust in before-signing guidance.
 ### Status
 
 - accepted
+
+## D25 — Phase 1 tier: ent (2026-05-27)
+
+**Phase:** After-signing deterministic analysis service
+**Types:** [data-processing, data-validation]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Cover enterprise edge cases on all phases — deterministic
+discrepancy enrichment, missing comparison context detection, and escalation
+questions must handle partial facts and edge-case numeric comparisons reliably.
+
+### Sections rendered
+
+- Core (always)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- None — Core always renders all 4 dimensions unfiltered.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing + Scale abstractions deferred)
+- Load-bearing items skipped: none (Enterprise covers edge-case testing and
+  structured error handling)
+
+### Review trigger (when to escalate this phase)
+
+- When cross-document comparison requires real extraction from comparison
+  documents or when discrepancy classes exceed 5.
+
+### Status
+
+- accepted
+
+## D26 — Phase 2 tier: ent (2026-05-27)
+
+**Phase:** After-signing agent enrichment
+**Types:** [ai-agent, data-processing]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Cover enterprise edge cases on all phases — U4 structured output
+red-line requires framework-level enforcement when downstream code consumes
+findings mechanically; enterprise tier is the minimum for AI/Agent section
+compliance.
+
+### Sections rendered
+
+- Core (always)
+- AI/Agent: Structured output (1 of 4 dims rendered)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- AI/Agent.Prompt eval — FakeProvider, no real LLM prompts to evaluate.
+- AI/Agent.Cost/latency budget — zero-cost FakeProvider; no multi-model
+  routing or budget caps needed.
+- AI/Agent.Fallback chain — single provider path; deterministic-only is the
+  implicit safe default.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing + Scale abstractions from Core)
+- M × 1 (Scale structured output — fallback chain deferred)
+- Load-bearing items skipped: none (Enterprise structured output satisfies U4)
+
+### Review trigger (when to escalate this phase)
+
+- When a real LLM provider is wired for after-signing analysis or when agent
+  latency exceeds 10s p95.
+
+### Status
+
+- accepted
+
+## D27 — Phase 3 tier: ent (2026-05-27)
+
+**Phase:** After-signing UI presentation and docs
+**Types:** [user-facing, client-state, web]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Cover enterprise edge cases on all phases — user-facing findings
+must handle error states, loading states, and empty states gracefully to
+maintain trust in after-signing discrepancy evidence.
+
+### Sections rendered
+
+- Core (always)
+- UI/UX: Loading states, Error states (2 of 4 dims rendered)
+- Client State: Cache invalidation, Store coupling (2 of 7 dims rendered)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- UI/UX.A11y — important but not load-bearing for MVP/ent correctness; revisit
+  at Scale or when accessibility audit is scheduled.
+- UI/UX.Streaming — after-signing analysis is request/response, not streamed.
+- Client State.Optimistic updates — analysis runs are server-authoritative;
+  optimistic UI adds complexity without user benefit here.
+- Client State.Stale data — single-tab, single-case workflow; stale data risk
+  is low.
+- Client State.Mutation propagation — no cross-component mutation chains in
+  after-signing path.
+- Client State.Cross-tab sync — single-tab review is acceptable.
+- Client State.Offline support — online-only is acceptable at this maturity.
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing + Scale abstractions from Core)
+- M × 2 (Scale loading states polish, Scale error state recovery)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When mobile-web support is added or when user research reveals
+  discrepancy-state confusion.
+
+### Status
+
+- accepted

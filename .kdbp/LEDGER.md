@@ -1,5 +1,10 @@
 # Session Ledger
 
+## 2026-05-27 — PLAN CREATED: After-Signing Discrepancy Path (REQ-10)
+PHASES: 3 | COMPLEXITY: medium overall | MATURITY: mvp
+TIERS: ent × 3 | PROTOTYPES: 0
+DECISIONS: D25 → D27 (3 phase tier decisions logged)
+
 ## 2026-05-27 — PUSH: Phase 4 — Before-signing UI and finding presentation
 COMMITS: 2 (0e34a86..a9c9e7f)
 REMOTE: origin/main
