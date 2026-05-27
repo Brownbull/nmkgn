@@ -717,6 +717,14 @@ Current service boundaries:
   ratio, fee summary, insurance review, linked products).
   `_should_fire_finding` unifies both trigger modes (discrepancy key for
   after-signing, any-result for before-signing).
+- Before-signing deterministic analysis service (`before_signing.py`):
+  attaches reference catalog evidence to before-signing findings via
+  `FACT_REFERENCE_MAP` (maps fact keys to official reference keys);
+  generates missing-info findings for optional facts not confirmed
+  (`interest_rate`, `fee`, `insurance`, `linked_product`) with
+  `missing_context` uncertainty state; produces negotiation question
+  findings citing reference catalog entries (early payment, mandatory
+  insurance, fee breakdown, rate type).
 - Receptionist media service for bounded raw-document packing: extracted text
   for text uploads, image media for image uploads, and capped rendered page
   images for PDFs.

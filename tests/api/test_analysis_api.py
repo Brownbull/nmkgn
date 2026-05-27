@@ -20,6 +20,7 @@ from api.services.analysis import (
     get_analysis_run,
     run_deterministic_analysis,
 )
+from api.services.references import seed_references
 
 
 def _engine(tmp_path, name: str = "analysis_api.db"):
@@ -368,7 +369,7 @@ class TestBeforeSigningDeterministicAnalysis:
             case_stage="before_signing",
             analysis_plan="before_signing_review",
         )
-        _seed_references(session)
+        seed_references(session)
         session.commit()
 
         run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")

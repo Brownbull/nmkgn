@@ -354,6 +354,27 @@ def run_deterministic_analysis(
         specs, calc_results, calc_models, run, case_id, owner_ref, session
     )
 
+    if analysis_plan == "before_signing_review":
+        from api.services.before_signing import (
+            attach_reference_evidence,
+            generate_missing_info_findings,
+            generate_negotiation_questions,
+        )
+
+        bs_findings = [f for f in run.findings if f.finding_key.startswith("bs_")]
+        attach_reference_evidence(session, bs_findings, run, case_id)
+
+        next_order = len(run.findings)
+        missing = generate_missing_info_findings(
+            fact_map, run, case_id, owner_ref, session,
+            start_display_order=next_order,
+        )
+        next_order += len(missing)
+        generate_negotiation_questions(
+            session, run, case_id, owner_ref,
+            start_display_order=next_order,
+        )
+
     run.status = "completed"
     run.completed_at = _utcnow()
     session.commit()
