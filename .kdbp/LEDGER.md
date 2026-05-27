@@ -1,5 +1,23 @@
 # Session Ledger
 
+## 2026-05-27 — EXEC COMPLETE: Phase 3 — After-signing UI presentation and docs
+TASKS: T1-T4 code + T5 runtime evidence
+FILES:
+  - src/screens/AnalysisResults.tsx (+313: AsGroup types, classify/group functions, 3 card components, grouped render block, path-aware header/disclaimer/labels)
+  - docs/architecture.md (after-signing UI description updated to 3-section grouped layout)
+RUNTIME EVIDENCE:
+  - Command: `python3 .kdbp/evidence/phase-3/capture_after_signing.py`
+  - Target: Chromium headless via Python Playwright (route-intercepted mock API)
+  - Artifacts:
+    - .kdbp/evidence/phase-3/03-after-signing-grouped-layout.png (full page)
+    - .kdbp/evidence/phase-3/04-discrepancies-section.png (3 cards, severity + refs)
+    - .kdbp/evidence/phase-3/05-discrepancy-expanded-evidence.png (evidence chain: calculo + referencia oficial)
+    - .kdbp/evidence/phase-3/06-escalation-section.png (3 escalation cards with SERNAC/Ley refs)
+    - .kdbp/evidence/phase-3/07-escalation-expanded.png (expanded evidence chain)
+    - .kdbp/evidence/phase-3/08-missing-context-section.png (2 missing-context cards with "Pendiente" pill)
+  - All 3 groups visible: discrepancies (red border, severity), escalation (accent border, ref pills), missing_context (amber, Pendiente)
+EXEC COLUMN: 🔄 → ✅
+
 ## 2026-05-28 — PUSH: Phase 2 — After-signing agent enrichment
 COMMITS: 3 (4808607..a63ce15)
 REMOTE: origin/main

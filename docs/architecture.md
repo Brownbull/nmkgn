@@ -775,7 +775,12 @@ composite readiness gate. The analysis results screen (`AnalysisResults.tsx`) is
 `analysisPlan` is `before_signing_review`, findings display in a grouped layout
 (questions first, then key term comparisons with inline reference context, then
 missing-info as intake prompts) with cautious pre-firma language throughout.
-The after-signing discrepancy path keeps the original flat finding list.
+The after-signing discrepancy path mirrors this grouped layout with three
+sections: discrepancies first (contract inconsistencies with severity and
+reference evidence), then escalation options (SERNAC, detailed statement with
+legal citations), then missing comparison documents (simulation/offer as intake
+prompts). Post-firma language ("posible inconsistencia", "vias de consulta")
+replaces pre-firma language throughout.
 Later plan and email screens remain prototype surfaces.
 
 Frontend API helpers live under `src/api/`. `src/api/client.ts` owns the Vite

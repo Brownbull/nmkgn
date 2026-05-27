@@ -120,7 +120,10 @@ upload prototype with real document persistence plus fact confirmation:
 5. fact-candidate review with source snippets, confirm/correct/reject controls,
    and readiness blockers
 6. simulated analysis acknowledgement before entering later prototype screens
-7. findings by perspective
+7. findings by perspective — path-aware grouped layout:
+   before-signing groups into negotiation questions, key terms, and missing info;
+   after-signing groups into discrepancies, escalation paths, and missing
+   comparison context
 8. next actions
 9. export, compare, or draft communication
 
