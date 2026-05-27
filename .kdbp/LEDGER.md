@@ -1,5 +1,14 @@
 # Session Ledger
 
+## 2026-05-26 — REVIEW: Phase 1 — Path-aware routing and before-signing schemas
+SCOPE: api/services/analysis.py, api/routes/analysis.py, tests/api/test_analysis_api.py, docs/architecture.md
+CONFIDENCE: 91/100
+FINDINGS: 2 (0 critical, 0 high, 0 medium, 2 low)
+ACTIONS: 1:defer (D4 Times Deferred 0→1) 2:accept
+DEFERRED: D4 incremented
+VERDICT: PASS — no findings above MVP gate
+REVIEW COLUMN: ⬜ → ✅
+
 ## 2026-05-26 — [b63a786] test(analysis): add before-signing deterministic path and invalid plan tests
 FINDINGS: 0
 ACTIONS: none
