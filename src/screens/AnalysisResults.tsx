@@ -18,6 +18,45 @@ const SEV_STYLE: Record<FindingSeverity, { bg: string; color: string; label: str
   low: { bg: 'var(--paper-2)', color: 'var(--ink-faint)', label: 'bajo' },
 };
 
+type BsGroup = 'questions' | 'key_terms' | 'missing_info';
+
+const BS_GROUP_META: Record<BsGroup, { icon: string; title: string; subtitle: string }> = {
+  questions: {
+    icon: 'search',
+    title: 'Preguntas de negociacion',
+    subtitle: 'Puntos que vale la pena consultar con la institucion financiera antes de firmar.',
+  },
+  key_terms: {
+    icon: 'chart',
+    title: 'Condiciones clave del credito',
+    subtitle: 'Comparacion de las condiciones del contrato con referencias de mercado.',
+  },
+  missing_info: {
+    icon: 'info',
+    title: 'Informacion pendiente',
+    subtitle: 'Datos que no pudimos confirmar del documento. Puedes agregarlos para mejorar el analisis.',
+  },
+};
+
+function classifyBsFinding(f: AnalysisFinding): BsGroup {
+  if (f.finding_key.startsWith('bs_question_')) return 'questions';
+  if (f.finding_key.startsWith('bs_missing_')) return 'missing_info';
+  return 'key_terms';
+}
+
+function groupBsFindings(findings: AnalysisFinding[]): { group: BsGroup; findings: AnalysisFinding[] }[] {
+  const order: BsGroup[] = ['questions', 'key_terms', 'missing_info'];
+  const buckets = new Map<BsGroup, AnalysisFinding[]>();
+  for (const g of order) buckets.set(g, []);
+  for (const f of findings) {
+    const g = classifyBsFinding(f);
+    buckets.get(g)!.push(f);
+  }
+  return order
+    .filter(g => (buckets.get(g)?.length ?? 0) > 0)
+    .map(g => ({ group: g, findings: buckets.get(g)! }));
+}
+
 const EVIDENCE_LABELS: Record<string, string> = {
   fact: 'Hecho confirmado',
   calculation: 'Calculo deterministico',
@@ -90,6 +129,181 @@ function EvidenceItem({ ev }: { ev: AnalysisEvidence }) {
           Calculo: {ev.calculation_key}
         </div>
       )}
+    </div>
+  );
+}
+
+function BsQuestionCard({ finding }: { finding: AnalysisFinding }) {
+  const [expanded, setExpanded] = useState(false);
+  const refEvidence = finding.evidence.filter(e => e.evidence_type === 'reference');
+
+  return (
+    <div className="card" style={{ padding: 0, marginBottom: 12, borderLeft: '3px solid var(--accent)' }}>
+      <div
+        style={{ padding: '14px 18px', cursor: 'pointer' }}
+        onClick={() => setExpanded(e => !e)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Icon name="search" size={16} color="var(--accent)" />
+          <span style={{ fontSize: 15, fontWeight: 700, flex: 1, letterSpacing: -0.01 }}>
+            {finding.title}
+          </span>
+          <Icon name={expanded ? 'chevron-down' : 'chevron-r'} size={14} color="var(--ink-faint)" />
+        </div>
+        <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginTop: 6, lineHeight: 1.5, paddingLeft: 26 }}>
+          {finding.summary}
+        </div>
+        {refEvidence.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingLeft: 26 }}>
+            {refEvidence.map(ev => ev.citation && (
+              <a
+                key={ev.id}
+                href={ev.citation.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pill"
+                style={{ fontSize: 10, color: 'var(--accent)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                <Icon name="globe" size={10} color="var(--accent)" />
+                {ev.citation.label}
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+      {expanded && finding.evidence.length > 0 && (
+        <div style={{
+          borderTop: '1px solid var(--line)',
+          padding: '14px 18px',
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          <div className="label" style={{ fontSize: 11 }}>Cadena de evidencia</div>
+          {finding.evidence.map(ev => (
+            <EvidenceItem key={ev.id} ev={ev} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BsKeyTermCard({ finding }: { finding: AnalysisFinding }) {
+  const [expanded, setExpanded] = useState(false);
+  const sev = SEV_STYLE[finding.severity] ?? SEV_STYLE.low;
+  const refEvidence = finding.evidence.filter(e => e.evidence_type === 'reference');
+  const calcEvidence = finding.evidence.filter(e => e.evidence_type === 'calculation');
+
+  return (
+    <div className="card" style={{ padding: 0, marginBottom: 12 }}>
+      <div
+        style={{ padding: '14px 18px', cursor: 'pointer' }}
+        onClick={() => setExpanded(e => !e)}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{
+            width: 10, height: 10, borderRadius: '50%',
+            background: sev.color, flex: '0 0 auto',
+          }} />
+          <span style={{ fontSize: 15, fontWeight: 700, flex: 1, letterSpacing: -0.01 }}>
+            {finding.title}
+          </span>
+          <span className="pill" style={{ fontSize: 10.5, background: sev.bg, color: sev.color }}>
+            {sev.label}
+          </span>
+          <Icon name={expanded ? 'chevron-down' : 'chevron-r'} size={14} color="var(--ink-faint)" />
+        </div>
+        <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', marginTop: 6, lineHeight: 1.5, paddingLeft: 20 }}>
+          {finding.summary}
+        </div>
+        {refEvidence.length > 0 && (
+          <div style={{
+            marginTop: 8, marginLeft: 20, padding: '8px 12px',
+            background: 'var(--accent-soft)', borderRadius: 6, fontSize: 12,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <Icon name="globe" size={12} color="var(--accent)" />
+            <span style={{ color: 'var(--ink-soft)' }}>
+              Referencia: {refEvidence.map(e => e.citation?.label).filter(Boolean).join(', ') || 'Catalogo normativo'}
+            </span>
+            {refEvidence[0]?.citation?.reference_key && (
+              <span className="pill" style={{ fontSize: 9, marginLeft: 'auto' }}>
+                {refEvidence[0].citation.reference_key}
+              </span>
+            )}
+          </div>
+        )}
+        {!expanded && calcEvidence.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 20 }}>
+            <span className="pill" style={{ fontSize: 10 }}>Basado en calculo</span>
+            <span style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+              {finding.evidence.length} evidencia{finding.evidence.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
+      </div>
+      {expanded && finding.evidence.length > 0 && (
+        <div style={{
+          borderTop: '1px solid var(--line)',
+          padding: '14px 18px',
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          <div className="label" style={{ fontSize: 11 }}>Cadena de evidencia</div>
+          {finding.evidence.map(ev => (
+            <EvidenceItem key={ev.id} ev={ev} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BsMissingInfoCard({ finding }: { finding: AnalysisFinding }) {
+  return (
+    <div className="card" style={{
+      padding: '14px 18px', marginBottom: 12,
+      borderLeft: '3px solid var(--amber)',
+      background: 'var(--amber-soft)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Icon name="info" size={16} color="var(--amber)" />
+        <span style={{ fontSize: 14, fontWeight: 700, flex: 1 }}>
+          {finding.title}
+        </span>
+        <span className="pill" style={{ fontSize: 10, background: '#fff', color: 'var(--amber)' }}>
+          Falta contexto
+        </span>
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--ink-soft)', marginTop: 6, lineHeight: 1.5, paddingLeft: 26 }}>
+        {finding.summary}
+      </div>
+    </div>
+  );
+}
+
+function BsFindingCard({ finding }: { finding: AnalysisFinding }) {
+  const group = classifyBsFinding(finding);
+  if (group === 'questions') return <BsQuestionCard finding={finding} />;
+  if (group === 'missing_info') return <BsMissingInfoCard finding={finding} />;
+  return <BsKeyTermCard finding={finding} />;
+}
+
+function BsGroupSection({ group, findings }: { group: BsGroup; findings: AnalysisFinding[] }) {
+  const meta = BS_GROUP_META[group];
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+        <Icon name={meta.icon} size={16} color="var(--ink-soft)" />
+        <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0, letterSpacing: -0.01 }}>
+          {meta.title}
+        </h2>
+        <span className="pill" style={{ fontSize: 10 }}>{findings.length}</span>
+      </div>
+      <div style={{ fontSize: 12.5, color: 'var(--ink-faint)', marginBottom: 12, paddingLeft: 26 }}>
+        {meta.subtitle}
+      </div>
+      {findings.map(f => (
+        <BsFindingCard key={f.id} finding={f} />
+      ))}
     </div>
   );
 }
@@ -216,6 +430,7 @@ export function AnalysisResults() {
     );
   }
 
+  const isBeforeSigning = nav.state.analysisPlan === 'before_signing_review';
   const findings = run?.findings ?? [];
   const sortedFindings = [...findings].sort((a, b) => a.display_order - b.display_order);
   const calculations = run?.calculations ?? [];
@@ -224,41 +439,63 @@ export function AnalysisResults() {
     acc[f.severity] = (acc[f.severity] ?? 0) + 1;
     return acc;
   }, {});
+  const bsGroups = isBeforeSigning ? groupBsFindings(sortedFindings) : [];
 
   return (
     <AppShell>
       <div style={{ padding: '28px 32px', maxWidth: 960, margin: '0 auto' }}>
-        <div className="label">Analisis</div>
+        <div className="label">{isBeforeSigning ? 'Revision pre-firma' : 'Analisis'}</div>
         <h1 className="display" style={{ fontSize: 30, margin: '6px 0 4px', letterSpacing: -0.025 }}>
-          Resultados del analisis
+          {isBeforeSigning ? 'Puntos a revisar antes de firmar' : 'Resultados del analisis'}
         </h1>
+        {isBeforeSigning && (
+          <div style={{ fontSize: 13, color: 'var(--ink-faint)', marginTop: 4, lineHeight: 1.5 }}>
+            Esta revision identifica condiciones del contrato, preguntas de negociacion
+            y datos pendientes. No constituye asesoria financiera.
+          </div>
+        )}
         <div style={{ marginTop: 10 }}>
           <CaseContextStrip />
         </div>
 
         {loading && (
           <div className="card" style={{ padding: 24, marginTop: 20, textAlign: 'center', color: 'var(--ink-faint)' }}>
-            Cargando analisis...
+            {isBeforeSigning ? 'Cargando revision...' : 'Cargando analisis...'}
           </div>
         )}
 
         {error && (
-          <div className="card" style={{ padding: 18, marginTop: 20, background: 'var(--red-soft)', color: 'var(--red)' }}>
-            <Icon name="x" size={14} /> {error}
+          <div style={{
+            padding: 18, marginTop: 20, borderRadius: 10,
+            background: 'var(--red-soft)', color: 'var(--red)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <Icon name="x" size={14} />
+            <span style={{ flex: 1 }}>{error}</span>
+            <button
+              className="btn btn-small"
+              style={{ color: 'var(--red)', border: '1px solid var(--red)', background: 'transparent' }}
+              onClick={handleStartAnalysis}
+              disabled={starting}
+            >
+              Reintentar
+            </button>
           </div>
         )}
 
         {!loading && !run && (
           <div className="card" style={{ padding: 28, marginTop: 20, textAlign: 'center' }}>
             <div style={{ fontSize: 15, color: 'var(--ink-soft)', marginBottom: 16 }}>
-              No hay analisis previos para este caso.
+              {isBeforeSigning
+                ? 'No hay revisiones previas para este caso.'
+                : 'No hay analisis previos para este caso.'}
             </div>
             <button
               className="btn btn-accent"
               disabled={starting}
               onClick={handleStartAnalysis}
             >
-              {starting ? 'Iniciando...' : 'Iniciar analisis'}
+              {starting ? 'Iniciando...' : isBeforeSigning ? 'Iniciar revision' : 'Iniciar analisis'}
               <Icon name="arrow-r" size={14} />
             </button>
           </div>
@@ -271,7 +508,9 @@ export function AnalysisResults() {
                 <RunStatusBadge status={run.status} />
                 {run.status === 'completed' && (
                   <>
-                    <span className="pill">{findings.length} hallazgo{findings.length !== 1 ? 's' : ''}</span>
+                    <span className="pill">
+                      {findings.length} {isBeforeSigning ? 'punto' : 'hallazgo'}{findings.length !== 1 ? 's' : ''}
+                    </span>
                     <span className="pill">{calculations.length} calculo{calculations.length !== 1 ? 's' : ''}</span>
                     {sevCounts.high && <span className="pill pill-red">{sevCounts.high} alto{(sevCounts.high ?? 0) > 1 ? 's' : ''}</span>}
                     {sevCounts.medium && <span className="pill pill-amber">{sevCounts.medium} medio{(sevCounts.medium ?? 0) > 1 ? 's' : ''}</span>}
@@ -292,7 +531,15 @@ export function AnalysisResults() {
               </div>
             </div>
 
-            {run.status === 'completed' && sortedFindings.length > 0 && (
+            {run.status === 'completed' && sortedFindings.length > 0 && isBeforeSigning && (
+              <>
+                {bsGroups.map(({ group, findings: gFindings }) => (
+                  <BsGroupSection key={group} group={group} findings={gFindings} />
+                ))}
+              </>
+            )}
+
+            {run.status === 'completed' && sortedFindings.length > 0 && !isBeforeSigning && (
               <div style={{ marginTop: 20 }}>
                 <div className="label" style={{ marginBottom: 10 }}>
                   Hallazgos ({findings.length})
@@ -306,7 +553,11 @@ export function AnalysisResults() {
             {run.status === 'completed' && findings.length === 0 && (
               <div className="card" style={{ padding: 24, marginTop: 20, textAlign: 'center', color: 'var(--ink-soft)' }}>
                 <Icon name="check-circle" size={20} color="var(--green)" />
-                <div style={{ marginTop: 8, fontSize: 15 }}>No se detectaron discrepancias.</div>
+                <div style={{ marginTop: 8, fontSize: 15 }}>
+                  {isBeforeSigning
+                    ? 'No se identificaron puntos a revisar antes de firmar.'
+                    : 'No se detectaron discrepancias.'}
+                </div>
               </div>
             )}
 
@@ -336,11 +587,13 @@ export function AnalysisResults() {
                   onClick={handleStartAnalysis}
                   disabled={starting}
                 >
-                  {starting ? 'Iniciando...' : 'Volver a analizar'}
+                  {starting ? 'Iniciando...' : isBeforeSigning ? 'Volver a revisar' : 'Volver a analizar'}
                 </button>
-                <button className="btn btn-ghost" onClick={() => nav.go('coach')}>
-                  Ver vista prototipo
-                </button>
+                {!isBeforeSigning && (
+                  <button className="btn btn-ghost" onClick={() => nav.go('coach')}>
+                    Ver vista prototipo
+                  </button>
+                )}
               </div>
             )}
 
@@ -351,7 +604,7 @@ export function AnalysisResults() {
                   onClick={handleStartAnalysis}
                   disabled={starting}
                 >
-                  {starting ? 'Iniciando...' : 'Reintentar analisis'}
+                  {starting ? 'Iniciando...' : isBeforeSigning ? 'Reintentar revision' : 'Reintentar analisis'}
                 </button>
               </div>
             )}

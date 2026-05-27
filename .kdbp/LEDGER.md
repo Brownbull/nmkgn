@@ -1,5 +1,16 @@
 # Session Ledger
 
+## 2026-05-27 — Phase 4 Exec (T1-T4): Before-signing UI and finding presentation
+FILES: src/screens/AnalysisResults.tsx, docs/architecture.md
+TASKS: T1 path-aware branching, T2 questions-first grouping, T3 key-term inline references, T4 missing-info intake prompts
+RUNTIME EVIDENCE: Playwright headless Chromium screenshots
+  - .kdbp/evidence/phase-4/01-bs-findings-empty.png (before-signing empty state with cautious language)
+  - .kdbp/evidence/phase-4/02-as-findings-empty.png (after-signing regression — unchanged)
+  - .kdbp/evidence/phase-4/03-no-case-edge.png (no-case guard state)
+TYPESCRIPT: tsc --noEmit clean
+T5 FULL-STACK JOURNEY: blocked — Docker/PostgreSQL not available in WSL2. Playwright screenshots cover UI rendering paths.
+EXEC STATE: ⬜ → ✅
+
 ## 2026-05-27 — PUSH: Phase 3 — Before-signing agent orchestration
 COMMITS: 2 (ab3bfc3..e362bcd)
 REMOTE: origin/main

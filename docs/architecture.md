@@ -771,8 +771,12 @@ cross the real backend boundary: case setup creates persisted consumer-credit
 cases, and upload calls the document API to store files, list document metadata,
 show extracted text segments, list fact candidates, record confirm/correct/reject
 decisions, run receptionist review, list/resolve receptionist gaps, and read the
-composite readiness gate. Later analysis, plan, finding, and email screens
-remain prototype surfaces until agents and evidence-backed findings exist.
+composite readiness gate. The analysis results screen (`AnalysisResults.tsx`) is path-aware: when
+`analysisPlan` is `before_signing_review`, findings display in a grouped layout
+(questions first, then key term comparisons with inline reference context, then
+missing-info as intake prompts) with cautious pre-firma language throughout.
+The after-signing discrepancy path keeps the original flat finding list.
+Later plan and email screens remain prototype surfaces.
 
 Frontend API helpers live under `src/api/`. `src/api/client.ts` owns the Vite
 API base URL, while endpoint-specific clients such as `cases.ts`,
