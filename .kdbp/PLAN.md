@@ -58,7 +58,7 @@ provider questions without presenting guaranteed offers.
 |---|-------|-------------|-------|------|------------|------|--------|--------|------|
 | 1 | Path-aware routing and before-signing schemas | Wire `analysis_plan` into the analysis service so it branches on before/after signing; add before-signing finding types. | `data-validation, api` | ent | med | ✅ | ✅ | ✅ | ✅ |
 | 2 | Before-signing deterministic analysis | Extract key terms from confirmed facts, compare against reference catalog benchmarks, detect missing inputs, and generate negotiation questions from reference gaps. | `data-processing, data-validation` | ent | high | ✅ | ✅ | ✅ | ✅ |
-| 3 | Before-signing agent orchestration | Add a path-aware provider that synthesizes bounded comparisons and contextual questions from confirmed facts, deterministic checks, and references using cautious before-signing language. | `ai-agent, data-processing` | ent | high | ✅ | ⬜ | ⬜ | ⬜ |
+| 3 | Before-signing agent orchestration | Add a path-aware provider that synthesizes bounded comparisons and contextual questions from confirmed facts, deterministic checks, and references using cautious before-signing language. | `ai-agent, data-processing` | ent | high | ✅ | ✅ | ✅ | ⬜ |
 | 4 | Before-signing UI and finding presentation | Replace the generic finding display with a path-specific layout — questions-first grouping, key term highlights with benchmark context, missing context as intake prompts. | `user-facing, client-state, api` | ent | high | ⬜ | ⬜ | ⬜ | ⬜ |
 
 <!-- Exec is written by /gabe-execute: ⬜ not started, 🔄 in progress, ✅ complete -->

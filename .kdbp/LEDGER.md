@@ -1,5 +1,21 @@
 # Session Ledger
 
+## 2026-05-27 — REVIEW: Phase 3 — Before-signing agent orchestration
+SCOPE: api/services/consumer_credit_provider.py, api/services/analysis.py, tests/api/test_consumer_credit_agent.py, docs/architecture.md
+CONFIDENCE: 98/100
+FINDINGS: 1 (0 critical, 0 high, 0 medium, 1 low)
+ACTIONS: 1:skip (D4 Times Deferred 1→2, Scale-tier)
+DEFERRED: D4 incremented
+VERDICT: APPROVE — no findings above MVP gate
+REVIEW COLUMN: ⬜ → ✅
+
+## 2026-05-27 — [ab3bfc3] feat(agent): wire before-signing path into consumer credit provider and agent analysis
+FINDINGS: 0 (lint clean, 58 tests pass)
+ACTIONS: none
+DEFERRED: 0
+PHASE: 3 — Before-signing agent orchestration
+COMMIT COLUMN: ⬜ → ✅
+
 ## 2026-05-27 — PUSH: Phase 2 — Before-signing deterministic analysis
 COMMITS: 4 (4416cc7..62bd150)
 REMOTE: origin/main
