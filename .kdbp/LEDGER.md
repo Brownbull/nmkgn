@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-27 — PUSH: Phase 2 — Before-signing deterministic analysis
+COMMITS: 4 (4416cc7..62bd150)
+REMOTE: origin/main
+PUSH COLUMN: ⬜ → ✅
+PHASE 2 COMPLETE: all 4 columns ✅
+
 ## 2026-05-27 — REVIEW: Phase 2 — Before-signing deterministic analysis
 SCOPE: api/services/before_signing.py, api/services/analysis.py, tests/api/test_before_signing.py, tests/api/test_analysis_api.py, tests/api/conftest.py, docs/architecture.md
 CONFIDENCE: 96/100 → 100/100 (post-triage)
