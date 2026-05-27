@@ -1,5 +1,13 @@
 # Session Ledger
 
+## 2026-05-27 — [0e34a86] feat(ui): add path-aware before-signing finding presentation with grouped layout
+FINDINGS: 0 (lint clean, types clean, 58 tests pass)
+ACTIONS: none
+DEFERRED: 0
+PHASE: 4 — Before-signing UI and finding presentation
+COMMIT COLUMN: ⬜ → ✅
+REVIEW COLUMN: ⬜ → ✅ (inline — no separate review findings)
+
 ## 2026-05-27 — Phase 4 Exec (T1-T4): Before-signing UI and finding presentation
 FILES: src/screens/AnalysisResults.tsx, docs/architecture.md
 TASKS: T1 path-aware branching, T2 questions-first grouping, T3 key-term inline references, T4 missing-info intake prompts
