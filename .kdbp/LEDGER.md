@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-26 — [b63a786] test(analysis): add before-signing deterministic path and invalid plan tests
+FINDINGS: 0
+ACTIONS: none
+DEFERRED: 0
+PHASE: 1 — Path-aware routing and before-signing schemas
+
 ## 2026-05-26 — [48dddf0] feat(analysis): wire analysis_plan validation into run_agent_analysis
 FINDINGS: 0
 ACTIONS: none
