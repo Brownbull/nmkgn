@@ -1,5 +1,19 @@
 # Session Ledger
 
+## 2026-05-28 — REVIEW: Phase 1 — After-signing deterministic analysis service
+CONFIDENCE: 98/100 (post-triage)
+FINDINGS: 2 (0 critical, 0 high, 1 medium, 1 low)
+ACTIONS: 1:fix (agent-path test gap → 2 tests added in TestAfterSigningAgentAnalysis), 2:accept (Scale-gate duplication)
+VERDICT: APPROVE
+ALIGNMENT: ALIGNED
+REVIEW COLUMN: ⬜ → ✅
+FIX FILES: tests/api/test_consumer_credit_agent.py (+40)
+
+## 2026-05-27 — [e47fa87] feat(analysis): add after-signing deterministic analysis
+FINDINGS: 0 (0 critical, 0 high, 0 medium, 0 low)
+ACTIONS: none
+FILES: api/services/after_signing.py (+236), api/services/analysis.py (+17/-1), tests/api/test_after_signing.py (+290), tests/api/test_before_signing.py (+0/-6)
+
 ## 2026-05-27 — PLAN CREATED: After-Signing Discrepancy Path (REQ-10)
 PHASES: 3 | COMPLEXITY: medium overall | MATURITY: mvp
 TIERS: ent × 3 | PROTOTYPES: 0

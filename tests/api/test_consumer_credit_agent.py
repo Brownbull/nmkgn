@@ -630,3 +630,50 @@ class TestBeforeSigningAgentAnalysis:
             assert len(ref_evidence) > 0, (
                 f"Finding {finding.finding_key} should have reference evidence"
             )
+
+
+class TestAfterSigningAgentAnalysis:
+    def test_agent_path_attaches_reference_evidence(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(session, GOLDEN_FACTS)
+        _seed_references(session)
+        seed_references(session)
+        session.commit()
+
+        run = run_agent_analysis(
+            session,
+            case_id=case.id,
+            owner_ref="demo-user",
+            agent_settings=FAKE_SETTINGS,
+        )
+        assert run.status == "completed"
+
+        discrepancy_findings = [
+            f for f in run.findings
+            if f.finding_key in ("payment_count_delta", "total_paid_check", "term_signal")
+        ]
+        assert len(discrepancy_findings) > 0
+
+        ref_count = 0
+        for finding in discrepancy_findings:
+            for ev in finding.evidence:
+                if ev.evidence_type == "reference":
+                    ref_count += 1
+                    assert ev.reference_key is not None
+        assert ref_count > 0
+
+    def test_agent_path_no_bs_findings(self, session: Session) -> None:
+        case, _ = _seed_case_with_facts(session, GOLDEN_FACTS)
+        _seed_references(session)
+        seed_references(session)
+        session.commit()
+
+        run = run_agent_analysis(
+            session,
+            case_id=case.id,
+            owner_ref="demo-user",
+            agent_settings=FAKE_SETTINGS,
+        )
+        bs_findings = [
+            f for f in run.findings if f.finding_key.startswith("bs_")
+        ]
+        assert len(bs_findings) == 0
