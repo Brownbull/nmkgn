@@ -217,16 +217,72 @@ def _build_finding_summary(spec: dict, calc: CalculationResult) -> str:
         return spec["title"]
 
 
-def _has_discrepancy(spec: dict, calc: CalculationResult) -> bool:
-    key = spec.get("discrepancy_key")
-    if key is None:
-        return False
-    value = calc.result.get(key)
-    if value is None:
-        return False
-    if spec.get("discrepancy_inverted"):
-        return not value
-    return bool(value)
+def _specs_for_plan(analysis_plan: str) -> dict[str, dict]:
+    if analysis_plan == "before_signing_review":
+        return BEFORE_SIGNING_FINDING_SPECS
+    return FINDING_SPECS
+
+
+def _generate_plan_findings(
+    specs: dict[str, dict],
+    calc_results: list[CalculationResult],
+    calc_models: dict[str, AnalysisCalculation],
+    run: AnalysisRun,
+    case_id: str,
+    owner_ref: str,
+    session: Session,
+) -> None:
+    calc_map = {cr.calculation_key: cr for cr in calc_results}
+    display_order = 0
+
+    for finding_key, spec in specs.items():
+        calc_key = spec.get("calculation_key", finding_key)
+        cr = calc_map.get(calc_key)
+        if cr is None:
+            continue
+        if not _should_fire_finding(spec, cr):
+            continue
+
+        finding = AnalysisFinding(
+            analysis_run_id=run.id,
+            case_id=case_id,
+            owner_ref=owner_ref,
+            finding_key=finding_key,
+            title=spec["title"],
+            summary=_build_finding_summary(spec, cr),
+            severity=spec["severity"],
+            claim_type="calculation",
+            uncertainty_state="supported",
+            confidence=1.0,
+            display_order=display_order,
+        )
+        session.add(finding)
+        session.flush()
+        display_order += 1
+
+        calc_model = calc_models.get(calc_key)
+        if calc_model is not None:
+            evidence = AnalysisEvidence(
+                analysis_run_id=run.id,
+                case_id=case_id,
+                finding_id=finding.id,
+                evidence_type="calculation",
+                calculation_id=calc_model.id,
+                calculation_key=calc_key,
+                schema_version=CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION,
+            )
+            session.add(evidence)
+
+        for fact_id in cr.input_fact_ids:
+            fact_evidence = AnalysisEvidence(
+                analysis_run_id=run.id,
+                case_id=case_id,
+                finding_id=finding.id,
+                evidence_type="fact",
+                fact_id=fact_id,
+                schema_version=CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION,
+            )
+            session.add(fact_evidence)
 
 
 def run_deterministic_analysis(
@@ -235,7 +291,13 @@ def run_deterministic_analysis(
     case_id: str,
     owner_ref: str,
 ) -> AnalysisRun:
-    _ensure_case(session, case_id, owner_ref)
+    case = _ensure_case(session, case_id, owner_ref)
+
+    analysis_plan = case.analysis_plan
+    if analysis_plan not in VALID_ANALYSIS_PLANS:
+        raise InvalidAnalysisPlanError(
+            f"unsupported analysis_plan: {analysis_plan!r}"
+        )
 
     from api.services.receptionist_gaps import get_analysis_readiness
 
@@ -251,6 +313,7 @@ def run_deterministic_analysis(
     fact_map = _facts_to_input_map(confirmed_facts)
 
     readiness_snapshot = {
+        "analysis_plan": analysis_plan,
         "fact_count": len(confirmed_facts),
         "fact_keys": sorted({f.fact_key for f in confirmed_facts}),
         "blockers": readiness.blockers,
@@ -286,53 +349,10 @@ def run_deterministic_analysis(
         session.flush()
         calc_models[cr.calculation_key] = calc_model
 
-    display_order = 0
-    for cr in calc_results:
-        spec = FINDING_SPECS.get(cr.calculation_key)
-        if spec is None:
-            continue
-        if not _has_discrepancy(spec, cr):
-            continue
-
-        finding = AnalysisFinding(
-            analysis_run_id=run.id,
-            case_id=case_id,
-            owner_ref=owner_ref,
-            finding_key=cr.calculation_key,
-            title=spec["title"],
-            summary=_build_finding_summary(spec, cr),
-            severity=spec["severity"],
-            claim_type="calculation",
-            uncertainty_state="supported",
-            confidence=1.0,
-            display_order=display_order,
-        )
-        session.add(finding)
-        session.flush()
-        display_order += 1
-
-        calc_model = calc_models[cr.calculation_key]
-        evidence = AnalysisEvidence(
-            analysis_run_id=run.id,
-            case_id=case_id,
-            finding_id=finding.id,
-            evidence_type="calculation",
-            calculation_id=calc_model.id,
-            calculation_key=cr.calculation_key,
-            schema_version=CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION,
-        )
-        session.add(evidence)
-
-        for fact_id in cr.input_fact_ids:
-            fact_evidence = AnalysisEvidence(
-                analysis_run_id=run.id,
-                case_id=case_id,
-                finding_id=finding.id,
-                evidence_type="fact",
-                fact_id=fact_id,
-                schema_version=CONSUMER_CREDIT_ANALYSIS_SCHEMA_VERSION,
-            )
-            session.add(fact_evidence)
+    specs = _specs_for_plan(analysis_plan)
+    _generate_plan_findings(
+        specs, calc_results, calc_models, run, case_id, owner_ref, session
+    )
 
     run.status = "completed"
     run.completed_at = _utcnow()
