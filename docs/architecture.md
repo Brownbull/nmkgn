@@ -571,7 +571,6 @@ Analysis contract constraints:
 
 Future domain objects:
 
-- AnalysisPlan
 - NextAction
 
 ## API Contracts
@@ -710,6 +709,14 @@ Current service boundaries:
 - Analysis persistence contract for versioned consumer-credit analysis runs,
   deterministic calculation evidence, evidence-backed findings, citation
   metadata, inference metadata, and audit-only unsupported outputs.
+- Plan-aware analysis routing foundation: `VALID_ANALYSIS_PLANS` gates
+  accepted plan values; `FINDING_SPECS` drives after-signing discrepancy
+  checks (3 specs: payment count delta, total paid, term signal) while
+  `BEFORE_SIGNING_FINDING_SPECS` drives before-signing key term and
+  comparison checks (6 specs: rate comparison, total cost, installment
+  ratio, fee summary, insurance review, linked products).
+  `_should_fire_finding` unifies both trigger modes (discrepancy key for
+  after-signing, any-result for before-signing).
 - Receptionist media service for bounded raw-document packing: extracted text
   for text uploads, image media for image uploads, and capped rendered page
   images for PDFs.

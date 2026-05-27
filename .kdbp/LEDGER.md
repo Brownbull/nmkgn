@@ -1,5 +1,18 @@
 # Session Ledger
 
+## 2026-05-26 — PLAN CREATED: Before-signing review path (Roadmap Phase 5)
+GOAL: Provide a before-signing analysis path with key terms, bounded comparisons, negotiation questions, and missing information
+PHASES: 4 (all enterprise tier)
+TIERS: mvp x 0, ent x 4, scale x 0 | PROTOTYPES: 0
+DECISIONS: D21 → D24 (4 phase tier decisions)
+ROADMAP: Phase 5 (REQ-09)
+
+## 2026-05-26 — PLAN COMPLETED: Consumer-credit analysis engine
+ARCHIVE: .kdbp/archive/completed_PLAN_2026-05-26_consumer-credit-analysis.md
+PHASES COMPLETED: 9 of 9
+TIERS: mvp x 5, ent x 4, scale x 0 | PROTOTYPES: 0
+DECISIONS: D12 → D20 (9 phase tier decisions)
+
 ## 2026-05-26 — PHASE 9 PUSH: Analysis API and source inspection UI
 COMMITS: 422cde6, a6955c1, 740445a (3 commits)
 TARGET: origin/main (direct push)

@@ -711,3 +711,149 @@ review ergonomics can wait until the backend contract is stable under use.
 ### Status
 
 - accepted
+
+## D21 — Phase 1 tier: ent (2026-05-26)
+
+**Phase:** Path-aware routing and before-signing schemas
+**Types:** [data-validation, api]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Cover enterprise edge cases on all phases — path routing is the
+foundation for all downstream before-signing logic; enterprise-grade error
+handling and testing prevents cascading failures in later phases.
+
+### Sections rendered
+
+- Core (always)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- None — Core always renders all 4 dimensions unfiltered.
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing + Scale abstractions deferred)
+- Load-bearing items skipped: none (Enterprise covers edge-case testing and
+  structured error handling)
+
+### Review trigger (when to escalate this phase)
+
+- When a third analysis path type is added beyond before/after signing.
+
+### Status
+
+- accepted
+
+## D22 — Phase 2 tier: ent (2026-05-26)
+
+**Phase:** Before-signing deterministic analysis
+**Types:** [data-processing, data-validation]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Cover enterprise edge cases on all phases — deterministic checks
+must handle partial facts, zero values, missing references, and edge-case
+numeric comparisons reliably to avoid misleading users.
+
+### Sections rendered
+
+- Core (always)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- None — Core always renders all 4 dimensions unfiltered.
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing + Scale abstractions deferred)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When reference catalog grows beyond 10 entries or when external data sources
+  are introduced.
+
+### Status
+
+- accepted
+
+## D23 — Phase 3 tier: ent (2026-05-26)
+
+**Phase:** Before-signing agent orchestration
+**Types:** [ai-agent, data-processing]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Cover enterprise edge cases on all phases — U4 structured output
+red-line requires framework-level enforcement when downstream code consumes
+findings mechanically; enterprise tier is the minimum for AI/Agent section
+compliance.
+
+### Sections rendered
+
+- Core (always)
+- AI/Agent: Prompt eval, Structured output (2 of 4 dims rendered)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- AI/Agent.Cost/latency budget — single-provider local dev; no multi-model
+  routing or budget caps needed at this maturity.
+- AI/Agent.Fallback chain — one provider path; fallback to deterministic-only
+  is the implicit safe default.
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing + Scale abstractions from Core)
+- M × 1 (Scale prompt eval — adversarial prompt testing deferred)
+- Load-bearing items skipped: none (Enterprise structured output satisfies U4)
+
+### Review trigger (when to escalate this phase)
+
+- When a second LLM provider is added or when agent latency exceeds 10s p95.
+
+### Status
+
+- accepted
+
+## D24 — Phase 4 tier: ent (2026-05-26)
+
+**Phase:** Before-signing UI and finding presentation
+**Types:** [user-facing, client-state, api]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Cover enterprise edge cases on all phases — user-facing findings
+must handle error states, loading states, and empty states gracefully to
+maintain trust in before-signing guidance.
+
+### Sections rendered
+
+- Core (always)
+- UI/UX: Loading states, Error states (2 of 4 dims rendered)
+- Client State: Cache invalidation, Store coupling (2 of 7 dims rendered)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- UI/UX.A11y — important but not load-bearing for MVP/ent correctness; revisit
+  at Scale or when accessibility audit is scheduled.
+- UI/UX.Streaming — before-signing analysis is request/response, not streamed.
+- Client State.Optimistic updates — analysis runs are server-authoritative;
+  optimistic UI adds complexity without user benefit here.
+- Client State.Stale data — single-tab, single-case workflow; stale data risk
+  is low.
+- Client State.Mutation propagation — no cross-component mutation chains in
+  before-signing path.
+- Client State.Cross-tab sync — single-tab review is acceptable.
+- Client State.Offline support — online-only is acceptable at this maturity.
+
+### Δ deferred by tier choice
+
+- L × 2 (Scale testing + Scale abstractions from Core)
+- M × 2 (Scale loading states polish, Scale error state recovery)
+- Load-bearing items skipped: none
+
+### Review trigger (when to escalate this phase)
+
+- When mobile-web support is added or when user research reveals error-state
+  confusion.
+
+### Status
+
+- accepted

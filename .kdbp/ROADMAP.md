@@ -4,9 +4,9 @@ scope_version: 1
 roadmap_version: 1
 granularity: standard
 phases_total: 7
-phases_complete: 3
+phases_complete: 4
 created: 2026-05-13
-last_change: 2026-05-18
+last_change: 2026-05-26
 ---
 
 # ROADMAP — nmkgn
@@ -25,7 +25,7 @@ last_change: 2026-05-18
 | 1 | Product Backbone and Case Intake | complete | — | — | [REQ-01](SCOPE.md#req-01) |
 | 2 | Document Ingestion and Provenance Store | complete | 1 | — | [REQ-02](SCOPE.md#req-02), [REQ-04](SCOPE.md#req-04) |
 | 3 | Fact Extraction and Confirmation | complete | 2 | — | [REQ-03](SCOPE.md#req-03), [REQ-05](SCOPE.md#req-05) |
-| 4 | Consumer-Credit Analysis Engine | pending | 3 | — | [REQ-06](SCOPE.md#req-06), [REQ-07](SCOPE.md#req-07), [REQ-08](SCOPE.md#req-08), [REQ-11](SCOPE.md#req-11) |
+| 4 | Consumer-Credit Analysis Engine | complete | 3 | — | [REQ-06](SCOPE.md#req-06), [REQ-07](SCOPE.md#req-07), [REQ-08](SCOPE.md#req-08), [REQ-11](SCOPE.md#req-11) |
 | 5 | Before-Signing Review Path | pending | 4 | 6 | [REQ-09](SCOPE.md#req-09) |
 | 6 | After-Signing Discrepancy Path | pending | 4 | 5 | [REQ-10](SCOPE.md#req-10) |
 | 7 | Evidence Export, Audit, and Production Guardrails | pending | 5, 6 | — | [REQ-12](SCOPE.md#req-12), [REQ-13](SCOPE.md#req-13) |
@@ -101,7 +101,7 @@ Each phase below is deep-linkable via `{#phase-N}` anchor. `/gabe-teach` SCOPE m
 
 ### Phase 4 — Consumer-Credit Analysis Engine {#phase-4}
 
-**Status:** pending
+**Status:** complete
 **Goal:** By end of this phase, the system can generate stable `ConsumerCreditAnalysis` output with deterministic calculations, official references, and fact/inference provenance.
 
 **Why (business intent):** The first document type must work deeply before the product expands. This phase proves the structured-agent contract, calculation layer, official-source catalog, and unsupported-output suppression.
@@ -213,3 +213,4 @@ Append-only. Tracks phase splits, merges, insertions, reorderings, and the `/gab
 |---|---|---|
 | 2026-05-13 | init | Initial 7-phase roadmap derived from SCOPE.md v1. Granularity: standard. |
 | 2026-05-18 | status-sync | Marked Phases 1-3 complete from archived KDBP plans; next planning target remains Phase 4. |
+| 2026-05-26 | status-sync | Marked Phase 4 complete from archived KDBP plan (completed_PLAN_2026-05-26_consumer-credit-analysis.md); next targets: Phase 5 and/or 6. |
