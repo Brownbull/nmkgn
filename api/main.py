@@ -32,12 +32,18 @@ def create_app() -> FastAPI:
     if _DIST_DIR.is_dir():
         assets_dir = _DIST_DIR / "assets"
         if assets_dir.is_dir():
-            app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static-assets")
+            app.mount(
+                "/assets", StaticFiles(directory=str(assets_dir)), name="static-assets"
+            )
 
         @app.get("/{full_path:path}")
         async def serve_spa(full_path: str) -> FileResponse:
             file_path = _DIST_DIR / full_path
-            if full_path and file_path.is_file() and _DIST_DIR in file_path.resolve().parents:
+            if (
+                full_path
+                and file_path.is_file()
+                and _DIST_DIR in file_path.resolve().parents
+            ):
                 return FileResponse(str(file_path))
             return FileResponse(str(_DIST_DIR / "index.html"))
 

@@ -120,7 +120,7 @@ def _seed_case_with_facts(
             high_impact=spec.get("high_impact", True),
             confirmation_status=spec.get("confirmation_status", "confirmed"),
             source_page_number=1,
-            source_snippet=f'{spec["fact_key"]}: value',
+            source_snippet=f"{spec['fact_key']}: value",
             extraction_provider="local-facts",
             confidence=0.95,
         )
@@ -145,14 +145,54 @@ def _seed_references(session: Session) -> None:
 
 
 GOLDEN_FACTS = [
-    {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0, "label": "Monto del credito"},
-    {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15", "label": "Fecha del contrato"},
-    {"fact_key": "term_months", "value_kind": "integer", "value_number": 60, "label": "Plazo en meses"},
-    {"fact_key": "payment_count", "value_kind": "integer", "value_number": 68, "label": "Numero de cuotas"},
-    {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0, "label": "Valor de cuota"},
-    {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5, "label": "CAE"},
-    {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 1.2, "label": "Tasa de interes"},
-    {"fact_key": "total_cost", "value_kind": "money", "value_number": 8500000.0, "label": "Costo total"},
+    {
+        "fact_key": "principal_amount",
+        "value_kind": "money",
+        "value_number": 6000000.0,
+        "label": "Monto del credito",
+    },
+    {
+        "fact_key": "contract_date",
+        "value_kind": "date",
+        "value_text": "2025-01-15",
+        "label": "Fecha del contrato",
+    },
+    {
+        "fact_key": "term_months",
+        "value_kind": "integer",
+        "value_number": 60,
+        "label": "Plazo en meses",
+    },
+    {
+        "fact_key": "payment_count",
+        "value_kind": "integer",
+        "value_number": 68,
+        "label": "Numero de cuotas",
+    },
+    {
+        "fact_key": "installment_amount",
+        "value_kind": "money",
+        "value_number": 150000.0,
+        "label": "Valor de cuota",
+    },
+    {
+        "fact_key": "cae",
+        "value_kind": "percentage",
+        "value_number": 28.5,
+        "label": "CAE",
+    },
+    {
+        "fact_key": "interest_rate",
+        "value_kind": "percentage",
+        "value_number": 1.2,
+        "label": "Tasa de interes",
+    },
+    {
+        "fact_key": "total_cost",
+        "value_kind": "money",
+        "value_number": 8500000.0,
+        "label": "Costo total",
+    },
 ]
 
 
@@ -231,7 +271,10 @@ class TestFakeProvider:
         provider = FakeConsumerCreditProvider()
         result = provider.analyze(agent_input=agent_input, settings=FAKE_SETTINGS)
         assert len(result.analysis.findings) == 0
-        assert "no se detectaron inconsistencias" in result.analysis.next_actions[0].lower()
+        assert (
+            "no se detectaron inconsistencias"
+            in result.analysis.next_actions[0].lower()
+        )
 
     def test_term_mismatch_yields_medium_finding(self) -> None:
         agent_input = ConsumerCreditAgentInput(
@@ -523,7 +566,9 @@ class TestRunAgentAnalysis:
         assert "timed out" in run.error_message
         assert len(run.findings) == 0
 
-    def test_unexpected_error_records_failed(self, session: Session, monkeypatch) -> None:
+    def test_unexpected_error_records_failed(
+        self, session: Session, monkeypatch
+    ) -> None:
         case, facts = _seed_case_with_facts(session, GOLDEN_FACTS)
         _seed_references(session)
         session.commit()
@@ -594,8 +639,7 @@ class TestBeforeSigningFakeProvider:
         result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
         assert result.analysis.status == "completed"
         bs_findings = [
-            f for f in result.analysis.findings
-            if f.finding_key.startswith("bs_")
+            f for f in result.analysis.findings if f.finding_key.startswith("bs_")
         ]
         assert len(bs_findings) > 0
         rate_finding = next(
@@ -625,8 +669,7 @@ class TestBeforeSigningFakeProvider:
         provider = FakeConsumerCreditProvider()
         result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
         rate_finding = next(
-            f for f in result.analysis.findings
-            if f.finding_key == "bs_rate_comparison"
+            f for f in result.analysis.findings if f.finding_key == "bs_rate_comparison"
         )
         assert "vale la pena" in rate_finding.summary.lower()
 
@@ -642,7 +685,8 @@ class TestBeforeSigningFakeProvider:
         provider = FakeConsumerCreditProvider()
         result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
         question_findings = [
-            f for f in result.analysis.findings
+            f
+            for f in result.analysis.findings
             if f.finding_key.startswith("bs_question_")
         ]
         assert len(question_findings) > 0
@@ -663,7 +707,8 @@ class TestBeforeSigningFakeProvider:
         provider = FakeConsumerCreditProvider()
         result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
         question_findings = [
-            f for f in result.analysis.findings
+            f
+            for f in result.analysis.findings
             if f.finding_key.startswith("bs_question_")
         ]
         assert len(question_findings) == 0
@@ -689,8 +734,7 @@ class TestBeforeSigningFakeProvider:
         provider = FakeConsumerCreditProvider()
         result = provider.analyze(agent_input=agent_input, settings=BS_SETTINGS)
         calc_findings = [
-            f for f in result.analysis.findings
-            if f.claim_type == "calculation"
+            f for f in result.analysis.findings if f.claim_type == "calculation"
         ]
         assert len(calc_findings) == 0
 
@@ -734,7 +778,8 @@ class TestBeforeSigningFakeProvider:
 class TestBeforeSigningAgentAnalysis:
     def test_golden_path_produces_bs_findings(self, session: Session) -> None:
         case, _ = _seed_case_with_facts(
-            session, GOLDEN_FACTS,
+            session,
+            GOLDEN_FACTS,
             case_stage="before_signing",
             analysis_plan="before_signing_review",
         )
@@ -761,7 +806,8 @@ class TestBeforeSigningAgentAnalysis:
             timeout_seconds=5,
         )
         case, _ = _seed_case_with_facts(
-            session, GOLDEN_FACTS,
+            session,
+            GOLDEN_FACTS,
             case_stage="before_signing",
             analysis_plan="before_signing_review",
         )
@@ -779,7 +825,8 @@ class TestBeforeSigningAgentAnalysis:
 
     def test_reference_evidence_attached(self, session: Session) -> None:
         case, _ = _seed_case_with_facts(
-            session, GOLDEN_FACTS,
+            session,
+            GOLDEN_FACTS,
             case_stage="before_signing",
             analysis_plan="before_signing_review",
         )
@@ -793,9 +840,7 @@ class TestBeforeSigningAgentAnalysis:
             owner_ref="demo-user",
             agent_settings=BS_SETTINGS,
         )
-        calc_findings = [
-            f for f in run.findings if f.claim_type == "calculation"
-        ]
+        calc_findings = [f for f in run.findings if f.claim_type == "calculation"]
         for finding in calc_findings:
             ref_evidence = [
                 e for e in finding.evidence if e.evidence_type == "reference"
@@ -821,8 +866,10 @@ class TestAfterSigningAgentAnalysis:
         assert run.status == "completed"
 
         discrepancy_findings = [
-            f for f in run.findings
-            if f.finding_key in ("payment_count_delta", "total_paid_check", "term_signal")
+            f
+            for f in run.findings
+            if f.finding_key
+            in ("payment_count_delta", "total_paid_check", "term_signal")
         ]
         assert len(discrepancy_findings) > 0
 
@@ -846,7 +893,5 @@ class TestAfterSigningAgentAnalysis:
             owner_ref="demo-user",
             agent_settings=FAKE_SETTINGS,
         )
-        bs_findings = [
-            f for f in run.findings if f.finding_key.startswith("bs_")
-        ]
+        bs_findings = [f for f in run.findings if f.finding_key.startswith("bs_")]
         assert len(bs_findings) == 0

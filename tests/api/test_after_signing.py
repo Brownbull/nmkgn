@@ -15,14 +15,54 @@ from api.services.references import seed_references
 
 
 GOLDEN_FACTS = [
-    {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0, "label": "Monto del credito"},
-    {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15", "label": "Fecha del contrato"},
-    {"fact_key": "term_months", "value_kind": "integer", "value_number": 60, "label": "Plazo en meses"},
-    {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60, "label": "Numero de cuotas"},
-    {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0, "label": "Valor de cuota"},
-    {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5, "label": "CAE"},
-    {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 1.2, "label": "Tasa de interes"},
-    {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0, "label": "Costo total"},
+    {
+        "fact_key": "principal_amount",
+        "value_kind": "money",
+        "value_number": 6000000.0,
+        "label": "Monto del credito",
+    },
+    {
+        "fact_key": "contract_date",
+        "value_kind": "date",
+        "value_text": "2025-01-15",
+        "label": "Fecha del contrato",
+    },
+    {
+        "fact_key": "term_months",
+        "value_kind": "integer",
+        "value_number": 60,
+        "label": "Plazo en meses",
+    },
+    {
+        "fact_key": "payment_count",
+        "value_kind": "integer",
+        "value_number": 60,
+        "label": "Numero de cuotas",
+    },
+    {
+        "fact_key": "installment_amount",
+        "value_kind": "money",
+        "value_number": 150000.0,
+        "label": "Valor de cuota",
+    },
+    {
+        "fact_key": "cae",
+        "value_kind": "percentage",
+        "value_number": 28.5,
+        "label": "CAE",
+    },
+    {
+        "fact_key": "interest_rate",
+        "value_kind": "percentage",
+        "value_number": 1.2,
+        "label": "Tasa de interes",
+    },
+    {
+        "fact_key": "total_cost",
+        "value_kind": "money",
+        "value_number": 9000000.0,
+        "label": "Costo total",
+    },
 ]
 
 DISCREPANCY_FACTS = [
@@ -106,7 +146,7 @@ def _seed_as_case(
             high_impact=True,
             confirmation_status="confirmed",
             source_page_number=1,
-            source_snippet=f'{spec["fact_key"]}: value',
+            source_snippet=f"{spec['fact_key']}: value",
             extraction_provider="local-facts",
             confidence=0.95,
         )
@@ -158,16 +198,22 @@ def _seed_as_case(
 
 
 class TestDiscrepancyEvidenceAttachment:
-    def test_attaches_reference_evidence_to_discrepancy_findings(self, session: Session) -> None:
+    def test_attaches_reference_evidence_to_discrepancy_findings(
+        self, session: Session
+    ) -> None:
         case, _ = _seed_as_case(session, DISCREPANCY_FACTS)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         discrepancy_findings = [
-            f for f in run.findings
-            if f.finding_key in ("payment_count_delta", "total_paid_check", "term_signal")
+            f
+            for f in run.findings
+            if f.finding_key
+            in ("payment_count_delta", "total_paid_check", "term_signal")
         ]
         assert len(discrepancy_findings) > 0
 
@@ -186,7 +232,9 @@ class TestDiscrepancyEvidenceAttachment:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         pcd = next(
             (f for f in run.findings if f.finding_key == "payment_count_delta"), None
@@ -194,9 +242,7 @@ class TestDiscrepancyEvidenceAttachment:
         assert pcd is not None
 
         ref_keys = [
-            ev.reference_key
-            for ev in pcd.evidence
-            if ev.evidence_type == "reference"
+            ev.reference_key for ev in pcd.evidence if ev.evidence_type == "reference"
         ]
         assert "ley-chile-18010-operaciones-credito" in ref_keys
 
@@ -204,25 +250,36 @@ class TestDiscrepancyEvidenceAttachment:
         case, _ = _seed_as_case(session, DISCREPANCY_FACTS)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         discrepancy_findings = [
-            f for f in run.findings
-            if f.finding_key in ("payment_count_delta", "total_paid_check", "term_signal")
+            f
+            for f in run.findings
+            if f.finding_key
+            in ("payment_count_delta", "total_paid_check", "term_signal")
         ]
         for finding in discrepancy_findings:
-            ref_evidence = [e for e in finding.evidence if e.evidence_type == "reference"]
+            ref_evidence = [
+                e for e in finding.evidence if e.evidence_type == "reference"
+            ]
             assert len(ref_evidence) == 0
 
-    def test_consistent_facts_produce_no_discrepancy_findings(self, session: Session) -> None:
+    def test_consistent_facts_produce_no_discrepancy_findings(
+        self, session: Session
+    ) -> None:
         case, _ = _seed_as_case(session, GOLDEN_FACTS)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         discrepancy_findings = [
-            f for f in run.findings
+            f
+            for f in run.findings
             if f.finding_key in ("payment_count_delta", "total_paid_check")
         ]
         assert len(discrepancy_findings) == 0
@@ -234,7 +291,9 @@ class TestComparisonContextFindings:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("as_missing_")
@@ -250,7 +309,9 @@ class TestComparisonContextFindings:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("as_missing_")
@@ -262,7 +323,9 @@ class TestComparisonContextFindings:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("as_missing_")
@@ -274,7 +337,9 @@ class TestComparisonContextFindings:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("as_missing_")
@@ -285,20 +350,28 @@ class TestComparisonContextFindings:
             assert finding.uncertainty_state == "missing_context"
             assert finding.confidence == 1.0
 
-    def test_missing_findings_cite_consumer_protection_law(self, session: Session) -> None:
+    def test_missing_findings_cite_consumer_protection_law(
+        self, session: Session
+    ) -> None:
         case, _ = _seed_as_case(session, GOLDEN_FACTS)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("as_missing_")
         ]
         for finding in missing_findings:
-            ref_evidence = [e for e in finding.evidence if e.evidence_type == "reference"]
+            ref_evidence = [
+                e for e in finding.evidence if e.evidence_type == "reference"
+            ]
             assert len(ref_evidence) > 0
-            assert ref_evidence[0].reference_key == "ley-chile-19496-proteccion-consumidor"
+            assert (
+                ref_evidence[0].reference_key == "ley-chile-19496-proteccion-consumidor"
+            )
 
 
 class TestEscalationQuestions:
@@ -307,7 +380,9 @@ class TestEscalationQuestions:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("as_question_")
@@ -319,23 +394,31 @@ class TestEscalationQuestions:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("as_question_")
         ]
         for finding in question_findings:
-            ref_evidence = [e for e in finding.evidence if e.evidence_type == "reference"]
+            ref_evidence = [
+                e for e in finding.evidence if e.evidence_type == "reference"
+            ]
             assert len(ref_evidence) > 0, (
                 f"Question {finding.finding_key} should cite a reference"
             )
 
-    def test_question_findings_are_low_severity_reference_type(self, session: Session) -> None:
+    def test_question_findings_are_low_severity_reference_type(
+        self, session: Session
+    ) -> None:
         case, _ = _seed_as_case(session, GOLDEN_FACTS)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("as_question_")
@@ -349,7 +432,9 @@ class TestEscalationQuestions:
         case, _ = _seed_as_case(session, GOLDEN_FACTS)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("as_question_")
@@ -371,11 +456,11 @@ class TestAfterSigningEdgeCases:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
-        bs_findings = [
-            f for f in run.findings if f.finding_key.startswith("bs_")
-        ]
+        bs_findings = [f for f in run.findings if f.finding_key.startswith("bs_")]
         assert len(bs_findings) == 0
 
     def test_comparator_loan_suppresses_missing_context(self, session: Session) -> None:
@@ -385,19 +470,25 @@ class TestAfterSigningEdgeCases:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("as_missing_")
         ]
         assert len(missing_findings) == 0
 
-    def test_display_order_increments_across_finding_types(self, session: Session) -> None:
+    def test_display_order_increments_across_finding_types(
+        self, session: Session
+    ) -> None:
         case, _ = _seed_as_case(session, DISCREPANCY_FACTS)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         orders = [f.display_order for f in run.findings]
         assert len(orders) == len(set(orders)), "display_order values must be unique"
@@ -407,5 +498,7 @@ class TestAfterSigningEdgeCases:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert run.status == "completed"

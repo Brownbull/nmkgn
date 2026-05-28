@@ -13,11 +13,13 @@ from api.models.document import Document
 from api.models.reference import OfficialReference
 
 
-COMPARISON_ROLES: frozenset[str] = frozenset({
-    "simulation",
-    "offer",
-    "comparator_loan",
-})
+COMPARISON_ROLES: frozenset[str] = frozenset(
+    {
+        "simulation",
+        "offer",
+        "comparator_loan",
+    }
+)
 
 AS_FACT_REFERENCE_MAP: dict[str, list[str]] = {
     "payment_count": ["ley-chile-18010-operaciones-credito"],
@@ -100,12 +102,9 @@ def _load_references_by_keys(
 ) -> dict[str, OfficialReference]:
     if not reference_keys:
         return {}
-    stmt = (
-        select(OfficialReference)
-        .where(
-            OfficialReference.reference_key.in_(reference_keys),
-            OfficialReference.is_active.is_(True),
-        )
+    stmt = select(OfficialReference).where(
+        OfficialReference.reference_key.in_(reference_keys),
+        OfficialReference.is_active.is_(True),
     )
     refs = list(session.scalars(stmt))
     return {r.reference_key: r for r in refs}

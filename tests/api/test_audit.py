@@ -21,14 +21,54 @@ from api.services.analysis import run_deterministic_analysis
 
 
 BASIC_FACTS = [
-    {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0, "label": "Monto"},
-    {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15", "label": "Fecha"},
-    {"fact_key": "term_months", "value_kind": "integer", "value_number": 60, "label": "Plazo"},
-    {"fact_key": "payment_count", "value_kind": "integer", "value_number": 68, "label": "Cuotas"},
-    {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0, "label": "Cuota"},
-    {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5, "label": "CAE"},
-    {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 1.2, "label": "Tasa"},
-    {"fact_key": "total_cost", "value_kind": "money", "value_number": 8500000.0, "label": "Total"},
+    {
+        "fact_key": "principal_amount",
+        "value_kind": "money",
+        "value_number": 6000000.0,
+        "label": "Monto",
+    },
+    {
+        "fact_key": "contract_date",
+        "value_kind": "date",
+        "value_text": "2025-01-15",
+        "label": "Fecha",
+    },
+    {
+        "fact_key": "term_months",
+        "value_kind": "integer",
+        "value_number": 60,
+        "label": "Plazo",
+    },
+    {
+        "fact_key": "payment_count",
+        "value_kind": "integer",
+        "value_number": 68,
+        "label": "Cuotas",
+    },
+    {
+        "fact_key": "installment_amount",
+        "value_kind": "money",
+        "value_number": 150000.0,
+        "label": "Cuota",
+    },
+    {
+        "fact_key": "cae",
+        "value_kind": "percentage",
+        "value_number": 28.5,
+        "label": "CAE",
+    },
+    {
+        "fact_key": "interest_rate",
+        "value_kind": "percentage",
+        "value_number": 1.2,
+        "label": "Tasa",
+    },
+    {
+        "fact_key": "total_cost",
+        "value_kind": "money",
+        "value_number": 8500000.0,
+        "label": "Total",
+    },
 ]
 
 
@@ -102,7 +142,7 @@ def _seed_case(
             high_impact=True,
             confirmation_status="confirmed",
             source_page_number=1,
-            source_snippet=f'{spec["fact_key"]}: value',
+            source_snippet=f"{spec['fact_key']}: value",
             extraction_provider="local-facts",
             confidence=0.95,
         )
@@ -127,7 +167,9 @@ def _seed_references(session: Session) -> None:
 
 class TestAuditEvent:
     def test_to_dict_without_details(self) -> None:
-        event = AuditEvent(timestamp="2026-05-27T12:00:00+00:00", event_type="test_event")
+        event = AuditEvent(
+            timestamp="2026-05-27T12:00:00+00:00", event_type="test_event"
+        )
         result = event.to_dict()
         assert result == {
             "timestamp": "2026-05-27T12:00:00+00:00",
@@ -272,7 +314,9 @@ class TestTimelineIntegration:
         _seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert len(run.timeline_events) > 0
 
         event_types = [e["event_type"] for e in run.timeline_events]
@@ -284,7 +328,9 @@ class TestTimelineIntegration:
         _seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert run.timeline_events[0]["event_type"] == "run_started"
 
     def test_run_completed_is_last_event(self, session: Session) -> None:
@@ -292,35 +338,63 @@ class TestTimelineIntegration:
         _seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert run.timeline_events[-1]["event_type"] == "run_completed"
 
-    def test_timeline_includes_calculations_and_findings(self, session: Session) -> None:
+    def test_timeline_includes_calculations_and_findings(
+        self, session: Session
+    ) -> None:
         case = _seed_case(session, BASIC_FACTS)
         _seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         event_types = [e["event_type"] for e in run.timeline_events]
         assert "calculations_complete" in event_types
         assert "findings_generated" in event_types
 
     def test_suppressed_findings_tracked(self, session: Session) -> None:
         no_discrep = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15"},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 6000000.0,
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2025-01-15",
+            },
             {"fact_key": "term_months", "value_kind": "integer", "value_number": 60},
             {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0},
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 150000.0,
+            },
             {"fact_key": "cae", "value_kind": "percentage", "value_number": 20.0},
-            {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 1.2},
-            {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0},
+            {
+                "fact_key": "interest_rate",
+                "value_kind": "percentage",
+                "value_number": 1.2,
+            },
+            {
+                "fact_key": "total_cost",
+                "value_kind": "money",
+                "value_number": 9000000.0,
+            },
         ]
         case = _seed_case(session, no_discrep)
         _seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert len(run.suppressed_finding_keys) > 0
 
     def test_warnings_empty_when_all_calcs_available(self, session: Session) -> None:
@@ -328,21 +402,27 @@ class TestTimelineIntegration:
         _seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert isinstance(run.warnings, list)
 
     def test_before_signing_timeline_records_plan(self, session: Session) -> None:
         case = _seed_case(
-            session, BASIC_FACTS,
+            session,
+            BASIC_FACTS,
             case_stage="before_signing",
             analysis_plan="before_signing_review",
         )
         _seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         enrichment_events = [
-            e for e in run.timeline_events
+            e
+            for e in run.timeline_events
             if e["event_type"] == "plan_enrichment_complete"
         ]
         assert len(enrichment_events) == 1

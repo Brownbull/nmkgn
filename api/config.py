@@ -64,7 +64,7 @@ def _positive_int_env(name: str, default: int) -> int:
 def get_database_url() -> str:
     url = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)
     if url.startswith("postgresql://"):
-        url = "postgresql+psycopg://" + url[len("postgresql://"):]
+        url = "postgresql+psycopg://" + url[len("postgresql://") :]
     return url
 
 
@@ -153,9 +153,7 @@ def get_consumer_credit_agent_settings() -> ConsumerCreditAgentSettings:
         raise ValueError("NMKGN_CONSUMER_CREDIT_AGENT_MODEL must not be blank")
 
     return ConsumerCreditAgentSettings(
-        enabled=os.getenv(
-            "NMKGN_CONSUMER_CREDIT_AGENT_ENABLED", "true"
-        ).strip().lower()
+        enabled=os.getenv("NMKGN_CONSUMER_CREDIT_AGENT_ENABLED", "true").strip().lower()
         == "true",
         provider=provider,
         model=model,

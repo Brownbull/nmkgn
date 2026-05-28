@@ -110,9 +110,7 @@ def _ensure_case(session: Session, case_id: str, owner_ref: str) -> Case:
     return case
 
 
-def _load_confirmed_facts(
-    session: Session, case_id: str
-) -> list[ConsumerCreditFact]:
+def _load_confirmed_facts(session: Session, case_id: str) -> list[ConsumerCreditFact]:
     stmt = (
         select(ConsumerCreditFact)
         .where(
@@ -149,15 +147,11 @@ def prepare_analysis(
 
     analysis_plan = case.analysis_plan
     if analysis_plan not in VALID_ANALYSIS_PLANS:
-        raise InvalidAnalysisPlanError(
-            f"unsupported analysis_plan: {analysis_plan!r}"
-        )
+        raise InvalidAnalysisPlanError(f"unsupported analysis_plan: {analysis_plan!r}")
 
     from api.services.receptionist_gaps import get_analysis_readiness
 
-    readiness = get_analysis_readiness(
-        session, case_id=case_id, owner_ref=owner_ref
-    )
+    readiness = get_analysis_readiness(session, case_id=case_id, owner_ref=owner_ref)
     if not readiness.ready_for_analysis:
         raise NotReadyError(
             f"case not ready for analysis: {', '.join(readiness.blockers)}"

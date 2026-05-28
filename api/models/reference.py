@@ -42,14 +42,10 @@ class OfficialReference(Base):
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid4())
     )
-    reference_key: Mapped[str] = mapped_column(
-        String(120), nullable=False, index=True
-    )
+    reference_key: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
     source_category: Mapped[str] = mapped_column(String(32), nullable=False)
     display_label: Mapped[str] = mapped_column(String(240), nullable=False)
-    marketplace_safe_label: Mapped[str] = mapped_column(
-        String(240), nullable=False
-    )
+    marketplace_safe_label: Mapped[str] = mapped_column(String(240), nullable=False)
     source_url: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     retrieved_at: Mapped[datetime] = mapped_column(
@@ -58,9 +54,7 @@ class OfficialReference(Base):
     verified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     schema_version: Mapped[str] = mapped_column(
         String(80), default=REFERENCE_SCHEMA_VERSION, nullable=False
     )

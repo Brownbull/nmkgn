@@ -17,7 +17,9 @@ OwnerDep = Annotated[str, Depends(get_stub_owner_ref)]
 
 
 @router.post("", response_model=CaseRead, status_code=status.HTTP_201_CREATED)
-def create_case(payload: CaseCreate, session: SessionDep, owner_ref: OwnerDep) -> CaseRead:
+def create_case(
+    payload: CaseCreate, session: SessionDep, owner_ref: OwnerDep
+) -> CaseRead:
     return case_service.create_case(session, payload, owner_ref)
 
 
@@ -30,5 +32,7 @@ def list_cases(session: SessionDep, owner_ref: OwnerDep) -> list[CaseRead]:
 def get_case(case_id: str, session: SessionDep, owner_ref: OwnerDep) -> CaseRead:
     case = case_service.get_case(session, case_id, owner_ref)
     if case is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="case not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="case not found"
+        )
     return case

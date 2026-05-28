@@ -25,7 +25,9 @@ from api.services.calculations import (
 )
 
 
-def _fi(key: str, num: float | None = None, text: str | None = None, fid: str = "f1") -> FactInput:
+def _fi(
+    key: str, num: float | None = None, text: str | None = None, fid: str = "f1"
+) -> FactInput:
     return FactInput(fact_id=fid, fact_key=key, value_number=num, value_text=text)
 
 
@@ -236,7 +238,9 @@ def _engine_with_fk(tmp_path, name: str = "calc_int.db"):
     return engine
 
 
-def _seed_case_with_facts(session, facts_spec: list[dict]) -> tuple[Case, list[ConsumerCreditFact]]:
+def _seed_case_with_facts(
+    session, facts_spec: list[dict]
+) -> tuple[Case, list[ConsumerCreditFact]]:
     case = Case(
         owner_ref="demo-user",
         title="Credito prueba calculo",
@@ -304,7 +308,7 @@ def _seed_case_with_facts(session, facts_spec: list[dict]) -> tuple[Case, list[C
             high_impact=spec.get("high_impact", True),
             confirmation_status=spec.get("confirmation_status", "confirmed"),
             source_page_number=1,
-            source_snippet=f'{spec["fact_key"]}: value',
+            source_snippet=f"{spec['fact_key']}: value",
             extraction_provider="local-facts",
             confidence=0.95,
         )
@@ -316,16 +320,68 @@ def _seed_case_with_facts(session, facts_spec: list[dict]) -> tuple[Case, list[C
 
 
 GOLDEN_FACTS = [
-    {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0, "label": "Monto del credito"},
-    {"fact_key": "contract_date", "value_kind": "date", "value_number": None, "value_text": "2024-01-15", "label": "Fecha de contrato"},
-    {"fact_key": "term_months", "value_kind": "integer", "value_number": 60, "label": "Plazo en meses"},
-    {"fact_key": "payment_count", "value_kind": "integer", "value_number": 68, "label": "Numero de cuotas"},
-    {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0, "label": "Valor de cuota"},
-    {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 1.2, "label": "Tasa de interes"},
-    {"fact_key": "cae", "value_kind": "percentage", "value_number": 18.5, "label": "CAE", "high_impact": True},
-    {"fact_key": "total_cost", "value_kind": "money", "value_number": 8500000.0, "label": "Costo total"},
-    {"fact_key": "fee", "value_kind": "money", "value_number": 50000.0, "label": "Comision apertura"},
-    {"fact_key": "insurance", "value_kind": "text", "value_text": "seguro desgravamen", "label": "Seguro asociado"},
+    {
+        "fact_key": "principal_amount",
+        "value_kind": "money",
+        "value_number": 6000000.0,
+        "label": "Monto del credito",
+    },
+    {
+        "fact_key": "contract_date",
+        "value_kind": "date",
+        "value_number": None,
+        "value_text": "2024-01-15",
+        "label": "Fecha de contrato",
+    },
+    {
+        "fact_key": "term_months",
+        "value_kind": "integer",
+        "value_number": 60,
+        "label": "Plazo en meses",
+    },
+    {
+        "fact_key": "payment_count",
+        "value_kind": "integer",
+        "value_number": 68,
+        "label": "Numero de cuotas",
+    },
+    {
+        "fact_key": "installment_amount",
+        "value_kind": "money",
+        "value_number": 150000.0,
+        "label": "Valor de cuota",
+    },
+    {
+        "fact_key": "interest_rate",
+        "value_kind": "percentage",
+        "value_number": 1.2,
+        "label": "Tasa de interes",
+    },
+    {
+        "fact_key": "cae",
+        "value_kind": "percentage",
+        "value_number": 18.5,
+        "label": "CAE",
+        "high_impact": True,
+    },
+    {
+        "fact_key": "total_cost",
+        "value_kind": "money",
+        "value_number": 8500000.0,
+        "label": "Costo total",
+    },
+    {
+        "fact_key": "fee",
+        "value_kind": "money",
+        "value_number": 50000.0,
+        "label": "Comision apertura",
+    },
+    {
+        "fact_key": "insurance",
+        "value_kind": "text",
+        "value_text": "seguro desgravamen",
+        "label": "Seguro asociado",
+    },
 ]
 
 
@@ -353,17 +409,23 @@ class TestAnalysisServiceIntegration:
             assert "total_paid_check" in finding_keys
             assert "term_signal" in finding_keys
 
-            pcd_finding = next(f for f in run.findings if f.finding_key == "payment_count_delta")
+            pcd_finding = next(
+                f for f in run.findings if f.finding_key == "payment_count_delta"
+            )
             assert pcd_finding.severity == "high"
             assert pcd_finding.claim_type == "calculation"
             assert pcd_finding.confidence == 1.0
             assert len(pcd_finding.evidence) >= 1
 
-            calc_evidence = [e for e in pcd_finding.evidence if e.evidence_type == "calculation"]
+            calc_evidence = [
+                e for e in pcd_finding.evidence if e.evidence_type == "calculation"
+            ]
             assert len(calc_evidence) == 1
             assert calc_evidence[0].calculation_key == "payment_count_delta"
 
-            fact_evidence = [e for e in pcd_finding.evidence if e.evidence_type == "fact"]
+            fact_evidence = [
+                e for e in pcd_finding.evidence if e.evidence_type == "fact"
+            ]
             assert len(fact_evidence) >= 1
 
     def test_no_findings_when_consistent(self, tmp_path) -> None:
@@ -374,13 +436,48 @@ class TestAnalysisServiceIntegration:
         Base.metadata.create_all(bind=engine)
 
         consistent_facts = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0, "label": "Monto"},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2024-01-15", "label": "Fecha"},
-            {"fact_key": "term_months", "value_kind": "integer", "value_number": 60, "label": "Plazo"},
-            {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60, "label": "Cuotas"},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0, "label": "Cuota"},
-            {"fact_key": "cae", "value_kind": "percentage", "value_number": 18.5, "label": "CAE"},
-            {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0, "label": "Total"},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 6000000.0,
+                "label": "Monto",
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2024-01-15",
+                "label": "Fecha",
+            },
+            {
+                "fact_key": "term_months",
+                "value_kind": "integer",
+                "value_number": 60,
+                "label": "Plazo",
+            },
+            {
+                "fact_key": "payment_count",
+                "value_kind": "integer",
+                "value_number": 60,
+                "label": "Cuotas",
+            },
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 150000.0,
+                "label": "Cuota",
+            },
+            {
+                "fact_key": "cae",
+                "value_kind": "percentage",
+                "value_number": 18.5,
+                "label": "CAE",
+            },
+            {
+                "fact_key": "total_cost",
+                "value_kind": "money",
+                "value_number": 9000000.0,
+                "label": "Total",
+            },
         ]
 
         with Session() as session:
@@ -430,14 +527,63 @@ class TestAnalysisServiceIntegration:
         Base.metadata.create_all(bind=engine)
 
         mixed_facts = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0, "label": "Monto", "confirmation_status": "confirmed"},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2024-01-15", "label": "Fecha", "confirmation_status": "confirmed"},
-            {"fact_key": "term_months", "value_kind": "integer", "value_number": 60, "label": "Plazo", "confirmation_status": "confirmed"},
-            {"fact_key": "payment_count", "value_kind": "integer", "value_number": 68, "label": "Cuotas", "confirmation_status": "confirmed"},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0, "label": "Cuota", "confirmation_status": "confirmed"},
-            {"fact_key": "cae", "value_kind": "percentage", "value_number": 18.5, "label": "CAE", "confirmation_status": "confirmed"},
-            {"fact_key": "total_cost", "value_kind": "money", "value_number": 8500000.0, "label": "Total", "confirmation_status": "confirmed"},
-            {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60, "label": "Cuotas wrong", "confirmation_status": "pending", "high_impact": False},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 6000000.0,
+                "label": "Monto",
+                "confirmation_status": "confirmed",
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2024-01-15",
+                "label": "Fecha",
+                "confirmation_status": "confirmed",
+            },
+            {
+                "fact_key": "term_months",
+                "value_kind": "integer",
+                "value_number": 60,
+                "label": "Plazo",
+                "confirmation_status": "confirmed",
+            },
+            {
+                "fact_key": "payment_count",
+                "value_kind": "integer",
+                "value_number": 68,
+                "label": "Cuotas",
+                "confirmation_status": "confirmed",
+            },
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 150000.0,
+                "label": "Cuota",
+                "confirmation_status": "confirmed",
+            },
+            {
+                "fact_key": "cae",
+                "value_kind": "percentage",
+                "value_number": 18.5,
+                "label": "CAE",
+                "confirmation_status": "confirmed",
+            },
+            {
+                "fact_key": "total_cost",
+                "value_kind": "money",
+                "value_number": 8500000.0,
+                "label": "Total",
+                "confirmation_status": "confirmed",
+            },
+            {
+                "fact_key": "payment_count",
+                "value_kind": "integer",
+                "value_number": 60,
+                "label": "Cuotas wrong",
+                "confirmation_status": "pending",
+                "high_impact": False,
+            },
         ]
 
         with Session() as session:
@@ -448,5 +594,9 @@ class TestAnalysisServiceIntegration:
                 session, case_id=case.id, owner_ref="demo-user"
             )
 
-            pcd_calc = next(c for c in run.calculations if c.calculation_key == "payment_count_delta")
+            pcd_calc = next(
+                c
+                for c in run.calculations
+                if c.calculation_key == "payment_count_delta"
+            )
             assert pcd_calc.inputs["contract_payment_count"] == 68

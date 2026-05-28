@@ -80,9 +80,7 @@ def get_reference_by_key(
         )
     )
     if ref is None:
-        raise ReferenceNotFoundError(
-            f"reference not found: {reference_key}"
-        )
+        raise ReferenceNotFoundError(f"reference not found: {reference_key}")
     return ref
 
 
@@ -97,9 +95,7 @@ def list_references(
         OfficialReference.reference_key,
     )
     if source_category is not None:
-        stmt = stmt.where(
-            OfficialReference.source_category == source_category
-        )
+        stmt = stmt.where(OfficialReference.source_category == source_category)
     if active_only:
         stmt = stmt.where(OfficialReference.is_active.is_(True))
     return list(session.scalars(stmt))

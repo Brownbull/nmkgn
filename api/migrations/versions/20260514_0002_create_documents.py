@@ -4,6 +4,7 @@ Revision ID: 20260514_0002
 Revises: 20260513_0001
 Create Date: 2026-05-14 10:35:00
 """
+
 from __future__ import annotations
 
 from alembic import op
@@ -39,8 +40,13 @@ def upgrade() -> None:
             "role in ('primary', 'simulation', 'offer', 'payment', 'email', 'comparator_loan')",
             name="ck_documents_role",
         ),
-        sa.CheckConstraint("document_type = 'consumer_credit'", name="ck_documents_document_type"),
-        sa.CheckConstraint("upload_status in ('pending', 'stored', 'failed')", name="ck_documents_upload_status"),
+        sa.CheckConstraint(
+            "document_type = 'consumer_credit'", name="ck_documents_document_type"
+        ),
+        sa.CheckConstraint(
+            "upload_status in ('pending', 'stored', 'failed')",
+            name="ck_documents_upload_status",
+        ),
         sa.CheckConstraint(
             "extraction_status in ('pending', 'extracting', 'extracted', 'needs_ocr', 'failed')",
             name="ck_documents_extraction_status",
@@ -68,9 +74,18 @@ def upgrade() -> None:
         sa.Column("confidence", sa.Float(), nullable=True),
         sa.Column("warning_code", sa.String(length=80), nullable=True),
         sa.Column("warning_message", sa.Text(), nullable=True),
-        sa.CheckConstraint("page_number is null or page_number >= 1", name="ck_extracted_text_page_positive"),
-        sa.CheckConstraint("start_offset is null or start_offset >= 0", name="ck_extracted_text_start_positive"),
-        sa.CheckConstraint("end_offset is null or end_offset >= 0", name="ck_extracted_text_end_positive"),
+        sa.CheckConstraint(
+            "page_number is null or page_number >= 1",
+            name="ck_extracted_text_page_positive",
+        ),
+        sa.CheckConstraint(
+            "start_offset is null or start_offset >= 0",
+            name="ck_extracted_text_start_positive",
+        ),
+        sa.CheckConstraint(
+            "end_offset is null or end_offset >= 0",
+            name="ck_extracted_text_end_positive",
+        ),
         sa.CheckConstraint(
             "start_offset is null or end_offset is null or end_offset >= start_offset",
             name="ck_extracted_text_span_order",
@@ -84,15 +99,24 @@ def upgrade() -> None:
             "page_number is not null or start_offset is not null",
             name="ck_extracted_text_source_locator",
         ),
-        sa.CheckConstraint("confidence is null or (confidence >= 0 and confidence <= 1)", name="ck_extracted_text_confidence"),
+        sa.CheckConstraint(
+            "confidence is null or (confidence >= 0 and confidence <= 1)",
+            name="ck_extracted_text_confidence",
+        ),
         sa.ForeignKeyConstraint(["document_id"], ["documents.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_extracted_text_segments_document_id", "extracted_text_segments", ["document_id"])
+    op.create_index(
+        "ix_extracted_text_segments_document_id",
+        "extracted_text_segments",
+        ["document_id"],
+    )
 
 
 def downgrade() -> None:
-    op.drop_index("ix_extracted_text_segments_document_id", table_name="extracted_text_segments")
+    op.drop_index(
+        "ix_extracted_text_segments_document_id", table_name="extracted_text_segments"
+    )
     op.drop_table("extracted_text_segments")
     op.drop_index("ix_documents_owner_ref", table_name="documents")
     op.drop_index("ix_documents_case_id", table_name="documents")

@@ -5,7 +5,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-DocumentRole = Literal["primary", "simulation", "offer", "payment", "email", "comparator_loan"]
+DocumentRole = Literal[
+    "primary", "simulation", "offer", "payment", "email", "comparator_loan"
+]
 DocumentType = Literal["consumer_credit"]
 UploadStatus = Literal["pending", "stored", "failed"]
 ExtractionStatus = Literal["pending", "extracting", "extracted", "needs_ocr", "failed"]
@@ -34,8 +36,12 @@ class DocumentCreate(BaseModel):
     @classmethod
     def normalize_checksum_sha256(cls, value: str) -> str:
         normalized = value.strip().lower()
-        if len(normalized) != 64 or any(char not in "0123456789abcdef" for char in normalized):
-            raise ValueError("checksum_sha256 must be a 64-character lowercase hexadecimal digest")
+        if len(normalized) != 64 or any(
+            char not in "0123456789abcdef" for char in normalized
+        ):
+            raise ValueError(
+                "checksum_sha256 must be a 64-character lowercase hexadecimal digest"
+            )
         return normalized
 
 

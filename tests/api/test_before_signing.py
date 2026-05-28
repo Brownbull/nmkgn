@@ -15,14 +15,54 @@ from api.services.references import seed_references
 
 
 GOLDEN_FACTS = [
-    {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0, "label": "Monto del credito"},
-    {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15", "label": "Fecha del contrato"},
-    {"fact_key": "term_months", "value_kind": "integer", "value_number": 60, "label": "Plazo en meses"},
-    {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60, "label": "Numero de cuotas"},
-    {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0, "label": "Valor de cuota"},
-    {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5, "label": "CAE"},
-    {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 1.2, "label": "Tasa de interes"},
-    {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0, "label": "Costo total"},
+    {
+        "fact_key": "principal_amount",
+        "value_kind": "money",
+        "value_number": 6000000.0,
+        "label": "Monto del credito",
+    },
+    {
+        "fact_key": "contract_date",
+        "value_kind": "date",
+        "value_text": "2025-01-15",
+        "label": "Fecha del contrato",
+    },
+    {
+        "fact_key": "term_months",
+        "value_kind": "integer",
+        "value_number": 60,
+        "label": "Plazo en meses",
+    },
+    {
+        "fact_key": "payment_count",
+        "value_kind": "integer",
+        "value_number": 60,
+        "label": "Numero de cuotas",
+    },
+    {
+        "fact_key": "installment_amount",
+        "value_kind": "money",
+        "value_number": 150000.0,
+        "label": "Valor de cuota",
+    },
+    {
+        "fact_key": "cae",
+        "value_kind": "percentage",
+        "value_number": 28.5,
+        "label": "CAE",
+    },
+    {
+        "fact_key": "interest_rate",
+        "value_kind": "percentage",
+        "value_number": 1.2,
+        "label": "Tasa de interes",
+    },
+    {
+        "fact_key": "total_cost",
+        "value_kind": "money",
+        "value_number": 9000000.0,
+        "label": "Costo total",
+    },
 ]
 
 
@@ -94,7 +134,7 @@ def _seed_case_with_facts(
             high_impact=spec.get("high_impact", True),
             confirmation_status=spec.get("confirmation_status", "confirmed"),
             source_page_number=1,
-            source_snippet=f'{spec["fact_key"]}: value',
+            source_snippet=f"{spec['fact_key']}: value",
             extraction_provider="local-facts",
             confidence=0.95,
         )
@@ -111,7 +151,9 @@ class TestReferenceEvidenceAttachment:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         bs_findings = [f for f in run.findings if f.finding_key.startswith("bs_")]
         assert len(bs_findings) > 0
@@ -131,7 +173,9 @@ class TestReferenceEvidenceAttachment:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         rate_finding = next(
             (f for f in run.findings if f.finding_key == "bs_rate_comparison"), None
@@ -149,10 +193,14 @@ class TestReferenceEvidenceAttachment:
         case, _ = _seed_case_with_facts(session, GOLDEN_FACTS)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         for finding in run.findings:
-            ref_evidence = [e for e in finding.evidence if e.evidence_type == "reference"]
+            ref_evidence = [
+                e for e in finding.evidence if e.evidence_type == "reference"
+            ]
             assert len(ref_evidence) == 0
 
 
@@ -160,19 +208,37 @@ class TestMissingInfoFindings:
     def test_missing_optional_facts_produce_findings(self, session: Session) -> None:
         """All readiness-required facts present, but no optional facts (rate, fee, insurance, linked_product)."""
         required_only = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15"},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 6000000.0,
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2025-01-15",
+            },
             {"fact_key": "term_months", "value_kind": "integer", "value_number": 60},
             {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0},
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 150000.0,
+            },
             {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5},
-            {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0},
+            {
+                "fact_key": "total_cost",
+                "value_kind": "money",
+                "value_number": 9000000.0,
+            },
         ]
         case, _ = _seed_case_with_facts(session, required_only)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("bs_missing_")
@@ -187,36 +253,73 @@ class TestMissingInfoFindings:
 
     def test_no_missing_findings_with_all_facts(self, session: Session) -> None:
         all_facts = GOLDEN_FACTS + [
-            {"fact_key": "fee", "value_kind": "money", "value_number": 50000.0, "label": "Comision"},
-            {"fact_key": "insurance", "value_kind": "text", "value_text": "Seguro desgravamen", "label": "Seguro"},
-            {"fact_key": "linked_product", "value_kind": "text", "value_text": "Cuenta corriente", "label": "Producto vinculado"},
+            {
+                "fact_key": "fee",
+                "value_kind": "money",
+                "value_number": 50000.0,
+                "label": "Comision",
+            },
+            {
+                "fact_key": "insurance",
+                "value_kind": "text",
+                "value_text": "Seguro desgravamen",
+                "label": "Seguro",
+            },
+            {
+                "fact_key": "linked_product",
+                "value_kind": "text",
+                "value_text": "Cuenta corriente",
+                "label": "Producto vinculado",
+            },
         ]
         case, _ = _seed_case_with_facts(session, all_facts)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("bs_missing_")
         ]
         assert len(missing_findings) == 0
 
-    def test_missing_findings_have_missing_context_state(self, session: Session) -> None:
+    def test_missing_findings_have_missing_context_state(
+        self, session: Session
+    ) -> None:
         required_only = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15"},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 6000000.0,
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2025-01-15",
+            },
             {"fact_key": "term_months", "value_kind": "integer", "value_number": 60},
             {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0},
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 150000.0,
+            },
             {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5},
-            {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0},
+            {
+                "fact_key": "total_cost",
+                "value_kind": "money",
+                "value_number": 9000000.0,
+            },
         ]
         case, _ = _seed_case_with_facts(session, required_only)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         missing_findings = [
             f for f in run.findings if f.finding_key.startswith("bs_missing_")
@@ -226,28 +329,50 @@ class TestMissingInfoFindings:
             assert finding.claim_type == "fact"
             assert finding.severity == "medium"
 
-    def test_missing_findings_cite_references_when_available(self, session: Session) -> None:
+    def test_missing_findings_cite_references_when_available(
+        self, session: Session
+    ) -> None:
         required_only = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15"},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 6000000.0,
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2025-01-15",
+            },
             {"fact_key": "term_months", "value_kind": "integer", "value_number": 60},
             {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0},
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 150000.0,
+            },
             {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5},
-            {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0},
+            {
+                "fact_key": "total_cost",
+                "value_kind": "money",
+                "value_number": 9000000.0,
+            },
         ]
         case, _ = _seed_case_with_facts(session, required_only)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         rate_missing = next(
             (f for f in run.findings if f.finding_key == "bs_missing_interest_rate"),
             None,
         )
         assert rate_missing is not None
-        ref_evidence = [e for e in rate_missing.evidence if e.evidence_type == "reference"]
+        ref_evidence = [
+            e for e in rate_missing.evidence if e.evidence_type == "reference"
+        ]
         assert len(ref_evidence) > 0
         assert ref_evidence[0].reference_key == "cmf-tasa-maxima-convencional"
 
@@ -266,7 +391,9 @@ class TestNegotiationQuestions:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("bs_question_")
@@ -278,13 +405,17 @@ class TestNegotiationQuestions:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("bs_question_")
         ]
         for finding in question_findings:
-            ref_evidence = [e for e in finding.evidence if e.evidence_type == "reference"]
+            ref_evidence = [
+                e for e in finding.evidence if e.evidence_type == "reference"
+            ]
             assert len(ref_evidence) > 0, (
                 f"Question {finding.finding_key} should cite a reference"
             )
@@ -294,7 +425,9 @@ class TestNegotiationQuestions:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("bs_question_")
@@ -307,7 +440,9 @@ class TestNegotiationQuestions:
         case, _ = _seed_case_with_facts(session, GOLDEN_FACTS)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
         question_findings = [
             f for f in run.findings if f.finding_key.startswith("bs_question_")
@@ -324,41 +459,79 @@ class TestNegotiationQuestions:
 class TestEdgeCases:
     def test_zero_value_facts_still_produce_findings(self, session: Session) -> None:
         zero_facts = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 0.0},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15"},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 0.0,
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2025-01-15",
+            },
             {"fact_key": "term_months", "value_kind": "integer", "value_number": 60},
             {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 0.0},
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 0.0,
+            },
             {"fact_key": "cae", "value_kind": "percentage", "value_number": 0.0},
-            {"fact_key": "interest_rate", "value_kind": "percentage", "value_number": 0.0},
+            {
+                "fact_key": "interest_rate",
+                "value_kind": "percentage",
+                "value_number": 0.0,
+            },
             {"fact_key": "total_cost", "value_kind": "money", "value_number": 0.0},
         ]
         case, _ = _seed_case_with_facts(session, zero_facts)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert run.status == "completed"
         missing_findings = [
             f for f in run.findings if f.finding_key == "bs_missing_interest_rate"
         ]
         assert len(missing_findings) == 0
 
-    def test_required_only_produces_all_optional_missing(self, session: Session) -> None:
+    def test_required_only_produces_all_optional_missing(
+        self, session: Session
+    ) -> None:
         required_only = [
-            {"fact_key": "principal_amount", "value_kind": "money", "value_number": 6000000.0},
-            {"fact_key": "contract_date", "value_kind": "date", "value_text": "2025-01-15"},
+            {
+                "fact_key": "principal_amount",
+                "value_kind": "money",
+                "value_number": 6000000.0,
+            },
+            {
+                "fact_key": "contract_date",
+                "value_kind": "date",
+                "value_text": "2025-01-15",
+            },
             {"fact_key": "term_months", "value_kind": "integer", "value_number": 60},
             {"fact_key": "payment_count", "value_kind": "integer", "value_number": 60},
-            {"fact_key": "installment_amount", "value_kind": "money", "value_number": 150000.0},
+            {
+                "fact_key": "installment_amount",
+                "value_kind": "money",
+                "value_number": 150000.0,
+            },
             {"fact_key": "cae", "value_kind": "percentage", "value_number": 28.5},
-            {"fact_key": "total_cost", "value_kind": "money", "value_number": 9000000.0},
+            {
+                "fact_key": "total_cost",
+                "value_kind": "money",
+                "value_number": 9000000.0,
+            },
         ]
         case, _ = _seed_case_with_facts(session, required_only)
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
         assert run.status == "completed"
 
         missing_findings = [
@@ -430,7 +603,7 @@ class TestEdgeCases:
                 high_impact=True,
                 confirmation_status="confirmed",
                 source_page_number=1,
-                source_snippet=f'{spec["fact_key"]}: value',
+                source_snippet=f"{spec['fact_key']}: value",
                 extraction_provider="local-facts",
                 confidence=0.95,
             )
@@ -439,12 +612,11 @@ class TestEdgeCases:
         seed_references(session)
         session.commit()
 
-        run = run_deterministic_analysis(session, case_id=case.id, owner_ref="demo-user")
+        run = run_deterministic_analysis(
+            session, case_id=case.id, owner_ref="demo-user"
+        )
 
-        bs_findings = [
-            f for f in run.findings
-            if f.finding_key.startswith("bs_")
-        ]
+        bs_findings = [f for f in run.findings if f.finding_key.startswith("bs_")]
         assert len(bs_findings) == 0, (
             "After-signing path should not produce before-signing findings"
         )

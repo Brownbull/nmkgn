@@ -18,9 +18,7 @@ depends_on = None
 
 def upgrade() -> None:
     with op.batch_alter_table("documents") as batch_op:
-        batch_op.create_unique_constraint(
-            "uq_documents_id_case_id", ["id", "case_id"]
-        )
+        batch_op.create_unique_constraint("uq_documents_id_case_id", ["id", "case_id"])
     with op.batch_alter_table("extracted_text_segments") as batch_op:
         batch_op.create_unique_constraint(
             "uq_extracted_text_id_document_id", ["id", "document_id"]
@@ -191,8 +189,6 @@ def downgrade() -> None:
     )
     op.drop_table("consumer_credit_facts")
     with op.batch_alter_table("extracted_text_segments") as batch_op:
-        batch_op.drop_constraint(
-            "uq_extracted_text_id_document_id", type_="unique"
-        )
+        batch_op.drop_constraint("uq_extracted_text_id_document_id", type_="unique")
     with op.batch_alter_table("documents") as batch_op:
         batch_op.drop_constraint("uq_documents_id_case_id", type_="unique")

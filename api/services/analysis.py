@@ -183,12 +183,19 @@ def _apply_plan_enrichment(
 
         next_order = len(run.findings)
         missing = generate_missing_info_findings(
-            fact_map, run, case_id, owner_ref, session,
+            fact_map,
+            run,
+            case_id,
+            owner_ref,
+            session,
             start_display_order=next_order,
         )
         next_order += len(missing)
         generate_negotiation_questions(
-            session, run, case_id, owner_ref,
+            session,
+            run,
+            case_id,
+            owner_ref,
             start_display_order=next_order,
         )
         timeline.record(
@@ -209,12 +216,18 @@ def _apply_plan_enrichment(
 
         next_order = len(run.findings)
         context = generate_comparison_context_findings(
-            session, run, case_id, owner_ref,
+            session,
+            run,
+            case_id,
+            owner_ref,
             start_display_order=next_order,
         )
         next_order += len(context)
         generate_escalation_questions(
-            session, run, case_id, owner_ref,
+            session,
+            run,
+            case_id,
+            owner_ref,
             start_display_order=next_order,
         )
         timeline.record(
@@ -224,9 +237,7 @@ def _apply_plan_enrichment(
         )
 
 
-def _finalize_run(
-    run: AnalysisRun, timeline: RunAuditTimeline
-) -> None:
+def _finalize_run(run: AnalysisRun, timeline: RunAuditTimeline) -> None:
     run.timeline_events = timeline.events
     run.warnings = timeline.warnings
     run.suppressed_finding_keys = timeline.suppressed_finding_keys
@@ -260,19 +271,28 @@ def run_deterministic_analysis(
 
     calc_results = run_all_calculations(setup.fact_map)
     timeline.record("calculations_complete", count=len(calc_results))
-    calc_models = _persist_calculations(
-        session, calc_results, run, case_id, timeline
-    )
+    calc_models = _persist_calculations(session, calc_results, run, case_id, timeline)
 
     specs = specs_for_plan(setup.analysis_plan)
     _generate_plan_findings(
-        specs, calc_results, calc_models, run, case_id, owner_ref, session,
+        specs,
+        calc_results,
+        calc_models,
+        run,
+        case_id,
+        owner_ref,
+        session,
         timeline,
     )
 
     _apply_plan_enrichment(
-        session, setup.analysis_plan, run, case_id, owner_ref,
-        setup.fact_map, timeline,
+        session,
+        setup.analysis_plan,
+        run,
+        case_id,
+        owner_ref,
+        setup.fact_map,
+        timeline,
     )
 
     run.status = "completed"
@@ -320,9 +340,7 @@ def run_agent_analysis(
 
     calc_results = run_all_calculations(setup.fact_map)
     timeline.record("calculations_complete", count=len(calc_results))
-    calc_models = _persist_calculations(
-        session, calc_results, run, case_id, timeline
-    )
+    calc_models = _persist_calculations(session, calc_results, run, case_id, timeline)
 
     from api.agents.consumer_credit import ConsumerCreditAgent
     from api.services.consumer_credit_provider import (
@@ -391,9 +409,15 @@ def run_agent_analysis(
                     calculation_key=ev_data.calculation_key,
                     citation_url=ev_data.citation.url if ev_data.citation else None,
                     citation_label=ev_data.citation.label if ev_data.citation else None,
-                    reference_key=ev_data.citation.reference_key if ev_data.citation else None,
-                    citation_retrieved_at=ev_data.citation.retrieved_at if ev_data.citation else None,
-                    citation_verified_at=ev_data.citation.verified_at if ev_data.citation else None,
+                    reference_key=ev_data.citation.reference_key
+                    if ev_data.citation
+                    else None,
+                    citation_retrieved_at=ev_data.citation.retrieved_at
+                    if ev_data.citation
+                    else None,
+                    citation_verified_at=ev_data.citation.verified_at
+                    if ev_data.citation
+                    else None,
                     excerpt=ev_data.excerpt,
                     inference_summary=ev_data.inference_summary,
                     model_name=ev_data.model_name,
@@ -421,9 +445,7 @@ def run_agent_analysis(
             from api.services.before_signing import attach_reference_evidence
 
             session.flush()
-            bs_findings = [
-                f for f in run.findings if f.finding_key.startswith("bs_")
-            ]
+            bs_findings = [f for f in run.findings if f.finding_key.startswith("bs_")]
             attach_reference_evidence(session, bs_findings, run, case_id)
             timeline.record("agent_reference_evidence_attached")
 
@@ -431,9 +453,7 @@ def run_agent_analysis(
             from api.services.after_signing import attach_discrepancy_evidence
 
             session.flush()
-            attach_discrepancy_evidence(
-                session, list(run.findings), run, case_id
-            )
+            attach_discrepancy_evidence(session, list(run.findings), run, case_id)
             timeline.record("agent_discrepancy_evidence_attached")
 
         run.status = "completed"

@@ -25,7 +25,9 @@ class FactInput:
     value_text: str | None
 
 
-def _num(facts: dict[str, list[FactInput]], key: str) -> tuple[float | None, str | None]:
+def _num(
+    facts: dict[str, list[FactInput]], key: str
+) -> tuple[float | None, str | None]:
     entries = facts.get(key, [])
     if not entries:
         return None, None
@@ -142,7 +144,9 @@ def calc_installment_signal(facts: dict[str, list[FactInput]]) -> CalculationRes
         min_installment = round(principal / int(count), 2)
         result["min_installment_no_interest"] = min_installment
         if installment is not None:
-            ratio = round(installment / min_installment, 4) if min_installment > 0 else None
+            ratio = (
+                round(installment / min_installment, 4) if min_installment > 0 else None
+            )
             result["ratio_to_minimum"] = ratio
 
     return CalculationResult(

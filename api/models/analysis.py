@@ -90,9 +90,7 @@ class AnalysisRun(Base):
     timeline_events: Mapped[list[dict[str, Any]]] = mapped_column(
         JSON, nullable=False, default=list
     )
-    warnings: Mapped[list[str]] = mapped_column(
-        JSON, nullable=False, default=list
-    )
+    warnings: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     suppressed_finding_keys: Mapped[list[str]] = mapped_column(
         JSON, nullable=False, default=list
     )
