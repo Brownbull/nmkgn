@@ -16,7 +16,7 @@ Evidence Export, Audit, and Production Guardrails — Roadmap Phase 7 (REQ-12, R
 
 ## Current Phase
 
-Phase 3: E2E and integration testing infrastructure
+Phase 4: Document retention and access guardrails
 
 ## Phases
 
@@ -24,7 +24,7 @@ Phase 3: E2E and integration testing infrastructure
 |---|-------|-------------|------|-------|------------|------|--------|--------|------|
 | 1 | Run audit timeline and observability | Wire run-level audit fields (status lifecycle, token counts, cost, latency, warnings, suppressed findings) into the analysis service with structured timeline events | ent | data-processing, data-validation | medium | ✅ | ✅ | ✅ | ✅ |
 | 2 | Railway deployment and production config | Deploy nmkgn (FastAPI + React + PostgreSQL) to Railway Pro with Dockerfile, railway.toml, Alembic pre-deploy migration, CORS for production URLs, and cost-optimized resource settings | mvp (Rollback→ent, Migration→ent) | migration, rollout | medium | ✅ | ✅ | ✅ | ✅ |
-| 3 | E2E and integration testing infrastructure | Set up Playwright (Python) for E2E testing against local dev and deployed Railway URL, write smoke tests covering health, SPA loading, navigation, and case creation flow with fake providers | mvp | testing, integration | medium | ✅ | ✅ | ⬜ | ⬜ |
+| 3 | E2E and integration testing infrastructure | Set up Playwright (Python) for E2E testing against local dev and deployed Railway URL, write smoke tests covering health, SPA loading, navigation, and case creation flow with fake providers | mvp | testing, integration | medium | ✅ | ✅ | ✅ | ✅ |
 | 4 | Document retention and access guardrails | Enforce retention_state transitions (active → delete_requested → deleted), owner-scoped access checks, and audit logging for document lifecycle events | ent | data-processing, data-validation | medium | ⬜ | ⬜ | ⬜ | ⬜ |
 | 5 | Finding selection and export service | Build export service that accepts user-selected finding IDs, validates each has evidence backing, assembles exportable summary with source references, and refuses unsupported outputs | ent | data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |
 | 6 | Communication draft generation | Add draft generation service using PydanticAI to produce editable communication drafts from selected findings with B4-compliant cautious language and deterministic post-filter | ent (Str.out→ent, Cost→ent) | ai-agent, data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |
