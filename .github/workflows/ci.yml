@@ -59,6 +59,6 @@ jobs:
           python-version: "3.12"
       - run: uv sync --frozen
       - run: uv run playwright install --with-deps chromium
-      - run: uv run pytest tests/e2e/test_smoke.py -v --browser chromium
+      - run: uv run pytest tests/e2e/ -v --browser chromium
         env:
           E2E_BASE_URL: https://nmkgn-app-production.up.railway.app
