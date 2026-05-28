@@ -18,9 +18,12 @@ dependencies = [
 [dependency-groups]
 dev = [
   "httpx>=0.28.1",
+  "playwright>=1.52.0",
   "pytest>=8.3.4",
+  "pytest-playwright>=0.7.0",
 ]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests/api"]
+markers = ["e2e: End-to-end browser tests (requires playwright browsers installed)"]
