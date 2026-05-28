@@ -1,5 +1,9 @@
 # Session Ledger
 
+## 2026-05-28 — [984f62f] feat(deploy): add Railway deployment config with Dockerfile, railway.toml, and SPA serving
+FINDINGS: 4 (0 critical, 0 high, 3 medium, 1 low)
+ACTIONS: 1-3:update-structure 4:accept
+
 ## 2026-05-28 — PLAN UPDATE: Insert Phase 2 (Railway deployment), renumber Phases 2-5 → 3-6
 CHANGE: New Phase 2 inserted — Railway deployment and production config
 TIER: mvp (Rollback→ent, Migration→ent per red-line)
