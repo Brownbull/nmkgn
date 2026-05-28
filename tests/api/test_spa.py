@@ -23,10 +23,10 @@ def test_spa_serves_index_html(dist_dir: Path) -> None:
         from api.main import create_app
 
         app = create_app()
-    client = TestClient(app)
-    resp = client.get("/some/unknown/route")
-    assert resp.status_code == 200
-    assert "<!doctype html>" in resp.text
+        client = TestClient(app)
+        resp = client.get("/some/unknown/route")
+        assert resp.status_code == 200
+        assert "<!doctype html>" in resp.text
 
 
 def test_spa_serves_static_asset(dist_dir: Path) -> None:
@@ -34,10 +34,10 @@ def test_spa_serves_static_asset(dist_dir: Path) -> None:
         from api.main import create_app
 
         app = create_app()
-    client = TestClient(app)
-    resp = client.get("/assets/index-abc123.js")
-    assert resp.status_code == 200
-    assert "console.log" in resp.text
+        client = TestClient(app)
+        resp = client.get("/assets/index-abc123.js")
+        assert resp.status_code == 200
+        assert "console.log" in resp.text
 
 
 def test_spa_blocks_path_traversal(dist_dir: Path) -> None:
@@ -47,8 +47,8 @@ def test_spa_blocks_path_traversal(dist_dir: Path) -> None:
         from api.main import create_app
 
         app = create_app()
-    client = TestClient(app)
-    resp = client.get("/../secret.txt")
-    assert resp.status_code == 200
-    assert "<!doctype html>" in resp.text
-    assert "sensitive" not in resp.text
+        client = TestClient(app)
+        resp = client.get("/../secret.txt")
+        assert resp.status_code == 200
+        assert "<!doctype html>" in resp.text
+        assert "sensitive" not in resp.text
