@@ -23,11 +23,12 @@ Phase 2: Railway deployment and production config
 | # | Phase | Description | Tier | Types | Complexity | Exec | Review | Commit | Push |
 |---|-------|-------------|------|-------|------------|------|--------|--------|------|
 | 1 | Run audit timeline and observability | Wire run-level audit fields (status lifecycle, token counts, cost, latency, warnings, suppressed findings) into the analysis service with structured timeline events | ent | data-processing, data-validation | medium | ✅ | ✅ | ✅ | ✅ |
-| 2 | Railway deployment and production config | Deploy nmkgn (FastAPI + React + PostgreSQL) to Railway Pro with Dockerfile, railway.toml, Alembic pre-deploy migration, CORS for production URLs, and cost-optimized resource settings | mvp (Rollback→ent, Migration→ent) | migration, rollout | medium | 🔄 | ⬜ | ✅ | ⬜ |
-| 3 | Document retention and access guardrails | Enforce retention_state transitions (active → delete_requested → deleted), owner-scoped access checks, and audit logging for document lifecycle events | ent | data-processing, data-validation | medium | ⬜ | ⬜ | ⬜ | ⬜ |
-| 4 | Finding selection and export service | Build export service that accepts user-selected finding IDs, validates each has evidence backing, assembles exportable summary with source references, and refuses unsupported outputs | ent | data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |
-| 5 | Communication draft generation | Add draft generation service using PydanticAI to produce editable communication drafts from selected findings with B4-compliant cautious language and deterministic post-filter | ent (Str.out→ent, Cost→ent) | ai-agent, data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |
-| 6 | Export and draft UI | Replace Email.tsx mockup with real export/draft screens: finding selection checkboxes, export preview, draft generation trigger, editable draft editor, and copy/download actions | ent | user-facing, client-state, web | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 2 | Railway deployment and production config | Deploy nmkgn (FastAPI + React + PostgreSQL) to Railway Pro with Dockerfile, railway.toml, Alembic pre-deploy migration, CORS for production URLs, and cost-optimized resource settings | mvp (Rollback→ent, Migration→ent) | migration, rollout | medium | ✅ | ✅ | ⬜ | ⬜ |
+| 3 | E2E and integration testing infrastructure | Set up Playwright (Python) for E2E testing against local dev and deployed Railway URL, write smoke tests covering health, SPA loading, navigation, and case creation flow with fake providers | mvp | testing, integration | medium | ⬜ | ⬜ | ⬜ | ⬜ |
+| 4 | Document retention and access guardrails | Enforce retention_state transitions (active → delete_requested → deleted), owner-scoped access checks, and audit logging for document lifecycle events | ent | data-processing, data-validation | medium | ⬜ | ⬜ | ⬜ | ⬜ |
+| 5 | Finding selection and export service | Build export service that accepts user-selected finding IDs, validates each has evidence backing, assembles exportable summary with source references, and refuses unsupported outputs | ent | data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |
+| 6 | Communication draft generation | Add draft generation service using PydanticAI to produce editable communication drafts from selected findings with B4-compliant cautious language and deterministic post-filter | ent (Str.out→ent, Cost→ent) | ai-agent, data-processing | medium | ⬜ | ⬜ | ⬜ | ⬜ |
+| 7 | Export and draft UI | Replace Email.tsx mockup with real export/draft screens: finding selection checkboxes, export preview, draft generation trigger, editable draft editor, and copy/download actions | ent | user-facing, client-state, web | high | ⬜ | ⬜ | ⬜ | ⬜ |
 
 ## Phase Details
 
@@ -65,10 +66,23 @@ suppressed_dims_count: 2
 decisions_entry: D33
 ```
 
-### Phase 3 — Document retention and access guardrails
+### Phase 3 — E2E and integration testing infrastructure
 
 ```yaml
 phase: 3
+types: [testing, integration]
+phase_tier: mvp
+prototype: false
+dim_overrides: []
+sections_considered: [Core]
+suppressed_dims_count: 0
+decisions_entry: D34
+```
+
+### Phase 4 — Document retention and access guardrails
+
+```yaml
+phase: 4
 types: [data-processing, data-validation]
 phase_tier: ent
 prototype: false
@@ -78,10 +92,10 @@ suppressed_dims_count: 0
 decisions_entry: D29
 ```
 
-### Phase 4 — Finding selection and export service
+### Phase 5 — Finding selection and export service
 
 ```yaml
-phase: 4
+phase: 5
 types: [data-processing]
 phase_tier: ent
 prototype: false
@@ -91,10 +105,10 @@ suppressed_dims_count: 0
 decisions_entry: D30
 ```
 
-### Phase 5 — Communication draft generation
+### Phase 6 — Communication draft generation
 
 ```yaml
-phase: 5
+phase: 6
 types: [ai-agent, data-processing]
 phase_tier: ent
 prototype: false
@@ -104,10 +118,10 @@ suppressed_dims_count: 2
 decisions_entry: D31
 ```
 
-### Phase 6 — Export and draft UI
+### Phase 7 — Export and draft UI
 
 ```yaml
-phase: 6
+phase: 7
 types: [user-facing, client-state, web]
 phase_tier: ent
 prototype: false
@@ -124,31 +138,36 @@ decisions_entry: D32
 - **New:** `api/services/audit.py`, `tests/api/test_audit.py`
 
 ### Phase 2
-- **New:** `Dockerfile`, `railway.toml`, `.dockerignore`
-- **Modified:** `vite.config.ts` (production build base path), `package.json` (build script)
+- **New:** `Dockerfile`, `railway.toml`, `.dockerignore`, `tests/api/test_config.py`, `tests/api/test_spa.py`
+- **Modified:** `api/main.py` (SPA static serving), `api/config.py` (DATABASE_URL psycopg3 normalization)
 
 ### Phase 3
+- **New:** `tests/e2e/conftest.py`, `tests/e2e/test_smoke.py`
+- **Modified:** `pyproject.toml` (add playwright dependency)
+
+### Phase 4
 - **Modified:** `api/models/document.py`, `api/services/documents.py`
 - **New:** `tests/api/test_retention.py`
 
-### Phase 4
+### Phase 5
 - **New:** `api/services/export.py`, `tests/api/test_export.py`
 
-### Phase 5
+### Phase 6
 - **Modified:** `api/services/consumer_credit_provider.py`
 - **New:** `api/services/draft.py`, `tests/api/test_draft.py`
 
-### Phase 6
+### Phase 7
 - **Modified:** `src/screens/Email.tsx`
 - **New:** export/draft screen components
 
 ## Dependencies
 
 - Phase 2 depends on Phase 1 (deploys existing codebase including audit work)
-- Phase 3 is independent of Phase 2 (retention vs deploy — parallel-safe, but tested on deployed env)
-- Phase 4 depends on Phase 1 (export references audit timeline fields)
-- Phase 5 depends on Phase 4 (draft generation consumes selected+exported findings)
-- Phase 6 depends on Phases 4 and 5 (UI needs both export and draft services)
+- Phase 3 depends on Phase 2 (needs deployed Railway URL for production-target smoke tests)
+- Phase 4 is independent of Phase 3 (retention vs testing — parallel-safe)
+- Phase 5 depends on Phase 1 (export references audit timeline fields)
+- Phase 6 depends on Phase 5 (draft generation consumes selected+exported findings)
+- Phase 7 depends on Phases 5 and 6 (UI needs both export and draft services)
 
 ## Risks
 
@@ -168,4 +187,5 @@ decisions_entry: D32
 ## Runtime Evidence Checkpoints
 
 - Phase 2 (migration, rollout): Browser screenshot of deployed Railway URL showing the app loads and /api/health returns OK. Artifacts: `.kdbp/evidence/phase-2/`.
-- Phase 6 (user-facing, web): Playwright browser screenshots of export selection, draft preview, and copy/download actions. Target: Chromium via Python playwright. Artifacts: `.kdbp/evidence/phase-6/`.
+- Phase 3 (testing, integration): Playwright smoke test run against deployed Railway URL with pass/fail report and failure screenshots. Artifacts: `.kdbp/evidence/phase-3/`.
+- Phase 7 (user-facing, web): Playwright browser screenshots of export selection, draft preview, and copy/download actions. Target: Chromium via Python playwright. Artifacts: `.kdbp/evidence/phase-7/`.

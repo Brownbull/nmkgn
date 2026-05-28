@@ -1233,3 +1233,34 @@ dim_overrides:
 ### Status
 
 - accepted
+
+## D34 — Phase 3 tier: mvp (2026-05-28)
+
+**Phase:** E2E and integration testing infrastructure
+**Types:** [testing, integration]
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** default MVP pick per U2 — smoke tests are the honest baseline for test tooling; edge coverage and structured test observability are Ent/Scale upgrades
+
+### Sections rendered
+- Core (always, 4 dims, 0 suppressed)
+
+### Dimensions suppressed (Layer 2 filter)
+- None (Core is never filtered; no additional sections triggered by [testing, integration] tags)
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+- L × 2 (Testing edges, Error handling typed+retry), M × 1 (Observability structured log), S × 1 (Abstractions 1 interface)
+- Load-bearing items skipped: none — testing infra at MVP is self-contained; deferred Δ items affect test quality, not app correctness
+
+### Review trigger (when to escalate this phase)
+- When E2E tests become flaky or >10 test files exist; when CI pipeline needs structured test reporting; when a second test target (staging env) is added
+
+### Status
+
+- accepted

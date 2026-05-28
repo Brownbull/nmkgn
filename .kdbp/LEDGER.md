@@ -1,5 +1,33 @@
 # Session Ledger
 
+## 2026-05-28 — PHASE 2 REVIEW: Railway deployment and production config
+VERDICT: APPROVE
+FINDINGS: 4 total (0 critical, 0 high, 2 medium, 2 low)
+COVERAGE: LOW → HIGH (6 tests added)
+CONFIDENCE: 75 → 100/100 (all 4 fixed)
+DEFERRED: none
+ALIGNMENT: DRIFTED (scope updated — api/config.py, api/main.py added; vite.config.ts, package.json removed)
+TIER: mvp | DRIFT: none
+TICK: ✅
+FIXES: +USER appuser in Dockerfile, +test_config.py (3 tests), +test_spa.py (3 tests), -startCommand from railway.toml
+
+## 2026-05-28 — PLAN UPDATE: Insert Phase 3 (E2E testing), renumber Phases 3-6 → 4-7
+CHANGE: New Phase 3 inserted — E2E and integration testing infrastructure (Playwright Python, smoke tests against local + Railway URL)
+TIER: mvp (no dim overrides)
+DECISIONS: D34
+RENUMBERED: old Phase 3→4, 4→5, 5→6, 6→7
+
+## 2026-05-28 — DEPLOY VERIFIED: Phase 2 — Railway deployment
+EXEC: ✅ (was 🔄)
+URL: https://nmkgn-app-production.up.railway.app
+HEALTH: /api/health → 200 OK
+SPA: / → 200, index.html served with hashed assets
+RELEASE_CMD: alembic upgrade head (7 migrations applied)
+FIXES APPLIED:
+  - [7564094] fix(deploy): hardcode port 8080 ($PORT not expanded)
+  - [66823ec] fix(deploy): normalize DATABASE_URL to psycopg3 driver
+EVIDENCE: .kdbp/evidence/phase-2/deploy-verification.md
+
 ## 2026-05-28 — [984f62f] feat(deploy): add Railway deployment config with Dockerfile, railway.toml, and SPA serving
 FINDINGS: 4 (0 critical, 0 high, 3 medium, 1 low)
 ACTIONS: 1-3:update-structure 4:accept
