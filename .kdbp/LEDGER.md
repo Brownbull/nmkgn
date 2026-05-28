@@ -1,5 +1,12 @@
 # Session Ledger
 
+## 2026-05-28 — PLAN UPDATE: Insert Phase 2 (Railway deployment), renumber Phases 2-5 → 3-6
+CHANGE: New Phase 2 inserted — Railway deployment and production config
+TIER: mvp (Rollback→ent, Migration→ent per red-line)
+DECISIONS: D33
+RENUMBERED: old Phase 2→3, 3→4, 4→5, 5→6
+CURRENT PHASE: 2
+
 ## 2026-05-27 — PUSH: Phase 1 — Run audit timeline and observability
 COMMITS: 6 (a4067d8..268a3a1)
 REMOTE: origin/main

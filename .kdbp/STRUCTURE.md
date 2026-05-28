@@ -42,6 +42,9 @@ Used by Gabe checks when new files are added.
 | `pyproject.toml` | Future Python dependencies | MVP |
 | `uv.lock` | Future Python lockfile | MVP |
 | `docker/**` | Future local service configuration | MVP |
+| `Dockerfile` | Container build definition | MVP |
+| `.dockerignore` | Docker build context exclusions | MVP |
+| `railway.toml` | Railway deployment configuration | MVP |
 | `manual-test-cases/**` | Manual test case fixtures, scenarios, and expected outputs | MVP |
 | `manual_test_cases/**` | Manual test case runner package | MVP |
 | `infra/**` | Future deployment configuration | Enterprise |

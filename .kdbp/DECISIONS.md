@@ -1180,3 +1180,56 @@ dim_overrides: []
 ### Status
 
 - accepted
+
+## D33 — Phase 2 tier: mvp (2026-05-28)
+
+**Phase:** Railway deployment and production config
+**Types:** [migration, rollout]
+**Tier chosen:** mvp
+**Prototype:** no
+**Reason:** Default MVP pick per U2 — deployment config files (Dockerfile, railway.toml, env setup) don't need Enterprise-grade code patterns. Red-line overrides handle the two production-safety requirements.
+
+### Sections rendered
+
+- Core (always)
+- Deployment/Release: Rollback plan, Migration order (2 of 4 dims rendered)
+
+### Dimensions suppressed (Layer 2 filter)
+
+- Deployment/Release.Feature flags — no feature toggles in first-time Railway deploy
+- Deployment/Release.Canary — Railway Pro single-instance deploy, no traffic splitting
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides:
+  - section: Deployment/Release
+    dim: Rollback plan
+    tier: ent
+    reason: Red-line — rollback plan mandatory for production deploy; Railway supports instant revert to previous deployment
+  - section: Deployment/Release
+    dim: Migration order
+    tier: ent
+    reason: Red-line — 7 Alembic migrations + code deploy in same release requires migrate-first; Railway pre-deploy command satisfies this
+```
+
+### Δ cell overrides
+
+- none
+
+### Δ deferred by tier choice
+
+- L × 2 (Core edge testing, Core structured observability)
+- M × 1 (Core observability structured log)
+- S × 2 (Core error handling retry, Core abstractions interface)
+- Load-bearing items skipped:
+  - Core.Testing edges: acceptable for config files (Dockerfile, railway.toml); runtime verification via deployed health check
+  - Core.Observability structured log: Railway provides built-in log aggregation; app-level structured logging not required at MVP
+
+### Review trigger (when to escalate this phase)
+
+- When adding a second deployment environment (staging), when traffic exceeds hobby thresholds, or when zero-downtime deploys become required.
+
+### Status
+
+- accepted
