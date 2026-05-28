@@ -124,10 +124,21 @@ def _extract_plain_text(path: Path) -> ExtractionOutcome:
 def _extract_pdf_text(path: Path) -> ExtractionOutcome:
     try:
         reader = PdfReader(path)
+        if reader.is_encrypted:
+            return ExtractionOutcome(
+                status="failed",
+                segments=(
+                    SegmentData(
+                        text="",
+                        extraction_provider="pypdf",
+                        warning_code="encrypted_pdf",
+                        warning_message="El PDF está protegido con contraseña y no se puede leer.",
+                    ),
+                ),
+            )
+        if not reader.pages:
+            return ExtractionOutcome(status="failed")
     except Exception:
-        return ExtractionOutcome(status="failed")
-
-    if not reader.pages:
         return ExtractionOutcome(status="failed")
 
     segments: list[SegmentData] = []
