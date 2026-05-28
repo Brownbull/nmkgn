@@ -1,5 +1,19 @@
 # Session Ledger
 
+## 2026-05-28 — PHASE EXEC COMPLETE: Phase 3 — E2E and integration testing infrastructure
+TIER: mvp
+TASKS: 4 tasks, 2 commits (aeae26b, 4312ad3)
+DEVIATIONS: 1 minor (Dockerfile chown fix — scope creep from Phase 2 ownership bug)
+EVIDENCE: .kdbp/evidence/phase-3/smoke-test-report.md
+RESULTS: 6/6 smoke tests pass against https://nmkgn-app-production.up.railway.app
+NOTABLE: Railway Alembic releaseCommand never ran successfully — tables were missing. Migrated manually via public DATABASE_URL.
+
+## 2026-05-28 — PUSH: Phase 2 — Railway deployment and production config
+COMMITS: 5 (984f62f..b4a6894)
+REMOTE: origin/main
+PHASE STATUS: Exec ✅ | Review ✅ | Commit ✅ | Push ✅
+ADVANCED: Current Phase → 3 (E2E and integration testing infrastructure)
+
 ## 2026-05-28 — [5f2489c] fix(deploy): harden Dockerfile and add deployment tests
 FINDINGS: 0 (all pass)
 ACTIONS: none

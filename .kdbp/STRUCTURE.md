@@ -47,6 +47,7 @@ Used by Gabe checks when new files are added.
 | `railway.toml` | Railway deployment configuration | MVP |
 | `manual-test-cases/**` | Manual test case fixtures, scenarios, and expected outputs | MVP |
 | `manual_test_cases/**` | Manual test case runner package | MVP |
+| `.github/workflows/*.yml` | GitHub Actions CI workflows | MVP |
 | `infra/**` | Future deployment configuration | Enterprise |
 
 ## Disallowed Patterns
