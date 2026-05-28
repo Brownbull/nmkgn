@@ -1,5 +1,16 @@
 # Session Ledger
 
+## 2026-05-28 — PHASE 3 REVIEW: E2E and integration testing infrastructure
+VERDICT: APPROVE
+FINDINGS: 1 total (0 critical, 0 high, 1 medium, 0 low)
+COVERAGE: HIGH
+CONFIDENCE: 94 → 100/100 (1 fixed)
+DEFERRED: none
+ALIGNMENT: DRIFTED (CI, Dockerfile, railway.toml off-scope but related + 23 ruff formatting files)
+TIER: mvp | DRIFT: none
+TICK: ✅
+FIXES: renamed test_case_create_and_list → test_case_create_returns_valid_schema (removed unnecessary list round-trip)
+
 ## 2026-05-28 — PHASE EXEC COMPLETE: Phase 3 — E2E and integration testing infrastructure
 TIER: mvp
 TASKS: 4 tasks, 2 commits (aeae26b, 4312ad3)

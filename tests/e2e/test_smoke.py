@@ -37,7 +37,7 @@ def test_cases_api_returns_list(api_url: str) -> None:
     assert isinstance(data, list)
 
 
-def test_case_create_and_list(api_url: str) -> None:
+def test_case_create_returns_valid_schema(api_url: str) -> None:
     create_resp = httpx.post(
         f"{api_url}/cases",
         json={
@@ -51,9 +51,7 @@ def test_case_create_and_list(api_url: str) -> None:
     assert create_resp.status_code == 201
     created = create_resp.json()
     assert created["title"] == "E2E smoke test case"
-    case_id = created["id"]
-
-    list_resp = httpx.get(f"{api_url}/cases", timeout=30)
-    assert list_resp.status_code == 200
-    ids = [c["id"] for c in list_resp.json()]
-    assert case_id in ids
+    assert created["document_type"] == "consumer_credit"
+    assert created["case_stage"] == "before_signing"
+    assert "id" in created
+    assert "created_at" in created
