@@ -40,10 +40,15 @@ def test_cases_api_returns_list(api_url: str) -> None:
 def test_case_create_and_list(api_url: str) -> None:
     create_resp = httpx.post(
         f"{api_url}/cases",
-        json={"title": "E2E smoke test case", "document_type": "consumer_credit"},
+        json={
+            "title": "E2E smoke test case",
+            "document_type": "consumer_credit",
+            "case_stage": "before_signing",
+            "institution_name": "Banco E2E Test",
+        },
         timeout=30,
     )
-    assert create_resp.status_code == 200
+    assert create_resp.status_code == 201
     created = create_resp.json()
     assert created["title"] == "E2E smoke test case"
     case_id = created["id"]
