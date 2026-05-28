@@ -1,5 +1,10 @@
 # Session Ledger
 
+## 2026-05-28 — [5f2489c] fix(deploy): harden Dockerfile and add deployment tests
+FINDINGS: 0 (all pass)
+ACTIONS: none
+PHASE: 2 — Railway deployment and production config (review fixes)
+
 ## 2026-05-28 — PHASE 2 REVIEW: Railway deployment and production config
 VERDICT: APPROVE
 FINDINGS: 4 total (0 critical, 0 high, 2 medium, 2 low)
