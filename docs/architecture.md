@@ -675,6 +675,22 @@ The receptionist API exposes a pre-analysis gap gate:
 - `GET /analysis-readiness` composes fact readiness with receptionist readiness.
   The existing `GET /facts/readiness` remains fact-layer readiness only.
 
+The export contract validates user-selected findings before assembly:
+
+- Export accepts a list of finding IDs and resolves them against the latest
+  completed analysis run for the case.
+- Findings with unsupported claim types (inference) are rejected with an
+  explicit reason — REQ-12 requires exports to refuse unsupported outputs.
+- Findings without evidence backing are rejected — every exported claim must
+  cite at least one source reference.
+- Missing finding IDs (not in the latest run) are rejected with a not-found
+  reason rather than silently ignored.
+- When all requested findings are rejected, the service raises
+  `EmptySelectionError` instead of returning an empty export.
+- The export summary includes the case ID, run ID, timestamp, exported
+  findings with evidence details (fact IDs, calculation keys, reference
+  citations), and a separate list of rejected items with per-item reasons.
+
 The central contract is document-type-specific structured output:
 
 - `ConsumerCreditAgent` will return the stable `ConsumerCreditAnalysis` schema.
@@ -810,6 +826,13 @@ Current service boundaries:
   findings citing reference keys, and pre-firma summary/next-actions.
   Mirrors the deterministic path's finding shape so the UI can treat both
   analysis modes uniformly.
+- Export service (`export.py`) for user-selected finding assembly.
+  `export_findings()` loads the latest completed analysis run, validates
+  each selected finding ID exists in that run, rejects inference-type
+  findings and evidence-less findings with explicit per-item reasons,
+  and assembles an `ExportSummary` with finding details and evidence
+  references. Raises `EmptySelectionError` when all selections fail
+  validation. Owner-scoped via case lookup.
 
 Expected future service boundaries:
 
