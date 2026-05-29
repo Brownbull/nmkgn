@@ -1,5 +1,15 @@
 # Session Ledger
 
+## 2026-05-29 — [6a394fe] feat(export): add finding selection and export service with evidence validation
+FINDINGS: 1 (0 critical after resolution, 0 high, 0 medium, 0 low)
+ACTIONS: 1:update-docs (docs/architecture.md — API Contracts + Services sections updated)
+DEFERRED: none
+
+## 2026-05-29 — PHASE EXEC COMPLETE: Phase 6 — Finding selection and export service
+TIER: ent
+TASKS: 3 tasks, 1 commit
+DEVIATIONS: 0 structural, 1 minor (api/schemas/export.py not in original Scope — Pydantic schemas for export request/response)
+
 ## 2026-05-29 — PUSH main → main
 PR: —
 CI: — (no CI configured)
