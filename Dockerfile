@@ -9,7 +9,7 @@ ENV VITE_API_BASE_URL=""
 RUN npm run build
 
 FROM python:3.12-slim AS backend
-RUN adduser --disabled-password --no-create-home appuser
+RUN adduser --disabled-password appuser
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
