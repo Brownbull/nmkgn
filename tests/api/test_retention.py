@@ -189,12 +189,16 @@ class TestOwnerScopedAccess:
         with pytest.raises(AccessDeniedError):
             request_deletion(session, case.id, doc.id, "owner-b")
 
-        stmt = (
-            session.query(DocumentAuditLog)
-            .filter(DocumentAuditLog.document_id == doc.id)
-            .all()
+        from sqlalchemy import select
+
+        results = list(
+            session.scalars(
+                select(DocumentAuditLog).where(
+                    DocumentAuditLog.document_id == doc.id
+                )
+            )
         )
-        access_denied_logs = [e for e in stmt if e.event_type == "access_denied"]
+        access_denied_logs = [e for e in results if e.event_type == "access_denied"]
         assert len(access_denied_logs) == 1
         assert access_denied_logs[0].actor_ref == "owner-b"
 

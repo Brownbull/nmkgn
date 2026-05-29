@@ -197,7 +197,7 @@ def _get_owned_document(
             actor_ref=owner_ref,
             detail=f"owner mismatch: expected {doc.owner_ref}",
         )
-        session.flush()
+        session.commit()
         raise AccessDeniedError("access denied")
     return doc
 
