@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-29 — PUSH main → main
+PR: —
+CI: — (no CI configured)
+PROMOTION: N/A
+DEPLOYMENTS: P20
+
 ## 2026-05-29 — PHASE 5 REVIEW: Document retention and access guardrails
 VERDICT: APPROVE
 FINDINGS: 2 total (0 critical, 0 high, 1 medium, 1 low)
