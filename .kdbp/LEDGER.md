@@ -1,5 +1,16 @@
 # Session Ledger
 
+## 2026-05-29 — PHASE 5 REVIEW: Document retention and access guardrails
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 0 high, 1 medium, 1 low)
+COVERAGE: HIGH
+CONFIDENCE: 93 → 100/100 (2 fixed, 0 deferred, 0 dismissed)
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: ent | DRIFT: none
+TICK: ✅
+FIXES: access_denied audit log now commits before exception propagation; test modernized to select() API
+
 ## 2026-05-28 — PHASE EXEC COMPLETE: Phase 5 — Document retention and access guardrails
 TIER: ent
 TASKS: 4 tasks, 1 commit
