@@ -834,13 +834,23 @@ Current service boundaries:
   references. Raises `EmptySelectionError` when all selections fail
   validation. Owner-scoped via case lookup.
 
+- Draft generation service (`draft.py`) for editable communication drafts
+  from exported findings. `generate_draft(ExportSummary)` assembles
+  structured `DraftResult` with four sections: Presentación (severity
+  breakdown), Hallazgos (numbered findings with missing_context notes),
+  Referencias normativas (when reference evidence exists), and Cierre
+  (explicit non-advice disclaimer). A deterministic B4 post-filter scans
+  all section bodies for 10 prescriptive/advisory patterns (debe,
+  recomendamos, fraudulento, etc.) and replaces them with cautious
+  alternatives. `filtered_phrases` list tracks every replacement for audit.
+  Raises `EmptyExportError` when no findings are provided.
+
 Expected future service boundaries:
 
 - OCR provider integration
 - document type detection
 - OCR/LLM-backed fact extraction
 - benchmark and rule-source lookup
-- report and email draft generation
 
 ## Frontend Structure
 
