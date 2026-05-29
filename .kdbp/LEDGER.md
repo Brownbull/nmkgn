@@ -1,5 +1,15 @@
 # Session Ledger
 
+## 2026-05-29 — PHASE 6 REVIEW: Finding selection and export service
+VERDICT: APPROVE
+FINDINGS: 0 total (0 critical, 0 high, 0 medium, 0 low)
+COVERAGE: HIGH
+CONFIDENCE: 100/100
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: ent | DRIFT: none
+TICK: ✅
+
 ## 2026-05-29 — [6a394fe] feat(export): add finding selection and export service with evidence validation
 FINDINGS: 1 (0 critical after resolution, 0 high, 0 medium, 0 low)
 ACTIONS: 1:update-docs (docs/architecture.md — API Contracts + Services sections updated)
