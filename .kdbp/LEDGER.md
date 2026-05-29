@@ -1,5 +1,10 @@
 # Session Ledger
 
+## 2026-05-28 — [e24a8d5] feat(retention): enforce document retention state machine, owner-scoped access, and lifecycle audit logging
+FINDINGS: 1 (0 critical after resolution, 0 high, 0 medium, 0 low)
+ACTIONS: 1:update-docs (docs/architecture.md — Data Model + Services sections updated)
+DEFERRED: none
+
 ## 2026-05-28 — PHASE 4 REVIEW: Fact review UX improvements
 VERDICT: APPROVE
 FINDINGS: 2 total (0 critical, 0 high, 1 medium, 1 low)
