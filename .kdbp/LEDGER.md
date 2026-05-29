@@ -1,5 +1,16 @@
 # Session Ledger
 
+## 2026-05-28 — PHASE 4 REVIEW: Fact review UX improvements
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 0 high, 1 medium, 1 low)
+COVERAGE: MEDIUM
+CONFIDENCE: 88 → 100/100 (1 fixed, 1 dismissed — Scale-tier useMemo is correct as-is)
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: ent | DRIFT: none
+TICK: ✅
+FIXES: bulk actions now use Promise.allSettled for parallel execution + partial failure reporting
+
 ## 2026-05-28 — PLAN UPDATE: Insert Phase 4 (Fact review UX), renumber Phases 4-7 → 5-8
 CHANGE: New Phase 4 inserted — Fact review UX improvements (bulk actions, stats, grouping, consistent layout)
 TIER: ent (user wants edge-case coverage: loading states, inline error recovery)

@@ -1090,16 +1090,17 @@ export function Upload() {
                     if (!caseId) return;
                     setBulkBusy(true);
                     setBulkError(null);
-                    try {
-                      for (const fact of pendingFacts) {
-                        await recordFactConfirmation({ caseId, factId: fact.id, payload: { fact_id: fact.id, action: 'confirm' } });
-                      }
-                      await refreshFactReview();
-                    } catch (err) {
-                      setBulkError(errorText(err, 'Error al confirmar todos los hechos pendientes.'));
-                    } finally {
-                      setBulkBusy(false);
+                    const results = await Promise.allSettled(
+                      pendingFacts.map(fact =>
+                        recordFactConfirmation({ caseId, factId: fact.id, payload: { fact_id: fact.id, action: 'confirm' } })
+                      )
+                    );
+                    const failed = results.filter(r => r.status === 'rejected').length;
+                    if (failed > 0) {
+                      setBulkError(`${failed} de ${pendingFacts.length} hechos no se pudieron confirmar. Los demas se procesaron correctamente.`);
                     }
+                    await refreshFactReview();
+                    setBulkBusy(false);
                   }}
                 >
                   {bulkBusy ? 'Procesando...' : `Confirmar todos (${pendingFacts.length})`}
@@ -1113,16 +1114,17 @@ export function Upload() {
                     if (!caseId) return;
                     setBulkBusy(true);
                     setBulkError(null);
-                    try {
-                      for (const fact of pendingFacts) {
-                        await recordFactConfirmation({ caseId, factId: fact.id, payload: { fact_id: fact.id, action: 'reject' } });
-                      }
-                      await refreshFactReview();
-                    } catch (err) {
-                      setBulkError(errorText(err, 'Error al rechazar todos los hechos pendientes.'));
-                    } finally {
-                      setBulkBusy(false);
+                    const results = await Promise.allSettled(
+                      pendingFacts.map(fact =>
+                        recordFactConfirmation({ caseId, factId: fact.id, payload: { fact_id: fact.id, action: 'reject' } })
+                      )
+                    );
+                    const failed = results.filter(r => r.status === 'rejected').length;
+                    if (failed > 0) {
+                      setBulkError(`${failed} de ${pendingFacts.length} hechos no se pudieron rechazar. Los demas se procesaron correctamente.`);
                     }
+                    await refreshFactReview();
+                    setBulkBusy(false);
                   }}
                 >
                   Rechazar todos ({pendingFacts.length})
