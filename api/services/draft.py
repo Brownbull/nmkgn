@@ -29,10 +29,6 @@ class DraftServiceError(Exception):
         self.detail = detail
 
 
-class DraftFilterRejectionError(DraftServiceError):
-    pass
-
-
 class EmptyExportError(DraftServiceError):
     pass
 
@@ -87,8 +83,10 @@ def apply_b4_filter(text: str) -> tuple[str, list[str]]:
 
 def _find_replacement(phrase: str) -> str | None:
     lower = phrase.lower().strip()
+    if lower in B4_REPLACEMENTS:
+        return B4_REPLACEMENTS[lower]
     for key, value in B4_REPLACEMENTS.items():
-        if lower == key or lower.startswith(key):
+        if lower.startswith(key):
             return value
     return None
 
