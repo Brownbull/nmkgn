@@ -733,6 +733,12 @@ The central contract is document-type-specific structured output:
   (deterministic or agent-backed, routed by config)
 - `GET /api/cases/{case_id}/analysis/runs/{run_id}` — get analysis run with
   nested findings, evidence chains, calculations, and unsupported outputs
+- `POST /api/cases/{case_id}/export` — validate and assemble selected findings
+  into an exportable summary with evidence references; rejects inference-type
+  and evidence-less findings with per-item reasons
+- `POST /api/cases/{case_id}/draft` — generate a B4-compliant communication
+  draft from selected findings with structured sections and cautious language
+  post-filter
 
 ## Services
 
@@ -869,12 +875,16 @@ reference evidence), then escalation options (SERNAC, detailed statement with
 legal citations), then missing comparison documents (simulation/offer as intake
 prompts). Post-firma language ("posible inconsistencia", "vias de consulta")
 replaces pre-firma language throughout.
-Later plan and email screens remain prototype surfaces.
+The export/draft screen (`Email.tsx`) replaces the original email mockup with a
+real three-step flow: finding selection with checkboxes and inference warnings,
+export preview showing evidence backing and rejection reasons, and an editable
+draft editor with B4 filter indicator, copy-to-clipboard, and download-as-text
+actions. The plan screen remains a prototype surface.
 
 Frontend API helpers live under `src/api/`. `src/api/client.ts` owns the Vite
 API base URL, while endpoint-specific clients such as `cases.ts`,
-`documents.ts`, `facts.ts`, and `receptionist.ts` own request payloads and
-response types.
+`documents.ts`, `facts.ts`, `receptionist.ts`, and `export.ts` own request
+payloads and response types.
 
 ## Integrations
 

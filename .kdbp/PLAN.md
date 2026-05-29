@@ -16,7 +16,7 @@ Evidence Export, Audit, and Production Guardrails — Roadmap Phase 7 (REQ-12, R
 
 ## Current Phase
 
-Phase 7: Communication draft generation
+Phase 8: Export and draft UI
 
 ## Phases
 
@@ -29,7 +29,7 @@ Phase 7: Communication draft generation
 | 5 | Document retention and access guardrails | Enforce retention_state transitions (active → delete_requested → deleted), owner-scoped access checks, and audit logging for document lifecycle events | ent | data-processing, data-validation | medium | ✅ | ✅ | ✅ | ✅ |
 | 6 | Finding selection and export service | Build export service that accepts user-selected finding IDs, validates each has evidence backing, assembles exportable summary with source references, and refuses unsupported outputs | ent | data-processing | medium | ✅ | ✅ | ✅ | ✅ |
 | 7 | Communication draft generation | Add draft generation service using PydanticAI to produce editable communication drafts from selected findings with B4-compliant cautious language and deterministic post-filter | ent (Str.out→ent, Cost→ent) | ai-agent, data-processing | medium | ✅ | ✅ | ✅ | ✅ |
-| 8 | Export and draft UI | Replace Email.tsx mockup with real export/draft screens: finding selection checkboxes, export preview, draft generation trigger, editable draft editor, and copy/download actions | ent | user-facing, client-state, web | high | ⬜ | ⬜ | ⬜ | ⬜ |
+| 8 | Export and draft UI | Replace Email.tsx mockup with real export/draft screens: finding selection checkboxes, export preview, draft generation trigger, editable draft editor, and copy/download actions | ent | user-facing, client-state, web | high | 🔄 | ⬜ | ⬜ | ⬜ |
 
 ## Phase Details
 

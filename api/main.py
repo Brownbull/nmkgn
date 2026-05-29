@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from api.config import get_cors_origins
-from api.routes import analysis, cases, documents, facts, health, receptionist
+from api.routes import analysis, cases, documents, export, facts, health, receptionist
 
 _DIST_DIR = Path(__file__).resolve().parent.parent / "dist"
 
@@ -28,6 +28,7 @@ def create_app() -> FastAPI:
     app.include_router(facts.router, prefix="/api")
     app.include_router(receptionist.router, prefix="/api")
     app.include_router(analysis.router, prefix="/api")
+    app.include_router(export.router, prefix="/api")
 
     if _DIST_DIR.is_dir():
         assets_dir = _DIST_DIR / "assets"
