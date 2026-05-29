@@ -1,5 +1,16 @@
 # Session Ledger
 
+## 2026-05-29 — PHASE 7 REVIEW: Communication draft generation
+VERDICT: APPROVE
+FINDINGS: 2 total (0 critical, 0 high, 0 medium, 2 low)
+COVERAGE: HIGH
+CONFIDENCE: 96 → 100/100 (2 fixed, 0 deferred, 0 dismissed)
+DEFERRED: none
+ALIGNMENT: ALIGNED
+TIER: ent | DRIFT: none
+TICK: ✅
+FIXES: removed dead DraftFilterRejectionError; fixed B4 replacement priority for plural verb forms
+
 ## 2026-05-29 — [c2a6f41] feat(draft): add communication draft generation with B4 cautious language post-filter
 FINDINGS: 1 (0 critical after resolution, 0 high, 1 medium resolved, 0 low)
 ACTIONS: 1:update-docs (docs/architecture.md — Services section updated)
@@ -1619,3 +1630,5 @@ Verification:
 - 2026-05-29 00:24 | Write | /home/khujta/projects/apps/nmkgn/api/services/draft.py
 - 2026-05-29 00:25 | Write | /home/khujta/projects/apps/nmkgn/tests/api/test_draft.py
 - 2026-05-29 00:30 | Edit | /home/khujta/projects/apps/nmkgn/docs/architecture.md
+- 2026-05-29 00:41 | Edit | /home/khujta/projects/apps/nmkgn/api/services/draft.py
+- 2026-05-29 00:41 | Edit | /home/khujta/projects/apps/nmkgn/api/services/draft.py
