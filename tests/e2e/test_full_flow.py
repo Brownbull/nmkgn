@@ -94,9 +94,6 @@ class TestCaseLifecycleAPI:
 class TestEncryptedPDFHandling:
     """Encrypted PDF should fail gracefully, not crash."""
 
-    @pytest.mark.xfail(
-        reason="Railway build cache stuck — fix in text_extraction.py:127 not deployed yet"
-    )
     def test_encrypted_pdf_does_not_crash(self, api_url: str, tmp_path: Path) -> None:
         encrypted_pdf = tmp_path / "encrypted.pdf"
         local_path = (
