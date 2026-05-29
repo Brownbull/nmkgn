@@ -1,5 +1,10 @@
 # Session Ledger
 
+## 2026-05-28 — PHASE EXEC COMPLETE: Phase 5 — Document retention and access guardrails
+TIER: ent
+TASKS: 4 tasks, 1 commit
+DEVIATIONS: 0 structural, 1 minor (migration file not in original Scope — infrastructure for DocumentAuditLog model)
+
 ## 2026-05-28 — [e24a8d5] feat(retention): enforce document retention state machine, owner-scoped access, and lifecycle audit logging
 FINDINGS: 1 (0 critical after resolution, 0 high, 0 medium, 0 low)
 ACTIONS: 1:update-docs (docs/architecture.md — Data Model + Services sections updated)
