@@ -26,6 +26,13 @@ def utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+VALID_RETENTION_TRANSITIONS: dict[str, frozenset[str]] = {
+    "active": frozenset({"delete_requested"}),
+    "delete_requested": frozenset({"active", "deleted"}),
+    "deleted": frozenset(),
+}
+
+
 class Document(Base):
     __tablename__ = "documents"
     __table_args__ = (
@@ -102,3 +109,39 @@ class Document(Base):
         back_populates="document",
         cascade="all, delete-orphan",
     )
+    audit_logs: Mapped[list["DocumentAuditLog"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        order_by="DocumentAuditLog.created_at",
+    )
+
+
+class DocumentAuditLog(Base):
+    __tablename__ = "document_audit_log"
+    __table_args__ = (
+        CheckConstraint(
+            "event_type in ("
+            "'retention_transition', "
+            "'access_denied', "
+            "'storage_purged'"
+            ")",
+            name="ck_document_audit_log_event_type",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid4())
+    )
+    document_id: Mapped[str] = mapped_column(
+        ForeignKey("documents.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    event_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    actor_ref: Mapped[str] = mapped_column(String(64), nullable=False)
+    from_state: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    to_state: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, nullable=False
+    )
+
+    document: Mapped["Document"] = relationship(back_populates="audit_logs")

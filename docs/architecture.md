@@ -20,13 +20,13 @@ rules.
 The current backend persists the case shell, uploaded document metadata,
 extracted text segments, deterministic normalized consumer-credit fact
 candidates, user confirmation records, the receptionist extraction gap gate,
-and the versioned analysis/finding persistence contract. It still does not run
-consumer-credit discrepancy calculations, call the later analysis agent, or
-expose analysis endpoints.
+the versioned analysis/finding persistence contract, and the document lifecycle
+audit log for retention state transitions and access control events.
 
 ```mermaid
 erDiagram
   CASE ||--o{ DOCUMENT : owns
+  DOCUMENT ||--o{ DOCUMENT_AUDIT_LOG : tracks
   DOCUMENT ||--o{ EXTRACTED_TEXT_SEGMENT : yields
   DOCUMENT ||--o{ CONSUMER_CREDIT_FACT : sources
   DOCUMENT ||--o{ DOCUMENT_RECEPTIONIST_RUN : reviews
@@ -76,6 +76,17 @@ erDiagram
     datetime delete_after
     datetime created_at
     datetime updated_at
+  }
+
+  DOCUMENT_AUDIT_LOG {
+    uuid id PK
+    uuid document_id FK
+    string event_type
+    string actor_ref
+    string from_state
+    string to_state
+    text detail
+    datetime created_at
   }
 
   EXTRACTED_TEXT_SEGMENT {
@@ -346,6 +357,27 @@ Document fields:
 - optional `delete_after`
 - `created_at`
 - `updated_at`
+
+Document retention constraints:
+
+- `retention_state` follows a strict state machine:
+  `active` → `delete_requested` → `deleted`. The `delete_requested` state
+  can also revert to `active` (cancellation). `deleted` is terminal.
+- All retention transitions are enforced at the service layer via
+  `VALID_RETENTION_TRANSITIONS` and recorded in `document_audit_log`.
+- Deleted documents are excluded from list and get queries by default.
+- Owner-scoped access checks at the document level log `access_denied`
+  audit events when a non-owner attempts a retention operation.
+
+Document audit log fields:
+
+- `id`
+- `document_id`
+- `event_type`: `retention_transition`, `access_denied`, or `storage_purged`
+- `actor_ref`
+- optional `from_state` and `to_state` for retention transitions
+- optional `detail`
+- `created_at`
 
 Extracted text segment fields:
 
@@ -697,9 +729,15 @@ Current service boundaries:
 - Upload storage configuration for local-only document persistence, including
   root path, size limit, allowed content types, retention days, and production
   upload guard.
-- Document service for scoped upload, list, and read. Validates content type
-  and size, streams file bytes to local storage with SHA-256 checksum, cleans
-  up partial files on failure, and enforces owner scoping on all queries.
+- Document service for scoped upload, list, read, and retention lifecycle.
+  Validates content type and size, streams file bytes to local storage with
+  SHA-256 checksum, cleans up partial files on failure, and enforces owner
+  scoping on all queries. Retention operations (`request_deletion`,
+  `confirm_deletion`, `cancel_deletion`) enforce the state machine via
+  `VALID_RETENTION_TRANSITIONS`, verify document-level ownership (logging
+  `access_denied` audit events on mismatch), and record every transition in
+  `document_audit_log`. Deleted documents are excluded from list and get
+  queries by default (`include_deleted=False`).
 - Text extraction service for local MVP extraction. It reads stored upload bytes,
   persists extracted segments, marks non-text image/scanned documents as
   `needs_ocr`, marks malformed/unreadable files as `failed`, and hands

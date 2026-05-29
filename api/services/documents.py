@@ -12,7 +12,12 @@ from sqlalchemy.orm import Session
 
 from api.config import UploadStorageSettings
 from api.models.case import Case
-from api.models.document import Document, utcnow
+from api.models.document import (
+    Document,
+    DocumentAuditLog,
+    VALID_RETENTION_TRANSITIONS,
+    utcnow,
+)
 from api.models.extraction import ExtractedTextSegment
 from api.schemas.documents import DocumentRole, DocumentType
 from api.services.text_extraction import extract_document_text
@@ -46,18 +51,42 @@ class StorageWriteError(DocumentServiceError):
     pass
 
 
-def list_documents(session: Session, case_id: str, owner_ref: str) -> list[Document]:
+class DocumentNotFoundError(DocumentServiceError):
+    pass
+
+
+class InvalidRetentionTransitionError(DocumentServiceError):
+    pass
+
+
+class AccessDeniedError(DocumentServiceError):
+    pass
+
+
+def list_documents(
+    session: Session,
+    case_id: str,
+    owner_ref: str,
+    *,
+    include_deleted: bool = False,
+) -> list[Document]:
     ensure_case(session, case_id, owner_ref)
     stmt = (
         select(Document)
         .where(Document.case_id == case_id, Document.owner_ref == owner_ref)
-        .order_by(Document.created_at.desc())
     )
-    return list(session.scalars(stmt))
+    if not include_deleted:
+        stmt = stmt.where(Document.retention_state != "deleted")
+    return list(session.scalars(stmt.order_by(Document.created_at.desc())))
 
 
 def get_document(
-    session: Session, case_id: str, document_id: str, owner_ref: str
+    session: Session,
+    case_id: str,
+    document_id: str,
+    owner_ref: str,
+    *,
+    include_deleted: bool = False,
 ) -> Document | None:
     ensure_case(session, case_id, owner_ref)
     stmt = select(Document).where(
@@ -65,6 +94,8 @@ def get_document(
         Document.case_id == case_id,
         Document.owner_ref == owner_ref,
     )
+    if not include_deleted:
+        stmt = stmt.where(Document.retention_state != "deleted")
     return session.scalar(stmt)
 
 
@@ -146,6 +177,113 @@ def store_document_upload(
     session.refresh(document)
     extract_document_text(session, document, settings)
     return document
+
+
+def _get_owned_document(
+    session: Session, case_id: str, document_id: str, owner_ref: str
+) -> Document:
+    stmt = select(Document).where(
+        Document.id == document_id,
+        Document.case_id == case_id,
+    )
+    doc = session.scalar(stmt)
+    if doc is None:
+        raise DocumentNotFoundError("document not found")
+    if doc.owner_ref != owner_ref:
+        _record_audit(
+            session,
+            document_id=doc.id,
+            event_type="access_denied",
+            actor_ref=owner_ref,
+            detail=f"owner mismatch: expected {doc.owner_ref}",
+        )
+        session.flush()
+        raise AccessDeniedError("access denied")
+    return doc
+
+
+def request_deletion(
+    session: Session, case_id: str, document_id: str, owner_ref: str
+) -> Document:
+    doc = _get_owned_document(session, case_id, document_id, owner_ref)
+    _transition_retention(session, doc, "delete_requested", owner_ref)
+    session.commit()
+    session.refresh(doc)
+    return doc
+
+
+def confirm_deletion(
+    session: Session, case_id: str, document_id: str, owner_ref: str
+) -> Document:
+    doc = _get_owned_document(session, case_id, document_id, owner_ref)
+    _transition_retention(session, doc, "deleted", owner_ref)
+    session.commit()
+    session.refresh(doc)
+    return doc
+
+
+def cancel_deletion(
+    session: Session, case_id: str, document_id: str, owner_ref: str
+) -> Document:
+    doc = _get_owned_document(session, case_id, document_id, owner_ref)
+    _transition_retention(session, doc, "active", owner_ref)
+    session.commit()
+    session.refresh(doc)
+    return doc
+
+
+def get_document_audit_log(
+    session: Session, case_id: str, document_id: str, owner_ref: str
+) -> list[DocumentAuditLog]:
+    doc = _get_owned_document(session, case_id, document_id, owner_ref)
+    stmt = (
+        select(DocumentAuditLog)
+        .where(DocumentAuditLog.document_id == doc.id)
+        .order_by(DocumentAuditLog.created_at)
+    )
+    return list(session.scalars(stmt))
+
+
+def _transition_retention(
+    session: Session, doc: Document, target_state: str, actor_ref: str
+) -> None:
+    current = doc.retention_state
+    allowed = VALID_RETENTION_TRANSITIONS.get(current, frozenset())
+    if target_state not in allowed:
+        raise InvalidRetentionTransitionError(
+            f"cannot transition from '{current}' to '{target_state}'"
+        )
+    from_state = current
+    doc.retention_state = target_state
+    _record_audit(
+        session,
+        document_id=doc.id,
+        event_type="retention_transition",
+        actor_ref=actor_ref,
+        from_state=from_state,
+        to_state=target_state,
+    )
+
+
+def _record_audit(
+    session: Session,
+    *,
+    document_id: str,
+    event_type: str,
+    actor_ref: str,
+    from_state: str | None = None,
+    to_state: str | None = None,
+    detail: str | None = None,
+) -> None:
+    entry = DocumentAuditLog(
+        document_id=document_id,
+        event_type=event_type,
+        actor_ref=actor_ref,
+        from_state=from_state,
+        to_state=to_state,
+        detail=detail,
+    )
+    session.add(entry)
 
 
 def ensure_case(session: Session, case_id: str, owner_ref: str) -> Case:
