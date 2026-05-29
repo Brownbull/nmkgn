@@ -77,6 +77,41 @@ const FACT_KEY_LABELS: Record<string, string> = {
   clause: 'Clausula relevante',
 };
 
+const FACT_CATEGORIES: Array<{ key: string; label: string; icon: string; keys: string[] }> = [
+  { key: 'amounts', label: 'Montos', icon: 'bank', keys: ['principal_amount', 'total_cost', 'installment_amount'] },
+  { key: 'dates', label: 'Fechas', icon: 'file', keys: ['contract_date'] },
+  { key: 'rates', label: 'Tasas e indices', icon: 'shield-check', keys: ['interest_rate', 'cae'] },
+  { key: 'terms', label: 'Plazo y cuotas', icon: 'file', keys: ['term_months', 'payment_count'] },
+  { key: 'costs', label: 'Seguros y cargos', icon: 'briefcase', keys: ['fee', 'insurance', 'linked_product'] },
+  { key: 'other', label: 'Otros datos', icon: 'file', keys: ['currency', 'clause'] },
+];
+
+function groupAndSortFacts(facts: ConsumerCreditFact[]): Array<{ category: typeof FACT_CATEGORIES[number]; facts: ConsumerCreditFact[] }> {
+  const assigned = new Set<string>();
+  const groups: Array<{ category: typeof FACT_CATEGORIES[number]; facts: ConsumerCreditFact[] }> = [];
+
+  for (const category of FACT_CATEGORIES) {
+    const matched = facts.filter(f => category.keys.includes(f.fact_key) && !assigned.has(f.id));
+    matched.forEach(f => assigned.add(f.id));
+    if (matched.length > 0) {
+      groups.push({
+        category,
+        facts: matched.sort((a, b) => (b.high_impact ? 1 : 0) - (a.high_impact ? 1 : 0)),
+      });
+    }
+  }
+
+  const unmatched = facts.filter(f => !assigned.has(f.id));
+  if (unmatched.length > 0) {
+    groups.push({
+      category: { key: 'uncategorized', label: 'Sin categoria', icon: 'file', keys: [] },
+      facts: unmatched.sort((a, b) => (b.high_impact ? 1 : 0) - (a.high_impact ? 1 : 0)),
+    });
+  }
+
+  return groups;
+}
+
 const GAP_TYPE_LABELS: Record<string, string> = {
   missing_in_deterministic: 'Falta en extractor deterministico',
   missing_in_receptionist: 'Falta en recepcion',
@@ -264,6 +299,9 @@ export function Upload() {
   const [receptionistRunByDocumentId, setReceptionistRunByDocumentId] = useState<Record<string, DocumentReceptionistRun>>({});
   const [receptionistRunBusyByDocumentId, setReceptionistRunBusyByDocumentId] = useState<Record<string, boolean>>({});
   const [gapActionById, setGapActionById] = useState<Record<string, ReceptionistResolutionAction>>({});
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const documentRecords = documents ?? EMPTY_DOCUMENTS;
@@ -295,6 +333,8 @@ export function Upload() {
   );
   const preview = previewText(segments);
   const updateNav = nav.set;
+  const factGroups = useMemo(() => groupAndSortFacts(factRecords), [factRecords]);
+  const pendingFacts = factRecords.filter(f => f.confirmation_status === 'pending');
 
   const refreshFactReview = useCallback(async () => {
     if (!caseId) return;
@@ -988,28 +1028,46 @@ export function Upload() {
             </div>
 
             {readiness && (
-              <div className="fact-review-summary-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10, marginTop: 16 }}>
-                <div style={summaryBoxStyle}>
-                  <div className="label">Total</div>
-                  <strong>{readiness.total_fact_count}</strong>
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(90px, 1fr))', gap: 8, marginTop: 16 }}>
+                  <div style={summaryBoxStyle}>
+                    <div className="label">Total</div>
+                    <strong>{readiness.total_fact_count}</strong>
+                  </div>
+                  <div style={{ ...summaryBoxStyle, borderColor: readiness.status_counts.confirmed > 0 ? 'var(--green)' : undefined }}>
+                    <div className="label">Confirmados</div>
+                    <strong style={{ color: 'var(--green)' }}>{readiness.status_counts.confirmed}</strong>
+                  </div>
+                  <div style={{ ...summaryBoxStyle, borderColor: readiness.status_counts.corrected > 0 ? 'var(--green)' : undefined }}>
+                    <div className="label">Corregidos</div>
+                    <strong style={{ color: 'var(--green)' }}>{readiness.status_counts.corrected}</strong>
+                  </div>
+                  <div style={{ ...summaryBoxStyle, borderColor: pendingFacts.length > 0 ? 'var(--amber)' : undefined }}>
+                    <div className="label">Pendientes</div>
+                    <strong style={{ color: pendingFacts.length > 0 ? 'var(--amber)' : undefined }}>{pendingFacts.length}</strong>
+                  </div>
+                  <div style={summaryBoxStyle}>
+                    <div className="label">Rechazados</div>
+                    <strong style={{ color: readiness.status_counts.rejected > 0 ? 'var(--red)' : undefined }}>{readiness.status_counts.rejected}</strong>
+                  </div>
                 </div>
-                <div style={summaryBoxStyle}>
-                  <div className="label">Alto impacto</div>
-                  <strong>{readiness.high_impact_fact_count}</strong>
-                </div>
-                <div style={summaryBoxStyle}>
-                  <div className="label">Pendientes</div>
-                  <strong>{readiness.unresolved_high_impact_count}</strong>
-                </div>
-                <div style={summaryBoxStyle}>
-                  <div className="label">Resueltos</div>
-                  <strong>{readiness.status_counts.confirmed + readiness.status_counts.corrected + readiness.status_counts.rejected}</strong>
-                </div>
-              </div>
+                {readiness.total_fact_count > 0 && (
+                  <div style={{ marginTop: 10, height: 6, borderRadius: 3, background: 'var(--paper-2)', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      borderRadius: 3,
+                      background: 'var(--green)',
+                      width: `${Math.round(((readiness.total_fact_count - pendingFacts.length) / readiness.total_fact_count) * 100)}%`,
+                      transition: 'width 0.3s ease',
+                    }} />
+                  </div>
+                )}
+              </>
             )}
 
             {factsLoading && <div style={emptyStateStyle}>Cargando hechos extraidos...</div>}
             {factsError && <div style={errorBoxStyle}>{factsError}</div>}
+            {bulkError && <div style={errorBoxStyle}>{bulkError}</div>}
             {!factsLoading && !factsError && factRecords.length === 0 && (
               <div style={emptyStateStyle}>
                 Todavia no hay hechos extraidos para confirmar. Sube un documento con texto de credito de consumo o revisa si la lectura quedo pendiente.
@@ -1022,62 +1080,143 @@ export function Upload() {
               </div>
             )}
 
-            {factRecords.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
-                {factRecords.map(fact => {
-                  const status = STATUS_COPY[fact.confirmation_status];
-                  const resolved = fact.confirmation_status !== 'pending';
-                  const busy = Boolean(factActionById[fact.id]);
-                  const correction = correctionById[fact.id] ?? '';
-                  return (
-                    <div key={fact.id} style={factRowStyle}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                        <div style={{ width: 34, height: 34, borderRadius: 9, background: fact.high_impact ? 'var(--amber-soft)' : 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
-                          <Icon name={fact.high_impact ? 'shield-check' : 'file'} size={16} color={fact.high_impact ? 'var(--amber)' : 'var(--ink-faint)'} />
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <strong style={{ fontSize: 13.5 }}>{fact.label}</strong>
-                            <span className={`pill ${status.className}`} style={{ fontSize: 10.5 }}>{status.label}</span>
-                            {fact.high_impact && <span className="pill" style={{ fontSize: 10.5 }}>alto impacto</span>}
-                          </div>
-                          <div style={{ marginTop: 5, fontSize: 13, color: fact.warning_code ? 'var(--amber)' : 'var(--ink)', fontWeight: 700 }}>
-                            {formatFactValue(fact)}
-                          </div>
-                          <div style={{ marginTop: 5, fontSize: 11.5, color: 'var(--ink-faint)' }}>
-                            {fact.extraction_provider} · {factLocator(fact)}
-                            {fact.confidence !== null ? ` · ${Math.round(fact.confidence * 100)}% confianza` : ''}
-                          </div>
-                          {fact.source_snippet && (
-                            <blockquote style={snippetStyle}>{fact.source_snippet}</blockquote>
-                          )}
-                          {!resolved && (
-                            <div className="fact-action-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1fr) auto auto auto', gap: 8, marginTop: 10 }}>
-                              <input
-                                aria-label={`Correccion para ${fact.label}`}
-                                value={correction}
-                                onChange={event => setCorrectionById(previous => ({ ...previous, [fact.id]: event.target.value }))}
-                                placeholder="Correccion opcional"
-                                style={correctionInputStyle}
-                              />
-                              <button type="button" className="btn btn-small" disabled={busy} onClick={() => handleFactAction(fact, 'correct')}>
-                                Corregir
-                              </button>
-                              <button type="button" className="btn btn-small btn-accent" disabled={busy} onClick={() => handleFactAction(fact, 'confirm')}>
-                                Confirmar
-                              </button>
-                              <button type="button" className="btn btn-small btn-ghost" disabled={busy} onClick={() => handleFactAction(fact, 'reject')} style={{ color: 'var(--red)' }}>
-                                Rechazar
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+            {pendingFacts.length > 0 && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-small btn-accent"
+                  disabled={bulkBusy}
+                  onClick={async () => {
+                    if (!caseId) return;
+                    setBulkBusy(true);
+                    setBulkError(null);
+                    try {
+                      for (const fact of pendingFacts) {
+                        await recordFactConfirmation({ caseId, factId: fact.id, payload: { fact_id: fact.id, action: 'confirm' } });
+                      }
+                      await refreshFactReview();
+                    } catch (err) {
+                      setBulkError(errorText(err, 'Error al confirmar todos los hechos pendientes.'));
+                    } finally {
+                      setBulkBusy(false);
+                    }
+                  }}
+                >
+                  {bulkBusy ? 'Procesando...' : `Confirmar todos (${pendingFacts.length})`}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-small btn-ghost"
+                  disabled={bulkBusy}
+                  style={{ color: 'var(--red)' }}
+                  onClick={async () => {
+                    if (!caseId) return;
+                    setBulkBusy(true);
+                    setBulkError(null);
+                    try {
+                      for (const fact of pendingFacts) {
+                        await recordFactConfirmation({ caseId, factId: fact.id, payload: { fact_id: fact.id, action: 'reject' } });
+                      }
+                      await refreshFactReview();
+                    } catch (err) {
+                      setBulkError(errorText(err, 'Error al rechazar todos los hechos pendientes.'));
+                    } finally {
+                      setBulkBusy(false);
+                    }
+                  }}
+                >
+                  Rechazar todos ({pendingFacts.length})
+                </button>
+                {bulkBusy && <span style={{ fontSize: 12, color: 'var(--ink-faint)' }}>Procesando {pendingFacts.length} hechos...</span>}
               </div>
             )}
+
+            {factGroups.map(group => {
+              const collapsed = collapsedGroups[group.category.key] ?? false;
+              const groupPending = group.facts.filter(f => f.confirmation_status === 'pending').length;
+              const groupResolved = group.facts.length - groupPending;
+              return (
+                <div key={group.category.key} style={{ marginTop: 14 }}>
+                  <button
+                    type="button"
+                    onClick={() => setCollapsedGroups(prev => ({ ...prev, [group.category.key]: !collapsed }))}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                      padding: '8px 12px', borderRadius: 8, border: '1px solid var(--line)',
+                      background: 'var(--paper-2)', cursor: 'pointer', textAlign: 'left',
+                    }}
+                  >
+                    <Icon name={collapsed ? 'chevron-r' : 'chevron-d'} size={14} color="var(--ink-faint)" />
+                    <Icon name={group.category.icon} size={16} color="var(--ink-soft)" />
+                    <strong style={{ flex: 1, fontSize: 13 }}>{group.category.label}</strong>
+                    <span style={{ fontSize: 11.5, color: 'var(--ink-faint)' }}>
+                      {groupResolved}/{group.facts.length} resueltos
+                    </span>
+                    {groupPending > 0 && <span className="pill pill-amber" style={{ fontSize: 10 }}>{groupPending} pendientes</span>}
+                  </button>
+                  {!collapsed && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                      {group.facts.map(fact => {
+                        const status = STATUS_COPY[fact.confirmation_status];
+                        const resolved = fact.confirmation_status !== 'pending';
+                        const busy = Boolean(factActionById[fact.id]) || bulkBusy;
+                        const correction = correctionById[fact.id] ?? '';
+                        return (
+                          <div key={fact.id} style={factRowStyle}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                              <div style={{ width: 30, height: 30, borderRadius: 8, background: fact.high_impact ? 'var(--amber-soft)' : 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>
+                                <Icon name={fact.high_impact ? 'shield-check' : 'file'} size={14} color={fact.high_impact ? 'var(--amber)' : 'var(--ink-faint)'} />
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <strong style={{ fontSize: 13 }}>{fact.label}</strong>
+                                  <span className={`pill ${status.className}`} style={{ fontSize: 10 }}>{status.label}</span>
+                                  {fact.high_impact && <span className="pill pill-amber" style={{ fontSize: 10 }}>alto impacto</span>}
+                                </div>
+                                <div style={{ marginTop: 4, fontSize: 13, color: fact.warning_code ? 'var(--amber)' : 'var(--ink)', fontWeight: 700 }}>
+                                  {formatFactValue(fact)}
+                                </div>
+                                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--ink-faint)' }}>
+                                  {fact.extraction_provider} · {factLocator(fact)}
+                                  {fact.confidence !== null ? ` · ${Math.round(fact.confidence * 100)}%` : ''}
+                                </div>
+                                {fact.source_snippet && (
+                                  <blockquote style={snippetStyle}>{fact.source_snippet}</blockquote>
+                                )}
+                              </div>
+                              <div style={{ flex: '0 0 auto', display: 'flex', gap: 6, alignItems: 'flex-start', marginLeft: 8 }}>
+                                {!resolved ? (
+                                  <>
+                                    <input
+                                      aria-label={`Correccion para ${fact.label}`}
+                                      value={correction}
+                                      onChange={event => setCorrectionById(previous => ({ ...previous, [fact.id]: event.target.value }))}
+                                      placeholder="Corregir..."
+                                      style={{ ...correctionInputStyle, width: 120 }}
+                                    />
+                                    <button type="button" className="btn btn-small" disabled={busy} onClick={() => handleFactAction(fact, 'correct')}>
+                                      Corregir
+                                    </button>
+                                    <button type="button" className="btn btn-small btn-accent" disabled={busy} onClick={() => handleFactAction(fact, 'confirm')}>
+                                      Confirmar
+                                    </button>
+                                    <button type="button" className="btn btn-small btn-ghost" disabled={busy} onClick={() => handleFactAction(fact, 'reject')} style={{ color: 'var(--red)' }}>
+                                      Rechazar
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className={`pill ${status.className}`} style={{ fontSize: 10.5, whiteSpace: 'nowrap' }}>{status.label}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </section>
         )}
 
