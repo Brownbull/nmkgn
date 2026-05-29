@@ -1,5 +1,15 @@
 # Session Ledger
 
+## 2026-05-29 — [c2a6f41] feat(draft): add communication draft generation with B4 cautious language post-filter
+FINDINGS: 1 (0 critical after resolution, 0 high, 1 medium resolved, 0 low)
+ACTIONS: 1:update-docs (docs/architecture.md — Services section updated)
+DEFERRED: none
+
+## 2026-05-29 — PHASE EXEC COMPLETE: Phase 7 — Communication draft generation
+TIER: ent
+TASKS: 3 tasks, 1 commit
+DEVIATIONS: 0 structural, 1 minor (consumer_credit_provider.py not modified — draft service is standalone)
+
 ## 2026-05-29 — PUSH main → main
 PR: —
 CI: — (no CI configured)
@@ -1606,3 +1616,6 @@ Verification:
   gap count is now 8 with no `missing_in_receptionist` gaps, leaving one
   blocking `source_conflict` for `clause` plus seven advisory
   `unsupported_field` gaps.
+- 2026-05-29 00:24 | Write | /home/khujta/projects/apps/nmkgn/api/services/draft.py
+- 2026-05-29 00:25 | Write | /home/khujta/projects/apps/nmkgn/tests/api/test_draft.py
+- 2026-05-29 00:30 | Edit | /home/khujta/projects/apps/nmkgn/docs/architecture.md
