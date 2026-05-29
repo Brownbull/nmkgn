@@ -1,5 +1,11 @@
 # Session Ledger
 
+## 2026-05-28 — PLAN UPDATE: Insert Phase 4 (Fact review UX), renumber Phases 4-7 → 5-8
+CHANGE: New Phase 4 inserted — Fact review UX improvements (bulk actions, stats, grouping, consistent layout)
+TIER: ent (user wants edge-case coverage: loading states, inline error recovery)
+DECISIONS: D35
+RENUMBERED: old Phase 4→5, 5→6, 6→7, 7→8
+
 ## 2026-05-28 — PUSH: Phase 3 — E2E and integration testing infrastructure
 COMMITS: 6 (aeae26b..3d5630e)
 REMOTE: origin/main

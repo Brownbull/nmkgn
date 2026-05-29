@@ -1234,6 +1234,44 @@ dim_overrides:
 
 - accepted
 
+## D35 — Phase 4 tier: ent (2026-05-28)
+
+**Phase:** Fact review UX improvements
+**Types:** [user-facing, client-state]
+**Tier chosen:** ent
+**Prototype:** no
+**Reason:** Sensible UI change — user wants edge cases covered (loading states, inline error recovery, consistent layout)
+
+### Sections rendered
+- Core (always, 4 dims, 0 suppressed)
+- UI/UX: 2 dims, 2 suppressed (A11y — not the focus; Streaming — no streaming in fact review)
+- Client State: 1 dim, 6 suppressed (single-component state, no cross-tab/offline/cache concerns)
+
+### Dimensions suppressed (Layer 2 filter)
+- UI/UX.A11y — not the focus of this fact-review rework
+- UI/UX.Streaming — no streaming data in fact confirmation flow
+- ClientState.Cache invalidation — manual refetch sufficient for single-screen
+- ClientState.Optimistic updates — fact confirmation is synchronous POST
+- ClientState.Stale data — facts reload after each action
+- ClientState.Cross-tab sync — single-tab use case
+- ClientState.Offline support — requires network for API calls
+
+### Per-dim tier overrides
+
+```yaml
+dim_overrides: []
+```
+
+### Δ deferred by tier choice
+- M × 2 (Loading optimistic render, Error retry+report), S × 2 (Observability traces, Store normalizer)
+
+### Review trigger (when to escalate this phase)
+- When fact count exceeds 50 per case, when multiple users review same facts, or when a11y audit is required
+
+### Status
+
+- accepted
+
 ## D34 — Phase 3 tier: mvp (2026-05-28)
 
 **Phase:** E2E and integration testing infrastructure
