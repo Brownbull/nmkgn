@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Icon } from '../components/Icon';
 import { AppShell } from '../components/shared';
 import { useNav } from '../components/NavContext';
-import type { AnalysisFinding } from '../api/analysis';
+import { listAnalysisRuns, type AnalysisFinding } from '../api/analysis';
 import {
   exportFindings,
   generateDraft,
@@ -26,11 +26,31 @@ function sevMeta(sev: string) {
 export function Email() {
   const nav = useNav();
   const caseId = nav.state.caseId ?? '';
-  const findings: AnalysisFinding[] = nav.state.findings ?? [];
 
-  const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(findings.filter(f => f.claim_type !== 'inference').map(f => f.id)),
-  );
+  const [findings, setFindings] = useState<AnalysisFinding[]>([]);
+  const [loadingFindings, setLoadingFindings] = useState(true);
+
+  useEffect(() => {
+    if (!caseId) { setLoadingFindings(false); return; }
+    listAnalysisRuns(caseId)
+      .then(runs => {
+        const completed = runs.find(r => r.status === 'completed');
+        setFindings(completed?.findings ?? []);
+      })
+      .catch(() => setFindings([]))
+      .finally(() => setLoadingFindings(false));
+  }, [caseId]);
+
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectionInit, setSelectionInit] = useState(false);
+
+  useEffect(() => {
+    if (!selectionInit && findings.length > 0) {
+      setSelected(new Set(findings.filter(f => f.claim_type !== 'inference').map(f => f.id)));
+      setSelectionInit(true);
+    }
+  }, [findings, selectionInit]);
+
   const [step, setStep] = useState<Step>('select');
   const [exportResult, setExportResult] = useState<ExportSummary | null>(null);
   const [draftResult, setDraftResult] = useState<DraftResult | null>(null);
@@ -249,7 +269,13 @@ function SelectionStep({ findings, selected, onToggle, onToggleAll, onExport, on
         })}
       </div>
 
-      {findings.length === 0 && (
+      {loadingFindings && (
+        <div className="card-soft" style={{ padding: 20, textAlign: 'center', color: 'var(--ink-soft)', fontSize: 14 }}>
+          Cargando hallazgos...
+        </div>
+      )}
+
+      {!loadingFindings && findings.length === 0 && (
         <div className="card-soft" style={{ padding: 20, textAlign: 'center', color: 'var(--ink-soft)', fontSize: 14 }}>
           No hay hallazgos disponibles. Ejecuta un análisis primero.
         </div>
