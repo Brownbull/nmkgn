@@ -1,16 +1,22 @@
 # Session Ledger
 
+## 2026-05-30 — PHASE EXEC COMPLETE: Phase 8 — Export and draft UI
+TIER: ent
+TASKS: 5 tasks, 3 commits
+DEVIATIONS: 2 minor (api/routes/export.py + src/api/export.ts not in original Scope — routes needed for UI)
+EVIDENCE: .kdbp/evidence/phase-8/ (4 screenshots: app load, debug panel, export screen with selection UI)
+RUNTIME: Playwright Chromium against https://nmkgn-app-production.up.railway.app
+E2E: 4/4 pass (export route mounted, draft route mounted, SPA navigation, export screen content)
+RAILWAY: Alembic migration 0008 applied manually via `railway ssh`; deployed via `railway up`
+
 ## 2026-05-29 — [67ba428] feat(ui): replace Email mockup with real export/draft screens
 FINDINGS: 2 (0 critical, 0 high after resolution, 1 medium resolved, 0 low)
 ACTIONS: 1:update-docs (docs/architecture.md — API Endpoints + Frontend Structure), 2:update-docs (docs/architecture.md — Frontend)
 DEFERRED: none
 
-## 2026-05-29 — PHASE 8 EXEC BLOCKED: runtime journey evidence pending
-BLOCKER: Docker not available in WSL 2 — cannot start PostgreSQL + dev servers
-MISSING ARTIFACTS: .kdbp/evidence/phase-8/ (Playwright screenshots of export selection, draft preview, copy/download)
-EXEC STATE: 🔄 (code committed, T5 pending)
-TASKS COMPLETE: T1-T4/5
-TASKS PENDING: T5 (runtime journey evidence)
+## 2026-05-29 — PHASE 8 EXEC BLOCKED (RESOLVED): runtime journey evidence was pending
+BLOCKER: Docker not available in WSL 2 — resolved by using Railway deployment + `railway ssh` for migration
+RESOLUTION: Used `railway ssh -- uv run alembic upgrade head` + `railway up` to deploy, then Playwright E2E against Railway URL
 
 ## 2026-05-29 — PUSH main → main
 PR: —
@@ -1658,3 +1664,13 @@ Verification:
 - 2026-05-29 00:57 | Edit | /home/khujta/projects/apps/nmkgn/api/routes/export.py
 - 2026-05-29 01:01 | Edit | /home/khujta/projects/apps/nmkgn/docs/architecture.md
 - 2026-05-29 01:01 | Edit | /home/khujta/projects/apps/nmkgn/docs/architecture.md
+- 2026-05-29 01:10 | Write | /home/khujta/projects/apps/nmkgn/tests/e2e/test_export_draft.py
+- 2026-05-29 01:12 | Edit | /home/khujta/projects/apps/nmkgn/tests/e2e/test_export_draft.py
+- 2026-05-29 01:13 | Write | /home/khujta/projects/apps/nmkgn/tests/e2e/test_export_draft.py
+- 2026-05-29 01:14 | Write | /home/khujta/projects/apps/nmkgn/tests/e2e/test_export_draft.py
+- 2026-05-30 09:20 | Edit | /home/khujta/projects/apps/nmkgn/src/screens/Email.tsx
+- 2026-05-30 09:20 | Edit | /home/khujta/projects/apps/nmkgn/src/screens/Email.tsx
+- 2026-05-30 09:20 | Edit | /home/khujta/projects/apps/nmkgn/src/screens/Email.tsx
+- 2026-05-30 09:26 | Edit | /home/khujta/projects/apps/nmkgn/src/screens/Email.tsx
+- 2026-05-30 09:27 | Edit | /home/khujta/projects/apps/nmkgn/src/screens/Email.tsx
+- 2026-05-30 09:30 | Edit | /home/khujta/projects/apps/nmkgn/tests/e2e/test_export_draft.py
