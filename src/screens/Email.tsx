@@ -179,6 +179,7 @@ export function Email() {
             onExport={handleExport}
             onDraft={handleDraft}
             loading={loading}
+            loadingFindings={loadingFindings}
           />
         )}
 
@@ -212,9 +213,10 @@ interface SelectionStepProps {
   onExport: () => void;
   onDraft: () => void;
   loading: boolean;
+  loadingFindings: boolean;
 }
 
-function SelectionStep({ findings, selected, onToggle, onToggleAll, onExport, onDraft, loading }: SelectionStepProps) {
+function SelectionStep({ findings, selected, onToggle, onToggleAll, onExport, onDraft, loading, loadingFindings }: SelectionStepProps) {
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
