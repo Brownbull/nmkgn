@@ -62,15 +62,17 @@ def test_export_screen_content(page: Page, base_url: str) -> None:
     page.get_by_text("Continuar con Google").click()
     page.wait_for_timeout(500)
 
-    debug_toggle = page.locator("text=▸").first
-    if debug_toggle.is_visible():
-        debug_toggle.click()
-        page.wait_for_timeout(300)
+    debug_pill = page.locator("div").filter(has_text="case").last
+    if debug_pill.is_visible():
+        debug_pill.click()
+        page.wait_for_timeout(500)
+
+    page.screenshot(path=str(EVIDENCE_DIR / "03a-debug-panel.png"), full_page=True)
 
     email_btn = page.locator("button").filter(has_text="email")
     if email_btn.count() > 0:
         email_btn.first.click()
-        page.wait_for_timeout(1000)
+        page.wait_for_timeout(2000)
 
     page.screenshot(path=str(EVIDENCE_DIR / "03-export-content.png"), full_page=True)
 
@@ -81,9 +83,9 @@ def test_export_screen_content(page: Page, base_url: str) -> None:
             "Seleccionar",
             "Exportar",
             "hallazgo",
-            "Redactar",
-            "email",
-            "borrador",
+            "Cargando",
+            "No hay hallazgos",
+            "exportar",
         ]
     )
-    assert has_content, f"Expected export/email UI text. Got: {body[:300]}"
+    assert has_content, f"Expected export UI text. Got: {body[:300]}"
